@@ -1,0 +1,1273 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		069C4ED0FFCCF971D33D057E /* BrowserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */; };
+		0D4950F956A73C44DAA951D6 /* BrowserIntegrationInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28439851C5DD34712CF32AEB /* BrowserIntegrationInstaller.swift */; };
+		0E29AAD2B2549CDE2488181F /* ShareComposerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */; };
+		14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */; };
+		179BD1592565EC4828C0533D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5ACF2847F8BBF82E223584 /* main.swift */; };
+		26DD92D9C7A0156714888AE0 /* PinaxCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = 6F2F74B7336DDC96773E3FB3 /* PinaxCloudSync */; };
+		2725AA4A876495101629B69C /* BrowserIntegrationConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5414C354714BAA860E2A8775 /* BrowserIntegrationConfiguration.swift */; };
+		2996C4CE5D6B0BB94C19C742 /* PinaxShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9034FF366C8E265E756471AC /* PinaxShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		30E61DE9454D8A71CCCE21AB /* ShareComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76EBC41EDA62971A91B555B /* ShareComposerView.swift */; };
+		312DA1B67C7F6D8A15267A53 /* CaptureDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */; };
+		3362098A689B1307870FBB19 /* InspirationEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C421984B2C307DCC855CABA7 /* InspirationEditorSheet.swift */; };
+		393E55787DA30D26AF2AEE64 /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = A9338FB84BBC74C31E563ADE /* PinaxCore */; };
+		4184544F645A5DE57F92F9E9 /* PinaxColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEEDA3EB99E6CC5AD40A1785 /* PinaxColor.swift */; };
+		43BAC225C5AD4F0A61AF4DDC /* PinaxAgent in Resources */ = {isa = PBXBuildFile; fileRef = C09FDC155FD3B7B1808DFF55 /* PinaxAgent */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4805E95689ECFF598A66E337 /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5DF4CA7FF85985D3BA61E797 /* PinaxCore */; };
+		4AB66A454FE40AF632B1F850 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7913E82468644892D4F1181A /* Assets.xcassets */; };
+		4E68DD164B4C0D335A1611B7 /* ProjectEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1AA5E7CFC59C03308728E50 /* ProjectEditorSheet.swift */; };
+		51F572CFE0AC517C495F09CB /* CaptureDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */; };
+		54E3D7C8346BD2E7C0BB984C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17C1D1168232960E08F0EF78 /* Assets.xcassets */; };
+		59E12E4DD8A4020F3416D2A1 /* PinaxCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = BCFFDBF1E7F22D297582D9ED /* PinaxCloudSync */; };
+		62ED3BEE26211698E38F89B2 /* MacLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */; };
+		6A0880524547DBAF265F67D3 /* PinaxNativeHost in Resources */ = {isa = PBXBuildFile; fileRef = 26A6BB955B165ECDBD094F80 /* PinaxNativeHost */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		6CF8B90CA69711ADA949A840 /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = 643D912A58F4D05610A48609 /* PinaxCore */; };
+		714C8665CF2D2DA117CE4953 /* ChromiumBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E557B2CB98FC11FB1FDE5FF /* ChromiumBrowser.swift */; };
+		766943FF83FB37B560E51A5D /* IOSInspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67710632DF6A1D8F1DD1D13C /* IOSInspirationDetailView.swift */; };
+		7C08894180141C033FB39F8F /* IOSInspirationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5F25D0B681D7DBDF140A01D /* IOSInspirationCard.swift */; };
+		7CE56AD492D1EFC2783A42C4 /* CaptureProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09087426BEBF1093F410D192 /* CaptureProtocol.swift */; };
+		7F382A7CF2ECE0C30989A8AD /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = B2CCF951383CACE415282AED /* PinaxCore */; };
+		809C5A169D6E95099CF74F42 /* PinaxAgentCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F84370F3981D431F5EE5CA5 /* PinaxAgentCommand.swift */; };
+		81CE1A7DC0937ED4B0F374C9 /* CaptureAcknowledgement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BE334042550ABD6F1DCA236 /* CaptureAcknowledgement.swift */; };
+		857E6662F3C6D450C7F1EB5D /* PinaxCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = EF743463125AA850541A25AC /* PinaxCloudSync */; };
+		88A55C06F3EF3C046245C248 /* CaptureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6648723837BCA939AED69373 /* CaptureSheet.swift */; };
+		8BE6A1A67DDBF566ACDC6804 /* ShareItemExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494362440C606F731D799661 /* ShareItemExtractor.swift */; };
+		90352325B39E119D59DD0EA6 /* ManualCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9370C9FA3FD878E74665DC1D /* ManualCaptureView.swift */; };
+		95F5C17544DA4F8D868954C3 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
+		9C30AAC70E2EC527A4BFEF16 /* IOSLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */; };
+		A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D31782EDBB792389D4E078 /* InspirationDetailView.swift */; };
+		AA3AA7434D18E11432B6F55B /* NativeMessagingHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */; };
+		C2101F612D9D9B0B3E47B2B1 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
+		C3218466F0C3E53D077F8381 /* NativeMessageFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */; };
+		D326BFE9105DAC73BFA33491 /* PinaxiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */; };
+		DC5D54DBC1FBA2EAE71EF8F9 /* InspirationImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42094DB6B27C4C1FF5F6C30C /* InspirationImageView.swift */; };
+		E02428394842D8B9C55A9248 /* InspirationEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8DDFF167230CD3E1900605 /* InspirationEditorView.swift */; };
+		E8719F4D3A0903C4CC3DC105 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7A3B85355F1E375738700D9 /* ShareViewController.swift */; };
+		F032156F85D35F16E09BC0DE /* InspirationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20E065F91541EA756088B649 /* InspirationCard.swift */; };
+		F7BFDE853DF354E1F5EADB30 /* ProjectViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = F24D43E728BC7634B5C7B482 /* ProjectViews.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0C2490A78634A3377F1D74B2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB9645393AF08944C69D2561 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5167F70E2143383A597E8BB9;
+			remoteInfo = PinaxNativeMessaging;
+		};
+		3844DF139CE54974D6141340 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB9645393AF08944C69D2561 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 79B8175317766BE52357EBC0;
+			remoteInfo = PinaxAgent;
+		};
+		B4EAFD6A1201BCA27A54BB86 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB9645393AF08944C69D2561 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = C964D12D73179AD5AA2FEA32;
+			remoteInfo = PinaxShareExtension;
+		};
+		B8A2B2547BF779E3D356F1CC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB9645393AF08944C69D2561 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 4886257118D25DED667B7ABD;
+			remoteInfo = PinaxNativeHost;
+		};
+		D5F0A5A43A8791F3C391F0E4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB9645393AF08944C69D2561 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5167F70E2143383A597E8BB9;
+			remoteInfo = PinaxNativeMessaging;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		49F04A94BF1B41785E5049E9 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				2996C4CE5D6B0BB94C19C742 /* PinaxShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		09087426BEBF1093F410D192 /* CaptureProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureProtocol.swift; sourceTree = "<group>"; };
+		099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
+		0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessageFramer.swift; sourceTree = "<group>"; };
+		170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLibraryView.swift; sourceTree = "<group>"; };
+		17C1D1168232960E08F0EF78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxMacApp.swift; sourceTree = "<group>"; };
+		1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareComposerModel.swift; sourceTree = "<group>"; };
+		20E065F91541EA756088B649 /* InspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationCard.swift; sourceTree = "<group>"; };
+		263D8443E92573DF427FC129 /* PinaxiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PinaxiOS.entitlements; sourceTree = "<group>"; };
+		26A6BB955B165ECDBD094F80 /* PinaxNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = PinaxNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
+		28439851C5DD34712CF32AEB /* BrowserIntegrationInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserIntegrationInstaller.swift; sourceTree = "<group>"; };
+		2BE334042550ABD6F1DCA236 /* CaptureAcknowledgement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAcknowledgement.swift; sourceTree = "<group>"; };
+		2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHost.swift; sourceTree = "<group>"; };
+		42094DB6B27C4C1FF5F6C30C /* InspirationImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationImageView.swift; sourceTree = "<group>"; };
+		43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSLibraryView.swift; sourceTree = "<group>"; };
+		494362440C606F731D799661 /* ShareItemExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareItemExtractor.swift; sourceTree = "<group>"; };
+		5414C354714BAA860E2A8775 /* BrowserIntegrationConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserIntegrationConfiguration.swift; sourceTree = "<group>"; };
+		592A3D408D85B45AB3FA2D98 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PinaxiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
+		6648723837BCA939AED69373 /* CaptureSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSheet.swift; sourceTree = "<group>"; };
+		66D31782EDBB792389D4E078 /* InspirationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationDetailView.swift; sourceTree = "<group>"; };
+		6766387870BD9CE4938D29C5 /* PinaxShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PinaxShare.entitlements; sourceTree = "<group>"; };
+		67710632DF6A1D8F1DD1D13C /* IOSInspirationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSInspirationDetailView.swift; sourceTree = "<group>"; };
+		6E557B2CB98FC11FB1FDE5FF /* ChromiumBrowser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChromiumBrowser.swift; sourceTree = "<group>"; };
+		6F84370F3981D431F5EE5CA5 /* PinaxAgentCommand.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxAgentCommand.swift; sourceTree = "<group>"; };
+		7913E82468644892D4F1181A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8B5ACF2847F8BBF82E223584 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		9034FF366C8E265E756471AC /* PinaxShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PinaxShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		9370C9FA3FD878E74665DC1D /* ManualCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCaptureView.swift; sourceTree = "<group>"; };
+		A1AA5E7CFC59C03308728E50 /* ProjectEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectEditorSheet.swift; sourceTree = "<group>"; };
+		A76EBC41EDA62971A91B555B /* ShareComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareComposerView.swift; sourceTree = "<group>"; };
+		AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserSetupView.swift; sourceTree = "<group>"; };
+		AEEDA3EB99E6CC5AD40A1785 /* PinaxColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxColor.swift; sourceTree = "<group>"; };
+		BDA09240C82D4486947662C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C09FDC155FD3B7B1808DFF55 /* PinaxAgent */ = {isa = PBXFileReference; includeInIndex = 0; path = PinaxAgent; sourceTree = BUILT_PRODUCTS_DIR; };
+		C421984B2C307DCC855CABA7 /* InspirationEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationEditorSheet.swift; sourceTree = "<group>"; };
+		C5F25D0B681D7DBDF140A01D /* IOSInspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSInspirationCard.swift; sourceTree = "<group>"; };
+		C7A3B85355F1E375738700D9 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		CC8DDFF167230CD3E1900605 /* InspirationEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationEditorView.swift; sourceTree = "<group>"; };
+		E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPinaxNativeMessaging.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		E381B8FDDF23409C8327A77D /* pinax */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pinax; path = .; sourceTree = SOURCE_ROOT; };
+		ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxiOSApp.swift; sourceTree = "<group>"; };
+		F24D43E728BC7634B5C7B482 /* ProjectViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViews.swift; sourceTree = "<group>"; };
+		FB19603294E74AE12164816C /* PinaxMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PinaxMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		02AC5E889790A2B5D23208E2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4805E95689ECFF598A66E337 /* PinaxCore in Frameworks */,
+				857E6662F3C6D450C7F1EB5D /* PinaxCloudSync in Frameworks */,
+				95F5C17544DA4F8D868954C3 /* libPinaxNativeMessaging.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		20D54BEC6681BF3F33246358 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6CF8B90CA69711ADA949A840 /* PinaxCore in Frameworks */,
+				26DD92D9C7A0156714888AE0 /* PinaxCloudSync in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7758AA8652F3D1BB82E724D8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				393E55787DA30D26AF2AEE64 /* PinaxCore in Frameworks */,
+				59E12E4DD8A4020F3416D2A1 /* PinaxCloudSync in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		807A7C914AF424098F86C657 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F382A7CF2ECE0C30989A8AD /* PinaxCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F6AD9CA27C5D4595B49132FC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C2101F612D9D9B0B3E47B2B1 /* libPinaxNativeMessaging.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		385ABD9012F3C03B4F6D8B41 /* ShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */,
+				A76EBC41EDA62971A91B555B /* ShareComposerView.swift */,
+				494362440C606F731D799661 /* ShareItemExtractor.swift */,
+				C7A3B85355F1E375738700D9 /* ShareViewController.swift */,
+				C9F578F6F637C3B8FB1E1842 /* Resources */,
+			);
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		44EF1C65266C85DA1DF3864E = {
+			isa = PBXGroup;
+			children = (
+				689B0AA868D7D35F48237232 /* AgentAPI */,
+				BE168406D125AB44663BDF15 /* iOS */,
+				8B67ADE2F4A8F3C36D729137 /* Mac */,
+				6FFAC8A9AD5A71E66D85C10E /* NativeHost */,
+				F863CC857B1E6EF6C79A0A3F /* Packages */,
+				385ABD9012F3C03B4F6D8B41 /* ShareExtension */,
+				CD837CA6AC567DC065268C59 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		4C60CFCCCC8C85BD27C8902A /* BrowserIntegration */ = {
+			isa = PBXGroup;
+			children = (
+				ACF5DE338243FB0AE023BBAD /* Sources */,
+			);
+			path = BrowserIntegration;
+			sourceTree = "<group>";
+		};
+		519067038535B0606C602EDB /* PinaxNativeHost */ = {
+			isa = PBXGroup;
+			children = (
+				8B5ACF2847F8BBF82E223584 /* main.swift */,
+			);
+			path = PinaxNativeHost;
+			sourceTree = "<group>";
+		};
+		5DF494FA752E7E7DD104BD05 /* BrowserIntegration */ = {
+			isa = PBXGroup;
+			children = (
+				5414C354714BAA860E2A8775 /* BrowserIntegrationConfiguration.swift */,
+				28439851C5DD34712CF32AEB /* BrowserIntegrationInstaller.swift */,
+				6E557B2CB98FC11FB1FDE5FF /* ChromiumBrowser.swift */,
+			);
+			path = BrowserIntegration;
+			sourceTree = "<group>";
+		};
+		689B0AA868D7D35F48237232 /* AgentAPI */ = {
+			isa = PBXGroup;
+			children = (
+				B88B84582AD8B6F24F07BED0 /* Sources */,
+			);
+			path = AgentAPI;
+			sourceTree = "<group>";
+		};
+		6A4CCEBB79AE359EE14F5F72 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				519067038535B0606C602EDB /* PinaxNativeHost */,
+				F944D6985665B0839C87FBE6 /* PinaxNativeMessaging */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		6FFAC8A9AD5A71E66D85C10E /* NativeHost */ = {
+			isa = PBXGroup;
+			children = (
+				6A4CCEBB79AE359EE14F5F72 /* Sources */,
+			);
+			path = NativeHost;
+			sourceTree = "<group>";
+		};
+		70AC003294B83E8E0A6CFCFA /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				17C1D1168232960E08F0EF78 /* Assets.xcassets */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		89448AD157FEF361E41FCDD9 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */,
+				6648723837BCA939AED69373 /* CaptureSheet.swift */,
+				20E065F91541EA756088B649 /* InspirationCard.swift */,
+				66D31782EDBB792389D4E078 /* InspirationDetailView.swift */,
+				C421984B2C307DCC855CABA7 /* InspirationEditorSheet.swift */,
+				170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */,
+				A1AA5E7CFC59C03308728E50 /* ProjectEditorSheet.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		8B67ADE2F4A8F3C36D729137 /* Mac */ = {
+			isa = PBXGroup;
+			children = (
+				D63620AB72E6EC5064BF290E /* App */,
+				4C60CFCCCC8C85BD27C8902A /* BrowserIntegration */,
+				70AC003294B83E8E0A6CFCFA /* Resources */,
+				89448AD157FEF361E41FCDD9 /* Views */,
+			);
+			path = Mac;
+			sourceTree = "<group>";
+		};
+		ACF5DE338243FB0AE023BBAD /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				5DF494FA752E7E7DD104BD05 /* BrowserIntegration */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		B35D4EBA74BB4269E314DD12 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */,
+				ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		B88B84582AD8B6F24F07BED0 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				D944E2BE1253C3CB65074E05 /* PinaxAgent */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		BE168406D125AB44663BDF15 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				B35D4EBA74BB4269E314DD12 /* App */,
+				DE052D128B71F657B941EC32 /* Resources */,
+				ED0DEDF86DAEAF0101C23547 /* Support */,
+				E02D31DBE491E194DCC08529 /* Views */,
+			);
+			path = iOS;
+			sourceTree = "<group>";
+		};
+		C9F578F6F637C3B8FB1E1842 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				592A3D408D85B45AB3FA2D98 /* Info.plist */,
+				6766387870BD9CE4938D29C5 /* PinaxShare.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		CD837CA6AC567DC065268C59 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */,
+				C09FDC155FD3B7B1808DFF55 /* PinaxAgent */,
+				5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */,
+				FB19603294E74AE12164816C /* PinaxMac.app */,
+				26A6BB955B165ECDBD094F80 /* PinaxNativeHost */,
+				9034FF366C8E265E756471AC /* PinaxShareExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D63620AB72E6EC5064BF290E /* App */ = {
+			isa = PBXGroup;
+			children = (
+				099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */,
+				18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		D944E2BE1253C3CB65074E05 /* PinaxAgent */ = {
+			isa = PBXGroup;
+			children = (
+				6F84370F3981D431F5EE5CA5 /* PinaxAgentCommand.swift */,
+			);
+			path = PinaxAgent;
+			sourceTree = "<group>";
+		};
+		DE052D128B71F657B941EC32 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				7913E82468644892D4F1181A /* Assets.xcassets */,
+				BDA09240C82D4486947662C8 /* Info.plist */,
+				263D8443E92573DF427FC129 /* PinaxiOS.entitlements */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		E02D31DBE491E194DCC08529 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CC8DDFF167230CD3E1900605 /* InspirationEditorView.swift */,
+				42094DB6B27C4C1FF5F6C30C /* InspirationImageView.swift */,
+				C5F25D0B681D7DBDF140A01D /* IOSInspirationCard.swift */,
+				67710632DF6A1D8F1DD1D13C /* IOSInspirationDetailView.swift */,
+				43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */,
+				9370C9FA3FD878E74665DC1D /* ManualCaptureView.swift */,
+				F24D43E728BC7634B5C7B482 /* ProjectViews.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		ED0DEDF86DAEAF0101C23547 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				AEEDA3EB99E6CC5AD40A1785 /* PinaxColor.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		F863CC857B1E6EF6C79A0A3F /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				E381B8FDDF23409C8327A77D /* pinax */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		F944D6985665B0839C87FBE6 /* PinaxNativeMessaging */ = {
+			isa = PBXGroup;
+			children = (
+				2BE334042550ABD6F1DCA236 /* CaptureAcknowledgement.swift */,
+				09087426BEBF1093F410D192 /* CaptureProtocol.swift */,
+				0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */,
+				2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */,
+			);
+			path = PinaxNativeMessaging;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		4886257118D25DED667B7ABD /* PinaxNativeHost */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = CD23F49C0A62871BCADA3EE3 /* Build configuration list for PBXNativeTarget "PinaxNativeHost" */;
+			buildPhases = (
+				8156B8C8A0AFBF4CF792C4AB /* Sources */,
+				F6AD9CA27C5D4595B49132FC /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F2BEA658C06838FBA1CAF060 /* PBXTargetDependency */,
+			);
+			name = PinaxNativeHost;
+			packageProductDependencies = (
+			);
+			productName = PinaxNativeHost;
+			productReference = 26A6BB955B165ECDBD094F80 /* PinaxNativeHost */;
+			productType = "com.apple.product-type.tool";
+		};
+		5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 4F5EEC2AA9EEE570084D0878 /* Build configuration list for PBXNativeTarget "PinaxNativeMessaging" */;
+			buildPhases = (
+				10508C33AF79C0E000B3F21A /* Sources */,
+				8CC01EF6E3405D4875DA2BEA /* Copy Swift Objective-C Interface Header */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PinaxNativeMessaging;
+			packageProductDependencies = (
+			);
+			productName = PinaxNativeMessaging;
+			productReference = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		5F8C5ADE6300043D98005E05 /* PinaxiOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FF2585B0563AB65182FDB7D6 /* Build configuration list for PBXNativeTarget "PinaxiOS" */;
+			buildPhases = (
+				E302176ADC2976E8A33918D0 /* Sources */,
+				50ACACDF5C67FB75AADA0207 /* Resources */,
+				7758AA8652F3D1BB82E724D8 /* Frameworks */,
+				49F04A94BF1B41785E5049E9 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				E52C9BD266C92359EC885A2A /* PBXTargetDependency */,
+			);
+			name = PinaxiOS;
+			packageProductDependencies = (
+				A9338FB84BBC74C31E563ADE /* PinaxCore */,
+				BCFFDBF1E7F22D297582D9ED /* PinaxCloudSync */,
+			);
+			productName = PinaxiOS;
+			productReference = 5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+		79B8175317766BE52357EBC0 /* PinaxAgent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = C0EAC3FD03A08B7B9AFAAEF2 /* Build configuration list for PBXNativeTarget "PinaxAgent" */;
+			buildPhases = (
+				C2BA20486BBC671B9EB250BA /* Sources */,
+				807A7C914AF424098F86C657 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PinaxAgent;
+			packageProductDependencies = (
+				B2CCF951383CACE415282AED /* PinaxCore */,
+			);
+			productName = PinaxAgent;
+			productReference = C09FDC155FD3B7B1808DFF55 /* PinaxAgent */;
+			productType = "com.apple.product-type.tool";
+		};
+		B71ADB24B6050892C06047BA /* PinaxMac */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1B9279B3496F2599A80D9440 /* Build configuration list for PBXNativeTarget "PinaxMac" */;
+			buildPhases = (
+				1C2C96D6B4F7D1C0F801681F /* Sources */,
+				8149D9CFB75680E1F121F2DF /* Resources */,
+				02AC5E889790A2B5D23208E2 /* Frameworks */,
+				B5D61695DD132A7CC44D51E0 /* Bundle Chromium integration */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				95B93FBD7BD3181DC5F0ABB4 /* PBXTargetDependency */,
+				7E9F4FADC2F27B8C62DD1435 /* PBXTargetDependency */,
+				F8C47A88169CF9435D18AF54 /* PBXTargetDependency */,
+			);
+			name = PinaxMac;
+			packageProductDependencies = (
+				5DF4CA7FF85985D3BA61E797 /* PinaxCore */,
+				EF743463125AA850541A25AC /* PinaxCloudSync */,
+			);
+			productName = PinaxMac;
+			productReference = FB19603294E74AE12164816C /* PinaxMac.app */;
+			productType = "com.apple.product-type.application";
+		};
+		C964D12D73179AD5AA2FEA32 /* PinaxShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8AD07EF992B99BF8A6367A97 /* Build configuration list for PBXNativeTarget "PinaxShareExtension" */;
+			buildPhases = (
+				7AD5EEC96FC080EEECB7C19B /* Sources */,
+				20D54BEC6681BF3F33246358 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PinaxShareExtension;
+			packageProductDependencies = (
+				643D912A58F4D05610A48609 /* PinaxCore */,
+				6F2F74B7336DDC96773E3FB3 /* PinaxCloudSync */,
+			);
+			productName = PinaxShareExtension;
+			productReference = 9034FF366C8E265E756471AC /* PinaxShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FB9645393AF08944C69D2561 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					4886257118D25DED667B7ABD = {
+						DevelopmentTeam = R48ND8Q8V9;
+						ProvisioningStyle = Automatic;
+					};
+					5167F70E2143383A597E8BB9 = {
+						DevelopmentTeam = R48ND8Q8V9;
+						ProvisioningStyle = Automatic;
+					};
+					5F8C5ADE6300043D98005E05 = {
+						DevelopmentTeam = R48ND8Q8V9;
+						ProvisioningStyle = Automatic;
+					};
+					79B8175317766BE52357EBC0 = {
+						DevelopmentTeam = R48ND8Q8V9;
+						ProvisioningStyle = Automatic;
+					};
+					B71ADB24B6050892C06047BA = {
+						DevelopmentTeam = R48ND8Q8V9;
+						ProvisioningStyle = Automatic;
+					};
+					C964D12D73179AD5AA2FEA32 = {
+						DevelopmentTeam = R48ND8Q8V9;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 14AF2AB886FD57DC31A93F93 /* Build configuration list for PBXProject "Pinax" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 44EF1C65266C85DA1DF3864E;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				17981DD54B317B800DBEE57F /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = CD837CA6AC567DC065268C59 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				79B8175317766BE52357EBC0 /* PinaxAgent */,
+				B71ADB24B6050892C06047BA /* PinaxMac */,
+				4886257118D25DED667B7ABD /* PinaxNativeHost */,
+				5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */,
+				C964D12D73179AD5AA2FEA32 /* PinaxShareExtension */,
+				5F8C5ADE6300043D98005E05 /* PinaxiOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		50ACACDF5C67FB75AADA0207 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4AB66A454FE40AF632B1F850 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8149D9CFB75680E1F121F2DF /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				54E3D7C8346BD2E7C0BB984C /* Assets.xcassets in Resources */,
+				6A0880524547DBAF265F67D3 /* PinaxNativeHost in Resources */,
+				43BAC225C5AD4F0A61AF4DDC /* PinaxAgent in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		8CC01EF6E3405D4875DA2BEA /* Copy Swift Objective-C Interface Header */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+				"$(DERIVED_SOURCES_DIR)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			name = "Copy Swift Objective-C Interface Header";
+			outputPaths = (
+				"$(BUILT_PRODUCTS_DIR)/include/$(PRODUCT_MODULE_NAME)/$(SWIFT_OBJC_INTERFACE_HEADER_NAME)",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "ditto \"${SCRIPT_INPUT_FILE_0}\" \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+		};
+		B5D61695DD132A7CC44D51E0 /* Bundle Chromium integration */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Bundle Chromium integration";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nhelpers_dir=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers\"\nresources_dir=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nmkdir -p \"$helpers_dir\" \"$resources_dir\"\nditto \"$BUILT_PRODUCTS_DIR/PinaxNativeHost\" \"$helpers_dir/PinaxNativeHost\"\nchmod 755 \"$helpers_dir/PinaxNativeHost\"\nditto \"$BUILT_PRODUCTS_DIR/pinax-agent\" \"$helpers_dir/pinax-agent\"\nchmod 755 \"$helpers_dir/pinax-agent\"\nif [ -d \"$SRCROOT/BrowserExtension/dist\" ]; then\n  rm -rf \"$resources_dir/BrowserExtension\"\n  ditto \"$SRCROOT/BrowserExtension/dist\" \"$resources_dir/BrowserExtension\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		10508C33AF79C0E000B3F21A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				81CE1A7DC0937ED4B0F374C9 /* CaptureAcknowledgement.swift in Sources */,
+				7CE56AD492D1EFC2783A42C4 /* CaptureProtocol.swift in Sources */,
+				C3218466F0C3E53D077F8381 /* NativeMessageFramer.swift in Sources */,
+				AA3AA7434D18E11432B6F55B /* NativeMessagingHost.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1C2C96D6B4F7D1C0F801681F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				2725AA4A876495101629B69C /* BrowserIntegrationConfiguration.swift in Sources */,
+				0D4950F956A73C44DAA951D6 /* BrowserIntegrationInstaller.swift in Sources */,
+				069C4ED0FFCCF971D33D057E /* BrowserSetupView.swift in Sources */,
+				312DA1B67C7F6D8A15267A53 /* CaptureDeepLink.swift in Sources */,
+				88A55C06F3EF3C046245C248 /* CaptureSheet.swift in Sources */,
+				714C8665CF2D2DA117CE4953 /* ChromiumBrowser.swift in Sources */,
+				F032156F85D35F16E09BC0DE /* InspirationCard.swift in Sources */,
+				A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */,
+				3362098A689B1307870FBB19 /* InspirationEditorSheet.swift in Sources */,
+				62ED3BEE26211698E38F89B2 /* MacLibraryView.swift in Sources */,
+				14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */,
+				4E68DD164B4C0D335A1611B7 /* ProjectEditorSheet.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7AD5EEC96FC080EEECB7C19B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0E29AAD2B2549CDE2488181F /* ShareComposerModel.swift in Sources */,
+				30E61DE9454D8A71CCCE21AB /* ShareComposerView.swift in Sources */,
+				8BE6A1A67DDBF566ACDC6804 /* ShareItemExtractor.swift in Sources */,
+				E8719F4D3A0903C4CC3DC105 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8156B8C8A0AFBF4CF792C4AB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				179BD1592565EC4828C0533D /* main.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C2BA20486BBC671B9EB250BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				809C5A169D6E95099CF74F42 /* PinaxAgentCommand.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E302176ADC2976E8A33918D0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				51F572CFE0AC517C495F09CB /* CaptureDeepLink.swift in Sources */,
+				7C08894180141C033FB39F8F /* IOSInspirationCard.swift in Sources */,
+				766943FF83FB37B560E51A5D /* IOSInspirationDetailView.swift in Sources */,
+				9C30AAC70E2EC527A4BFEF16 /* IOSLibraryView.swift in Sources */,
+				E02428394842D8B9C55A9248 /* InspirationEditorView.swift in Sources */,
+				DC5D54DBC1FBA2EAE71EF8F9 /* InspirationImageView.swift in Sources */,
+				90352325B39E119D59DD0EA6 /* ManualCaptureView.swift in Sources */,
+				4184544F645A5DE57F92F9E9 /* PinaxColor.swift in Sources */,
+				D326BFE9105DAC73BFA33491 /* PinaxiOSApp.swift in Sources */,
+				F7BFDE853DF354E1F5EADB30 /* ProjectViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		7E9F4FADC2F27B8C62DD1435 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 4886257118D25DED667B7ABD /* PinaxNativeHost */;
+			targetProxy = B8A2B2547BF779E3D356F1CC /* PBXContainerItemProxy */;
+		};
+		95B93FBD7BD3181DC5F0ABB4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */;
+			targetProxy = D5F0A5A43A8791F3C391F0E4 /* PBXContainerItemProxy */;
+		};
+		E52C9BD266C92359EC885A2A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = C964D12D73179AD5AA2FEA32 /* PinaxShareExtension */;
+			targetProxy = B4EAFD6A1201BCA27A54BB86 /* PBXContainerItemProxy */;
+		};
+		F2BEA658C06838FBA1CAF060 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */;
+			targetProxy = 0C2490A78634A3377F1D74B2 /* PBXContainerItemProxy */;
+		};
+		F8C47A88169CF9435D18AF54 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 79B8175317766BE52357EBC0 /* PinaxAgent */;
+			targetProxy = 3844DF139CE54974D6141340 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0A68C12C9D880A19D7CB3975 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/Resources/PinaxShare.entitlements;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax.ShareExtension;
+				PRODUCT_MODULE_NAME = PinaxShareExtension;
+				PRODUCT_NAME = PinaxShareExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		0D50DBCA3B0E95D89D68D19E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iOS/Resources/PinaxiOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = iOS/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
+				PRODUCT_MODULE_NAME = PinaxiOS;
+				PRODUCT_NAME = Pinax;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		2ACDBAF72F43AF8312329143 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Mac/Resources/PinaxAgent.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax.AgentAPI;
+				PRODUCT_NAME = "pinax-agent";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		54B36FAA47818EA444FD78B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Mac/Resources/PinaxMac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Mac/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
+				PRODUCT_MODULE_NAME = PinaxMac;
+				PRODUCT_NAME = Pinax;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		7CEEC50AAD45A7C1CF0023B7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = R48ND8Q8V9;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		85340658506C47010E0FB5B1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = iOS/Resources/PinaxiOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = iOS/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
+				PRODUCT_MODULE_NAME = PinaxiOS;
+				PRODUCT_NAME = Pinax;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8748AB6472276B18CC914EA2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.PinaxNativeMessaging;
+				PRODUCT_NAME = PinaxNativeMessaging;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		A7CBA727E2839BE45B5E3A25 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/Resources/PinaxShare.entitlements;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareExtension/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax.ShareExtension;
+				PRODUCT_MODULE_NAME = PinaxShareExtension;
+				PRODUCT_NAME = PinaxShareExtension;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		ACEA2E34D40AF37D3A6B97DF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = R48ND8Q8V9;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		ADEB3336456AE4D486060433 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.PinaxNativeHost;
+				PRODUCT_NAME = PinaxNativeHost;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		B55EBA8D6375B0FCE5B76DC5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = Mac/Resources/PinaxAgent.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax.AgentAPI;
+				PRODUCT_NAME = "pinax-agent";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		D132D36C548CAAC7A7478296 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.PinaxNativeMessaging;
+				PRODUCT_NAME = PinaxNativeMessaging;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		E5CAFC4AF9508445FBC67AA1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Mac/Resources/PinaxMac.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Mac/Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
+				PRODUCT_MODULE_NAME = PinaxMac;
+				PRODUCT_NAME = Pinax;
+				REGISTER_APP_GROUPS = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		F22476A19EA3F8E7E072A4C0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-ObjC",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.PinaxNativeHost;
+				PRODUCT_NAME = PinaxNativeHost;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		14AF2AB886FD57DC31A93F93 /* Build configuration list for PBXProject "Pinax" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				ACEA2E34D40AF37D3A6B97DF /* Debug */,
+				7CEEC50AAD45A7C1CF0023B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		1B9279B3496F2599A80D9440 /* Build configuration list for PBXNativeTarget "PinaxMac" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E5CAFC4AF9508445FBC67AA1 /* Debug */,
+				54B36FAA47818EA444FD78B7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		4F5EEC2AA9EEE570084D0878 /* Build configuration list for PBXNativeTarget "PinaxNativeMessaging" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D132D36C548CAAC7A7478296 /* Debug */,
+				8748AB6472276B18CC914EA2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		8AD07EF992B99BF8A6367A97 /* Build configuration list for PBXNativeTarget "PinaxShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A68C12C9D880A19D7CB3975 /* Debug */,
+				A7CBA727E2839BE45B5E3A25 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		C0EAC3FD03A08B7B9AFAAEF2 /* Build configuration list for PBXNativeTarget "PinaxAgent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				2ACDBAF72F43AF8312329143 /* Debug */,
+				B55EBA8D6375B0FCE5B76DC5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CD23F49C0A62871BCADA3EE3 /* Build configuration list for PBXNativeTarget "PinaxNativeHost" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F22476A19EA3F8E7E072A4C0 /* Debug */,
+				ADEB3336456AE4D486060433 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		FF2585B0563AB65182FDB7D6 /* Build configuration list for PBXNativeTarget "PinaxiOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				85340658506C47010E0FB5B1 /* Debug */,
+				0D50DBCA3B0E95D89D68D19E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		17981DD54B317B800DBEE57F /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		5DF4CA7FF85985D3BA61E797 /* PinaxCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCore;
+		};
+		643D912A58F4D05610A48609 /* PinaxCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCore;
+		};
+		6F2F74B7336DDC96773E3FB3 /* PinaxCloudSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCloudSync;
+		};
+		A9338FB84BBC74C31E563ADE /* PinaxCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCore;
+		};
+		B2CCF951383CACE415282AED /* PinaxCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCore;
+		};
+		BCFFDBF1E7F22D297582D9ED /* PinaxCloudSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCloudSync;
+		};
+		EF743463125AA850541A25AC /* PinaxCloudSync */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PinaxCloudSync;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = FB9645393AF08944C69D2561 /* Project object */;
+}

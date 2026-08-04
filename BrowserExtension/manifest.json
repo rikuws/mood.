@@ -1,0 +1,34 @@
+{
+  "manifest_version": 3,
+  "name": "Pinax",
+  "version": "0.1.0",
+  "description": "Save design inspiration from the web to your Pinax moodbook.",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqnfewZ78aMykKbDq448N9cPKp/8z7RbjZgMG2EKs7rzDZuyM/hAIOl/BYUqirbmgKWPaMcK0jW4HVD/qPPkCYpS6QrZkDlpFU+xhUUvPbVrf6S3eDqNLTeUmYy/tBlvFdEHqArfOAj7IvicsaHHkWxPtyM6cB7K/3HPOBZxrR7dKN2KwMbI+cWdmHMzWM8E/tT7eNlU04MBmWzZrM3e5iCJDXr8n0cFZVTZm4y6g7oHZHn8UvokeQju46CgRcW9COEupjuqmlll7TRU7oSU2IB/20VqbpH5okfp/uobOLD39W4lsuKyjS4U60PK4XZC6kTL+17P3/Uu/mFKhL2WuTwIDAQAB",
+  "permissions": [
+    "activeTab",
+    "nativeMessaging",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "action": {
+    "default_title": "Save to Pinax"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "css": [
+        "content/x-content.css"
+      ],
+      "js": [
+        "lib/capture-helpers.js",
+        "content/x-content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

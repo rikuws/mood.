@@ -1,0 +1,253 @@
+name: Pinax
+
+options:
+  bundleIdPrefix: com.rikuwikman
+  deploymentTarget:
+    macOS: "14.0"
+    iOS: "17.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    SWIFT_STRICT_CONCURRENCY: complete
+    ENABLE_USER_SCRIPT_SANDBOXING: false
+    MARKETING_VERSION: 0.1.0
+    CURRENT_PROJECT_VERSION: 1
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: R48ND8Q8V9
+
+packages:
+  PinaxCore:
+    path: .
+
+targets:
+  PinaxNativeMessaging:
+    type: library.static
+    platform: macOS
+    sources:
+      - path: NativeHost/Sources/PinaxNativeMessaging
+    settings:
+      base:
+        PRODUCT_NAME: PinaxNativeMessaging
+        PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.PinaxNativeMessaging
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+  PinaxNativeHost:
+    type: tool
+    platform: macOS
+    sources:
+      - path: NativeHost/Sources/PinaxNativeHost
+    dependencies:
+      - target: PinaxNativeMessaging
+    settings:
+      base:
+        PRODUCT_NAME: PinaxNativeHost
+        PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.PinaxNativeHost
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+  PinaxAgent:
+    type: tool
+    platform: macOS
+    sources:
+      - path: AgentAPI/Sources/PinaxAgent
+    dependencies:
+      - package: PinaxCore
+        product: PinaxCore
+    entitlements:
+      path: Mac/Resources/PinaxAgent.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.rikuwikman.pinax
+    settings:
+      base:
+        PRODUCT_NAME: pinax-agent
+        PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax.AgentAPI
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+
+  PinaxMac:
+    type: application
+    platform: macOS
+    sources:
+      - path: Mac/App
+      - path: Mac/Views
+      - path: Mac/BrowserIntegration/Sources/BrowserIntegration
+      - path: Mac/Resources/Assets.xcassets
+    dependencies:
+      - package: PinaxCore
+        product: PinaxCore
+      - package: PinaxCore
+        product: PinaxCloudSync
+      - target: PinaxNativeMessaging
+      - target: PinaxNativeHost
+        link: false
+      - target: PinaxAgent
+        link: false
+    info:
+      path: Mac/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Pinax
+        CFBundleName: Pinax
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.graphics-design
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        NSHumanReadableCopyright: "Copyright © 2026 Riku Wikman"
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.rikuwikman.pinax.capture
+            CFBundleURLSchemes:
+              - pinax
+    entitlements:
+      path: Mac/Resources/PinaxMac.entitlements
+      properties:
+        com.apple.developer.aps-environment: development
+        com.apple.security.application-groups:
+          - group.com.rikuwikman.pinax
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.rikuwikman.Pinax
+        com.apple.developer.icloud-services:
+          - CloudKit
+    settings:
+      base:
+        PRODUCT_NAME: Pinax
+        PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax
+        PRODUCT_MODULE_NAME: PinaxMac
+        MACOSX_DEPLOYMENT_TARGET: "14.0"
+        GENERATE_INFOPLIST_FILE: false
+        REGISTER_APP_GROUPS: true
+    postBuildScripts:
+      - name: Bundle Chromium integration
+        basedOnDependencyAnalysis: false
+        script: |
+          set -eu
+          helpers_dir="$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers"
+          resources_dir="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
+          mkdir -p "$helpers_dir" "$resources_dir"
+          ditto "$BUILT_PRODUCTS_DIR/PinaxNativeHost" "$helpers_dir/PinaxNativeHost"
+          chmod 755 "$helpers_dir/PinaxNativeHost"
+          ditto "$BUILT_PRODUCTS_DIR/pinax-agent" "$helpers_dir/pinax-agent"
+          chmod 755 "$helpers_dir/pinax-agent"
+          if [ -d "$SRCROOT/BrowserExtension/dist" ]; then
+            rm -rf "$resources_dir/BrowserExtension"
+            ditto "$SRCROOT/BrowserExtension/dist" "$resources_dir/BrowserExtension"
+          fi
+
+  PinaxShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: ShareExtension
+    dependencies:
+      - package: PinaxCore
+        product: PinaxCore
+      - package: PinaxCore
+        product: PinaxCloudSync
+    info:
+      path: ShareExtension/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Save to Pinax
+        CFBundleName: Pinax Share
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.share-services
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
+          NSExtensionAttributes:
+            NSExtensionActivationRule:
+              NSExtensionActivationSupportsWebURLWithMaxCount: 1
+              NSExtensionActivationSupportsWebPageWithMaxCount: 1
+              NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsImageWithMaxCount: 1
+    entitlements:
+      path: ShareExtension/Resources/PinaxShare.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.rikuwikman.pinax
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.rikuwikman.Pinax
+        com.apple.developer.icloud-services:
+          - CloudKit
+    settings:
+      base:
+        PRODUCT_NAME: PinaxShareExtension
+        PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax.ShareExtension
+        PRODUCT_MODULE_NAME: PinaxShareExtension
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        GENERATE_INFOPLIST_FILE: false
+        SKIP_INSTALL: true
+        APPLICATION_EXTENSION_API_ONLY: true
+
+  PinaxiOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: iOS
+    dependencies:
+      - package: PinaxCore
+        product: PinaxCore
+      - package: PinaxCore
+        product: PinaxCloudSync
+      - target: PinaxShareExtension
+        embed: true
+    info:
+      path: iOS/Resources/Info.plist
+      properties:
+        CFBundleDisplayName: Pinax
+        CFBundleName: Pinax
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIBackgroundModes:
+          - fetch
+          - remote-notification
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: com.rikuwikman.pinax.capture
+            CFBundleURLSchemes:
+              - pinax
+    entitlements:
+      path: iOS/Resources/PinaxiOS.entitlements
+      properties:
+        aps-environment: development
+        com.apple.security.application-groups:
+          - group.com.rikuwikman.pinax
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.rikuwikman.Pinax
+        com.apple.developer.icloud-services:
+          - CloudKit
+    settings:
+      base:
+        PRODUCT_NAME: Pinax
+        PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax
+        PRODUCT_MODULE_NAME: PinaxiOS
+        IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+        GENERATE_INFOPLIST_FILE: false
+        REGISTER_APP_GROUPS: true
+
+schemes:
+  PinaxMac:
+    build:
+      targets:
+        PinaxMac: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+  PinaxiOS:
+    build:
+      targets:
+        PinaxiOS: all
+    run:
+      config: Debug
+    archive:
+      config: Release

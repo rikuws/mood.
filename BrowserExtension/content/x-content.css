@@ -1,0 +1,150 @@
+:root {
+  --pinax-blue: rgb(29, 155, 240);
+  --pinax-green: rgb(0, 186, 124);
+  --pinax-red: rgb(244, 33, 46);
+}
+
+[data-pinax-slot] {
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+}
+
+[data-pinax-save] {
+  all: unset;
+  position: relative;
+  display: inline-grid;
+  box-sizing: border-box;
+  width: 34px;
+  height: 34px;
+  cursor: pointer;
+  place-items: center;
+  border-radius: 9999px;
+  color: rgb(83, 100, 113);
+  -webkit-tap-highlight-color: transparent;
+  transition: color 150ms ease, background-color 150ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  [data-pinax-save] {
+    color: rgb(113, 118, 123);
+  }
+}
+
+[data-pinax-save]:hover,
+[data-pinax-save]:focus-visible {
+  color: var(--pinax-blue);
+  background-color: rgba(29, 155, 240, 0.1);
+}
+
+[data-pinax-save]:focus-visible {
+  outline: 2px solid var(--pinax-blue);
+  outline-offset: 2px;
+}
+
+[data-pinax-save][data-state="saving"] svg {
+  animation: pinax-save-pulse 700ms ease-in-out infinite alternate;
+}
+
+[data-pinax-save][data-state="success"] {
+  color: var(--pinax-green);
+  background-color: rgba(0, 186, 124, 0.1);
+}
+
+[data-pinax-save][data-state="error"] {
+  color: var(--pinax-red);
+  background-color: rgba(244, 33, 46, 0.1);
+}
+
+[data-pinax-save] svg {
+  display: block;
+  width: 19px;
+  height: 19px;
+  overflow: visible;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+[data-pinax-tooltip] {
+  position: absolute;
+  z-index: 2;
+  top: calc(100% + 5px);
+  left: 50%;
+  width: max-content;
+  max-width: 180px;
+  padding: 3px 5px;
+  pointer-events: none;
+  border-radius: 2px;
+  background: rgba(91, 112, 131, 0.92);
+  color: white;
+  font: 400 11px/16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  opacity: 0;
+  transform: translate(-50%, -2px);
+  transition: opacity 100ms ease 350ms, transform 100ms ease 350ms;
+}
+
+[data-pinax-save]:hover [data-pinax-tooltip],
+[data-pinax-save]:focus-visible [data-pinax-tooltip] {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+[data-pinax-toast-region] {
+  position: fixed;
+  z-index: 2147483647;
+  right: 20px;
+  bottom: 22px;
+  display: grid;
+  max-width: min(360px, calc(100vw - 40px));
+  pointer-events: none;
+}
+
+[data-pinax-toast] {
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgb(22, 32, 42);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.28);
+  color: white;
+  font: 600 13px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+
+[data-pinax-toast][data-kind="error"] {
+  background: rgb(180, 35, 44);
+}
+
+[data-pinax-toast][data-visible="true"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@keyframes pinax-save-pulse {
+  from {
+    opacity: 0.45;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pinax-save],
+  [data-pinax-save] svg,
+  [data-pinax-tooltip],
+  [data-pinax-toast] {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
