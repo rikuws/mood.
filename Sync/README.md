@@ -1,4 +1,4 @@
-# Pinax Cloud Sync
+# mood. Cloud Sync
 
 `PinaxCloudSync` is an optional, local-first sync layer for the JSON library in
 `PinaxCore`. It mirrors projects, inspiration metadata, and feasible local
@@ -10,7 +10,7 @@ missing account, airplane mode, or CloudKit error never blocks a capture.
 
 Enable the iCloud capability with CloudKit for the macOS app, iOS app, and share
 extension. Give each target access to the same iCloud container and the existing
-Pinax App Group. No API key, application account, or Pinax server is involved.
+mood. App Group. No API key, application account, or mood. server is involved.
 
 Create one engine from the same repository used by the app:
 
@@ -60,7 +60,7 @@ one silent `CKRecordZoneSubscription` for the private `PinaxLibrary` zone. When
 that push arrives, the app runs the normal conflict-aware sync and reloads its
 app-group library without needing a restart.
 
-If a push races an already-running foreground sync, Pinax awaits that work and
+If a push races an already-running foreground sync, mood. awaits that work and
 then performs one fresh reconciliation. This prevents a change committed after
 the first fetch began from waiting until the next activation.
 
@@ -68,7 +68,7 @@ The iOS target needs the Push Notifications capability, Background Modes with
 Background fetch and Remote notifications, and the `aps-environment`
 entitlement. The macOS target needs Push Notifications and
 `com.apple.developer.aps-environment`. Silent CloudKit pushes do not require a
-notification-permission prompt or a Pinax push server.
+notification-permission prompt or a mood. push server.
 
 Push delivery is a hint rather than a guarantee: the system may delay,
 coalesce, throttle, or suppress it. Keep the existing active-scene sync as a

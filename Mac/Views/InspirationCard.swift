@@ -52,7 +52,7 @@ struct InspirationCard: View {
             dragPreview
         }
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint("Opens inspiration details")
+        .accessibilityHint("Opens item details")
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
@@ -318,7 +318,7 @@ struct InspirationCard: View {
         if !previewText.isEmpty { return previewText }
         if let xHandle { return "Post by @\(xHandle)" }
         if !title.isEmpty { return title }
-        return inspiration.url.host() ?? "Untitled inspiration"
+        return inspiration.url.host() ?? "Untitled item"
     }
 
     private var shadowOpacity: Double {

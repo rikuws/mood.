@@ -36,9 +36,10 @@ struct CaptureSheet: View {
                 Image(systemName: "sparkles.rectangle.stack")
                     .font(.system(size: 28, weight: .light))
                     .foregroundStyle(.tint)
-                Text("Save inspiration")
+                Text(ProductIdentity.saveActionTitle)
+                    .accessibilityLabel(Text(ProductIdentity.saveActionSpokenLabel))
                     .font(.title2.weight(.semibold))
-                Text("Paste any page or X post. Pinax will keep the original link and avoid duplicates.")
+                Text("Paste any page or X post. mood. keeps the original link and avoids duplicates.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

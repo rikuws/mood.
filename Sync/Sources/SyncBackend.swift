@@ -13,9 +13,9 @@ extension PinaxSyncBackendError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .conflict(let message):
-            "Pinax cloud data changed during sync: \(message)"
+            "mood. cloud data changed during sync: \(message)"
         case .operationFailed(let message):
-            "Pinax cloud sync failed: \(message)"
+            "mood. cloud sync failed: \(message)"
         }
     }
 }

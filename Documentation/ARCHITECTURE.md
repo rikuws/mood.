@@ -1,11 +1,11 @@
-# Pinax architecture
+# mood. architecture
 
-Pinax is a local-first moodbook with several capture surfaces, one coordinated library format, and an optional private CloudKit replica.
+mood. is a local-first visual moodboard with several capture surfaces, one coordinated library format, and an optional private CloudKit replica.
 
 ## System overview
 
 ```text
-Chromium toolbar / X Pinax action / confirmed X Bookmark
+Chromium toolbar / X mood. action / confirmed X Bookmark
                          |
                          v
         Chromium native messaging (framed JSON on stdio)
@@ -14,7 +14,7 @@ Chromium toolbar / X Pinax action / confirmed X Bookmark
                PinaxNativeHost helper
                          |  validated pinax://capture URL
                          v
-                    Pinax for Mac --------+
+                    mood. for Mac --------+
                          |                 |
                          |                 v
                          |       private CloudKit database
@@ -31,13 +31,13 @@ Chromium toolbar / X Pinax action / confirmed X Bookmark
                          |
             +------------+-------------+
             |                          |
-      Pinax for iOS          Save to Pinax extension
+      mood. for iOS          Save to mood. extension
                                       ^
                                       |
                          X / Safari / any iOS share
 ```
 
-The Mac native host never edits the library. It validates the extension payload and opens a narrow app URL against the Pinax app bundle that contains the helper, leaving canonicalization, deduplication, and persistence to the app. A request-ID-correlated acknowledgement file is written atomically only after that repository transaction. The host consumes it and returns the real item ID and duplicate state; dispatch, save, and timeout failures return structured errors instead of optimistic success.
+The Mac native host never edits the library. It validates the extension payload and opens a narrow app URL against the compatibility-preserved `Pinax.app` bundle that contains the helper, leaving canonicalization, deduplication, and persistence to mood. A request-ID-correlated acknowledgement file is written atomically only after that repository transaction. The host consumes it and returns the real item ID and duplicate state; dispatch, save, and timeout failures return structured errors instead of optimistic success.
 
 The iOS Share Extension writes directly to the same App Group library because a share extension cannot depend on launching its containing app. It saves locally before attempting a three-second best-effort CloudKit sync.
 
@@ -104,7 +104,7 @@ chrome-extension://ohhhjpbfjecipcnkahlhaggckmdjfndg/
 
 Requests use Chromium's native-messaging framing: a four-byte little-endian length followed by UTF-8 JSON. Version 1 sends an HTTP(S) item URL, source, metadata, request context, and capture trigger. The host rejects unsafe or oversized input, percent-encodes accepted fields into `pinax://capture`, emits exactly one JSON response, and writes no diagnostic text to stdout.
 
-The helper targets its containing `Pinax.app` explicitly, so another registered build cannot receive the capture by accident. It requests a non-activating open; a cold browser capture can launch Pinax without opening its moodbook window, while a later Dock click or normal launch opens the native library as usual. The helper waits up to nine seconds for the app's repository acknowledgement, within the extension's fifteen-second native-response deadline.
+The helper targets its containing `Pinax.app` explicitly, so another registered build cannot receive the capture by accident. It requests a non-activating open; a cold browser capture can launch mood. without opening its moodboard window, while a later Dock click or normal launch opens the native library as usual. The helper waits up to nine seconds for the app's repository acknowledgement, within the extension's fifteen-second native-response deadline.
 
 The Mac build bundles the helper at `Contents/Helpers/PinaxNativeHost` and the built extension at `Contents/Resources/BrowserExtension`. Browser Setup writes a per-user native-host manifest for Chrome, Chromium, Brave, Edge, Arc, and Vivaldi. Each manifest contains the helper's absolute path and only the fixed allowed origin. Existing unrelated or unreadable manifests are not overwritten.
 
@@ -118,7 +118,7 @@ The Share Extension accepts one web URL or web page, text containing an HTTP(S) 
 
 The composer lets the user edit the title and note and choose General or a project. Saving completes only after the App Group repository confirms its local transaction. CloudKit upload failure does not turn a confirmed local save into an error.
 
-X does not expose a supported API for injecting Pinax into its native iOS post-action row. Pinax therefore uses the system path: **Share** -> **Share via…** -> **Save to Pinax**.
+X does not expose a supported API for injecting mood. into its native iOS post-action row. mood. therefore uses the system path: **Share** -> **Share via…** -> **Save to mood.**
 
 ## Provisioning boundary
 

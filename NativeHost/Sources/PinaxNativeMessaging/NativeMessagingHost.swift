@@ -28,7 +28,7 @@ public struct NativeMessageProcessor {
             guard request.protocolVersion == 1 else {
                 response = .failure(
                     code: "unsupported_protocol",
-                    message: "Pinax native messaging supports protocolVersion 1."
+                    message: "mood. native messaging supports protocolVersion 1."
                 )
                 return encode(response)
             }
@@ -36,7 +36,7 @@ public struct NativeMessageProcessor {
             guard request.type == "capture" else {
                 response = .failure(
                     code: "unsupported_message",
-                    message: "Pinax native messaging supports capture messages only."
+                    message: "mood. native messaging supports capture messages only."
                 )
                 return encode(response)
             }
@@ -44,7 +44,7 @@ public struct NativeMessageProcessor {
             guard let requestID = CaptureAcknowledgementIdentifier.normalized(request.requestId) else {
                 response = .failure(
                     code: "invalid_request_id",
-                    message: "Pinax capture requests require a valid request ID."
+                    message: "mood. capture requests require a valid request ID."
                 )
                 return encode(response)
             }
@@ -63,7 +63,7 @@ public struct NativeMessageProcessor {
             guard acknowledgementWaiter.prepare(for: requestID) else {
                 response = .failure(
                     code: "confirmation_unavailable",
-                    message: "Pinax could not prepare capture confirmation."
+                    message: "mood. could not prepare capture confirmation."
                 )
                 return encode(response)
             }
@@ -71,7 +71,7 @@ public struct NativeMessageProcessor {
             guard opener.open(captureURL) else {
                 response = .failure(
                     code: "open_failed",
-                    message: "macOS could not open Pinax for this capture."
+                    message: "macOS could not open mood. for this capture."
                 )
                 return encode(response)
             }
@@ -79,7 +79,7 @@ public struct NativeMessageProcessor {
             guard let confirmedResponse = acknowledgementWaiter.wait(for: requestID) else {
                 response = .failure(
                     code: "confirmation_timeout",
-                    message: "Pinax did not confirm the save in time. Open Pinax to check your library."
+                    message: "mood. did not confirm the save in time. Open mood. to check your library."
                 )
                 return encode(response)
             }
@@ -104,7 +104,7 @@ public struct NativeMessageProcessor {
 
     private func encode(_ response: NativeHostResponse) -> Data {
         // These fixed response structures are always JSON-encodable.
-        (try? encoder.encode(response)) ?? Data(#"{"ok":false,"error":{"code":"encoding_failed","message":"Pinax could not encode the native host response."}}"#.utf8)
+        (try? encoder.encode(response)) ?? Data(#"{"ok":false,"error":{"code":"encoding_failed","message":"mood. could not encode the native host response."}}"#.utf8)
     }
 }
 
@@ -148,7 +148,7 @@ public struct NativeMessagingHostRunner {
             } catch {
                 let response = processor.encodedFailure(
                     code: "internal_error",
-                    message: "Pinax native messaging encountered an internal error."
+                    message: "mood. native messaging encountered an internal error."
                 )
                 try? framer.writeMessage(response, to: output)
                 return 1

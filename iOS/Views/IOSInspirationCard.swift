@@ -57,7 +57,7 @@ struct IOSInspirationCard: View {
         )
         .accessibilityElement(children: .combine)
         .accessibilityLabel(displayTitle)
-        .accessibilityHint("Opens inspiration details")
+        .accessibilityHint("Opens item details")
     }
 
     private var imageInsetCaption: some View {
@@ -240,7 +240,7 @@ struct IOSInspirationCard: View {
         }
         if !inspiration.title.isEmpty { return inspiration.title }
         if !inspiration.text.isEmpty { return inspiration.text }
-        return inspiration.url.host() ?? "Untitled inspiration"
+        return inspiration.url.host() ?? "Untitled item"
     }
 
     private var previewSourceLabel: String {

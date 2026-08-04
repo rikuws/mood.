@@ -38,7 +38,7 @@ struct InspirationEditorView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Inspiration") {
+                Section("Moodboard item") {
                     TextField("Title", text: $title)
                         .focused($focusedField, equals: .title)
 
@@ -67,7 +67,7 @@ struct InspirationEditorView: View {
                     }
                 }
             }
-            .navigationTitle("Edit inspiration")
+            .navigationTitle("Edit item")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

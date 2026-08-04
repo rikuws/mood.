@@ -27,7 +27,7 @@ struct PinaxMacApp: App {
                 )
             }
         } catch {
-            fatalError("Pinax could not initialize its library: \(error.localizedDescription)")
+            fatalError("mood. could not initialize its library: \(error.localizedDescription)")
         }
     }
 
@@ -237,7 +237,7 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate {
             backing: .buffered,
             defer: false
         )
-        window.title = "Pinax"
+        window.title = ProductIdentity.displayName
         window.minSize = NSSize(width: 820, height: 560)
         window.toolbarStyle = .unified
         window.contentViewController = hostingController
@@ -256,7 +256,7 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate {
 
 private struct PinaxCommands: Commands {
     var body: some Commands {
-        CommandMenu("Inspiration") {
+        CommandMenu("Moodboard") {
             Button("Save a Link…") {
                 NotificationCenter.default.post(name: .pinaxQuickCapture, object: nil)
             }

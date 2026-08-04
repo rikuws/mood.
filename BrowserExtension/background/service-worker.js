@@ -41,7 +41,7 @@ function validatedItem(value) {
     throw new PinaxCaptureError("This page does not have a valid web address.", "invalid_url");
   }
   if (url.protocol !== "http:" && url.protocol !== "https:") {
-    throw new PinaxCaptureError("Pinax can only save web pages.", "unsupported_url");
+    throw new PinaxCaptureError("mood. can only save web pages.", "unsupported_url");
   }
 
   const source = value.source === "x" ? "x" : "web";
@@ -78,15 +78,15 @@ function validatedItem(value) {
 function nativeErrorMessage(rawMessage) {
   const message = String(rawMessage || "");
   if (/host not found|not registered|specified native messaging host/i.test(message)) {
-    return "Open the Pinax app once to finish browser setup.";
+    return "Open mood. once to finish browser setup.";
   }
   if (/forbidden|not allowed|access.*denied/i.test(message)) {
-    return "Pinax is not authorized for this browser. Reopen Pinax to repair the connection.";
+    return "mood. is not authorized for this browser. Reopen mood. to repair the connection.";
   }
   if (/exited|broken pipe|disconnected|closed/i.test(message)) {
-    return "Pinax stopped responding. Open the app and try again.";
+    return "mood. stopped responding. Open the app and try again.";
   }
-  return "Could not reach the Pinax app. Make sure it is installed, then try again.";
+  return "Could not reach mood. Make sure the app is installed, then try again.";
 }
 
 function sendNativeMessage(message) {
@@ -95,7 +95,7 @@ function sendNativeMessage(message) {
     const timeout = setTimeout(() => {
       if (!settled) {
         settled = true;
-        reject(new PinaxCaptureError("Pinax took too long to respond.", "native_timeout"));
+        reject(new PinaxCaptureError("mood. took too long to respond.", "native_timeout"));
       }
     }, NATIVE_RESPONSE_TIMEOUT_MS);
 
@@ -113,12 +113,12 @@ function sendNativeMessage(message) {
           return;
         }
         if (!response || typeof response !== "object") {
-          reject(new PinaxCaptureError("Pinax returned an empty response.", "invalid_native_response"));
+          reject(new PinaxCaptureError("mood. returned an empty response.", "invalid_native_response"));
           return;
         }
         if (response.ok !== true) {
           const responseMessage = normalizeString(response.error?.message, 500)
-            || "Pinax could not save this inspiration.";
+            || "mood. could not save this visual.";
           const responseCode = normalizeString(response.error?.code, 80) || "native_rejected";
           reject(new PinaxCaptureError(responseMessage, responseCode));
           return;
@@ -187,7 +187,7 @@ function publicError(error) {
     ok: false,
     error: {
       code: normalizeString(error?.code, 80) || "capture_failed",
-      message: normalizeString(error?.message, 500) || "Could not save to Pinax."
+      message: normalizeString(error?.message, 500) || "Could not save to mood."
     }
   };
 }
@@ -205,10 +205,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 function setActionFeedback(tabId, state) {
   const values = {
-    saving: { text: "…", color: "#536471", title: "Saving to Pinax…" },
-    success: { text: "✓", color: "#00A36C", title: "Saved to Pinax" },
-    error: { text: "!", color: "#E5484D", title: "Could not save to Pinax" },
-    idle: { text: "", color: "#536471", title: "Save to Pinax" }
+    saving: { text: "…", color: "#536471", title: "Saving to mood.…" },
+    success: { text: "✓", color: "#00A36C", title: "Saved to mood." },
+    error: { text: "!", color: "#E5484D", title: "Could not save to mood." },
+    idle: { text: "", color: "#536471", title: "Save to mood." }
   };
   const value = values[state] || values.idle;
 
@@ -280,7 +280,7 @@ async function showToolbarResult(tabId, message, kind) {
 function extractPageInTab() {
   try {
     if (!globalThis.PinaxCapture?.extractPage) {
-      throw new Error("Pinax capture helpers are unavailable");
+      throw new Error("mood. capture helpers are unavailable");
     }
     return {
       ok: true,
@@ -307,7 +307,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   try {
     const pageURL = new URL(tab.url || "");
     if (pageURL.protocol !== "http:" && pageURL.protocol !== "https:") {
-      throw new PinaxCaptureError("Pinax can only save web pages.", "unsupported_url");
+      throw new PinaxCaptureError("mood. can only save web pages.", "unsupported_url");
     }
 
     await chrome.scripting.executeScript({
@@ -327,7 +327,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     }
 
     const result = await captureItem(capture.item, "toolbar");
-    const message = result.duplicate || result.duplicateClient ? "Already in Pinax" : "Saved to Pinax";
+    const message = result.duplicate || result.duplicateClient ? "Already in mood." : "Saved to mood.";
     setActionFeedback(tabId, "success");
     await showToolbarResult(tabId, message, "success");
     setTimeout(() => setActionFeedback(tabId, "idle"), 2_500);

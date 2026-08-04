@@ -94,7 +94,7 @@ actor CloudKitRemoteChangeSubscriptionRegistrar {
             guard let zoneSubscription = existing as? CKRecordZoneSubscription,
                   zoneSubscription.zoneID == zoneID else {
                 throw PinaxSyncBackendError.operationFailed(
-                    "The Pinax CloudKit subscription ID is already used by another subscription."
+                    "The mood. CloudKit subscription ID is already used by another subscription."
                 )
             }
             if zoneSubscription.notificationInfo?.shouldSendContentAvailable == true,

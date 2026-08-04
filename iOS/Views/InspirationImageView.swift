@@ -193,7 +193,7 @@ struct InspirationImageView: View {
         if !title.isEmpty { return title }
         let text = inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !text.isEmpty { return text }
-        return inspiration.url.host() ?? "Untitled inspiration"
+        return inspiration.url.host() ?? "Untitled item"
     }
 
     private var previewCopy: String {
@@ -246,6 +246,6 @@ struct InspirationImageView: View {
         if inspiration.source == .x {
             return "Post preview: \(previewCopy.isEmpty ? displayTitle : previewCopy)"
         }
-        return "Web inspiration preview: \(displayTitle)"
+        return "Web preview: \(displayTitle)"
     }
 }

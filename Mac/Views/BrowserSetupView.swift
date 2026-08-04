@@ -31,7 +31,7 @@ struct BrowserSetupView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     setupStep(number: 1, title: "Install the native bridge") {
-                        Text("This lets the browser hand captures to Pinax. It writes a small manifest into each browser’s user profile.")
+                        Text("This lets the browser hand visual captures to mood. It writes a small manifest into each browser’s user profile.")
                             .foregroundStyle(.secondary)
 
                         VStack(spacing: 0) {
@@ -55,7 +55,7 @@ struct BrowserSetupView: View {
                         .disabled(isInstallingAll || statuses.isEmpty)
                     }
 
-                    setupStep(number: 2, title: "Load the Pinax extension") {
+                    setupStep(number: 2, title: "Load the mood. extension") {
                         Text("In your browser, open its Extensions page, enable Developer mode, choose “Load unpacked,” then select this folder:")
                             .foregroundStyle(.secondary)
 
@@ -83,7 +83,7 @@ struct BrowserSetupView: View {
                         .padding(12)
                         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-                        Label("Pin the extension for one-click saves. On X, Pinax also appears beside each post and follows X’s Bookmark button.", systemImage: "checkmark.circle")
+                        Label("Pin the extension for one-click saves. On X, mood. also appears beside each post and follows X’s Bookmark button.", systemImage: "checkmark.circle")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }

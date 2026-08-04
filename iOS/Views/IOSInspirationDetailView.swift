@@ -18,13 +18,13 @@ struct IOSInspirationDetailView: View {
                 detail(inspiration)
             } else {
                 ContentUnavailableView(
-                    "Inspiration unavailable",
+                    "Item unavailable",
                     systemImage: "rectangle.stack.badge.minus",
-                    description: Text("It may have been removed from another Pinax window.")
+                    description: Text("It may have been removed from mood. on another device.")
                 )
             }
         }
-        .navigationTitle("Inspiration")
+        .navigationTitle("Moodboard item")
         .navigationBarTitleDisplayMode(.inline)
         .tint(.pinaxPlum)
         .toolbar {
@@ -33,7 +33,7 @@ struct IOSInspirationDetailView: View {
                     ShareLink(item: inspiration.url) {
                         Image(systemName: "square.and.arrow.up")
                     }
-                    .accessibilityLabel("Share inspiration")
+                    .accessibilityLabel("Share moodboard item")
 
                     Menu {
                         Button {
@@ -67,7 +67,7 @@ struct IOSInspirationDetailView: View {
             }
         }
         .confirmationDialog(
-            "Delete this inspiration?",
+            "Delete this item?",
             isPresented: $isConfirmingDeletion,
             titleVisibility: .visible
         ) {
@@ -76,10 +76,10 @@ struct IOSInspirationDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes it from your Pinax library.")
+            Text("This removes the item from your moodboard.")
         }
         .alert(
-            "Couldn't update inspiration",
+            "Couldn't update item",
             isPresented: Binding(
                 get: { errorMessage != nil },
                 set: { if !$0 { errorMessage = nil } }
@@ -221,7 +221,7 @@ struct IOSInspirationDetailView: View {
         }
         if !inspiration.title.isEmpty { return inspiration.title }
         if !inspiration.text.isEmpty { return inspiration.text }
-        return inspiration.url.host() ?? "Untitled inspiration"
+        return inspiration.url.host() ?? "Untitled item"
     }
 
     private func byline(for inspiration: Inspiration) -> String? {

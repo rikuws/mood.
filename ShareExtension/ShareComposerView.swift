@@ -25,9 +25,14 @@ struct ShareComposerView: View {
                     failureView(message)
                 }
             }
-            .navigationTitle("Save to Pinax")
+            .navigationTitle(Text(ProductIdentity.saveActionTitle))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text(ProductIdentity.saveActionTitle)
+                        .font(.headline)
+                        .accessibilityLabel(Text(ProductIdentity.saveActionSpokenLabel))
+                }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel", action: onCancel)
                         .disabled(model.isSaving)
@@ -54,7 +59,7 @@ struct ShareComposerView: View {
     private var loadingView: some View {
         VStack(spacing: 14) {
             ProgressView()
-            Text("Preparing your inspiration…")
+            Text("Preparing your visual…")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
@@ -90,7 +95,7 @@ struct ShareComposerView: View {
             }
 
             Section("Title") {
-                TextField("Inspiration title", text: $model.title, axis: .vertical)
+                TextField("Visual title", text: $model.title, axis: .vertical)
                     .lineLimit(1...3)
                     .focused($focusedField, equals: .title)
                     .submitLabel(.next)
@@ -165,7 +170,7 @@ struct ShareComposerView: View {
             Label("Couldn't read this share", systemImage: "link.badge.plus")
         } description: {
             Text(message)
-            Text("Try sharing the post's link from X using Share via… and choose Save to Pinax.")
+            Text("Try sharing the post's link from X using Share via… and choose Save to mood.")
         } actions: {
             Button("Close", action: onCancel)
                 .buttonStyle(.borderedProminent)

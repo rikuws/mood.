@@ -70,23 +70,23 @@ struct MacLibraryView: View {
         .navigationTitle(scopeTitle)
         .accentColor(PinaxCatalogPalette.accent(for: colorScheme))
         .tint(PinaxCatalogPalette.accent(for: colorScheme))
-        .searchable(text: $store.searchText, placement: .toolbar, prompt: "Search inspiration")
+        .searchable(text: $store.searchText, placement: .toolbar, prompt: "Search your moodboard")
         .toolbar { toolbar }
         .overlay(alignment: .bottom) { toastOverlay }
         .sheet(item: $sheet) { destination in
             sheetContent(destination)
         }
-        .alert("Delete inspiration?", isPresented: inspirationDeleteAlert) {
+        .alert("Delete this item?", isPresented: inspirationDeleteAlert) {
             Button("Delete", role: .destructive) { confirmInspirationDeletion() }
             Button("Cancel", role: .cancel) { pendingInspirationDeletion = nil }
         } message: {
-            Text("This removes the saved inspiration from Pinax. The original page is not affected.")
+            Text("This removes the item from your moodboard. The original page is not affected.")
         }
         .alert("Delete project?", isPresented: projectDeleteAlert) {
             Button("Delete", role: .destructive) { confirmProjectDeletion() }
             Button("Cancel", role: .cancel) { pendingProjectDeletion = nil }
         } message: {
-            Text("Its inspirations will move back to General.")
+            Text("Its items will move back to General.")
         }
         .task { await syncAndReload() }
         .onChange(of: scenePhase) { _, phase in
@@ -102,7 +102,7 @@ struct MacLibraryView: View {
             guard let result = notification.object as? CaptureResult else { return }
             selectedInspirationID = result.inspiration.id
             store.scope = .all
-            showToast(result.inserted ? "Saved from browser" : "Already in Pinax — refreshed")
+            showToast(result.inserted ? "Saved from browser" : "Already in mood. — refreshed")
         }
         .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureFailed)) { notification in
             guard let message = notification.object as? String else { return }
@@ -132,7 +132,7 @@ struct MacLibraryView: View {
     private var sidebar: some View {
         List(selection: $store.scope) {
             Section("Library") {
-                sidebarRow("All Inspiration", icon: "square.grid.2x2", count: store.counts.total)
+                sidebarRow("All Visuals", icon: "square.grid.2x2", count: store.counts.total)
                     .tag(LibraryScope.all)
                 sidebarRow("General", icon: "tray", count: store.counts.general)
                     .tag(LibraryScope.general)
@@ -214,7 +214,7 @@ struct MacLibraryView: View {
 
         Group {
             if store.isLoading && store.inspirations.isEmpty {
-                ProgressView("Opening your moodbook…")
+                ProgressView("Opening your moodboard…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if visibleInspirations.isEmpty {
                 emptyState
@@ -313,7 +313,7 @@ struct MacLibraryView: View {
     private var emptyState: some View {
         ContentUnavailableView {
             Label(
-                store.searchText.isEmpty ? "Build your moodbook" : "No inspiration found",
+                store.searchText.isEmpty ? "Start your moodboard" : "No visuals found",
                 systemImage: store.searchText.isEmpty ? "sparkles.rectangle.stack" : "magnifyingglass"
             )
         } description: {
@@ -342,11 +342,11 @@ struct MacLibraryView: View {
         if !store.searchText.isEmpty { return "Try a different title, author, note, or URL." }
         switch store.scope {
         case .all:
-            return "Save from X or any webpage, then arrange what matters into projects."
+            return "Collect visual ideas from X or any webpage, then shape them into projects."
         case .general:
-            return "Unsorted inspiration lands here by default."
+            return "Unsorted visuals land here by default."
         case .project:
-            return "Move inspiration here, or save a new link directly into this project."
+            return "Move visuals here, or save a new link directly into this project."
         }
     }
 
@@ -409,7 +409,7 @@ struct MacLibraryView: View {
             CaptureSheet(projects: projects, initialProjectID: currentProjectID) { payload in
                 let result = try await store.capture(payload)
                 selectedInspirationID = result.inspiration.id
-                showToast(result.inserted ? "Saved to Pinax" : "Already saved — details refreshed")
+                showToast(result.inserted ? "Saved to mood." : "Already saved — details refreshed")
                 requestSync()
             }
         case .newProject:
@@ -429,7 +429,7 @@ struct MacLibraryView: View {
             InspirationEditorSheet(inspiration: inspiration, projects: projects) { draft in
                 let updated = try await store.updateInspiration(draft)
                 selectedInspirationID = updated.id
-                showToast("Inspiration updated")
+                showToast("Item updated")
                 requestSync()
             }
         case .browserSetup:
@@ -463,7 +463,7 @@ struct MacLibraryView: View {
 
     private var scopeTitle: String {
         switch store.scope {
-        case .all: "All Inspiration"
+        case .all: "All Visuals"
         case .general: "General"
         case .project(let id): project(with: id)?.name ?? "Project"
         }
@@ -543,7 +543,7 @@ struct MacLibraryView: View {
             do {
                 try await store.deleteInspiration(id: inspiration.id)
                 if selectedInspirationID == inspiration.id { selectedInspirationID = nil }
-                showToast("Inspiration deleted", symbol: "trash")
+                showToast("Item deleted", symbol: "trash")
                 requestSync()
             } catch {
                 showToast(error.localizedDescription, symbol: "exclamationmark.triangle.fill")

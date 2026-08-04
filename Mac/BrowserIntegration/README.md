@@ -1,7 +1,7 @@
-# Pinax browser integration
+# mood. browser integration
 
 `BrowserIntegrationInstaller` manages the per-user Chromium native-messaging manifests for
-Pinax. It always points at the helper bundled at:
+mood. It always points at the compatibility-preserved helper bundled at:
 
 ```text
 Pinax.app/Contents/Helpers/PinaxNativeHost
@@ -37,8 +37,8 @@ try installer.remove(for: .vivaldi)
 `notExecutable`). `isOperational` is true only when both pieces are ready. Calling `install`
 again is safe, and calling it after the app moves updates the absolute helper path.
 
-If a manifest at Pinax's expected filename declares another host or cannot be decoded, the
-installer refuses to overwrite or remove it. Pinax-owned writes use `Data.write(.atomic)` and
+If a manifest at the app's expected filename declares another host or cannot be decoded, the
+installer refuses to overwrite or remove it. Writes owned by mood. use `Data.write(.atomic)` and
 are decoded again after the write before success is returned.
 
 ## User-level manifest locations
@@ -59,7 +59,7 @@ Chromium user paths and the absolute executable-path requirement in its
 
 These are direct-distribution integration paths. A Mac App Sandbox container cannot normally
 write arbitrary browser Application Support directories; an App Store/sandboxed build needs a
-separate approved installation design. The direct Pinax build should remain unsandboxed for
+separate approved installation design. The direct mood. build should remain unsandboxed for
 this installer, while retaining hardened runtime and normal code signing/notarization.
 
 ## Tests
