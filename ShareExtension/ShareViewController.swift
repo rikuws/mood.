@@ -53,7 +53,7 @@ final class ShareViewController: UIViewController {
         let error = NSError(
             domain: NSCocoaErrorDomain,
             code: NSUserCancelledError,
-            userInfo: [NSLocalizedDescriptionKey: "The Pinax save was cancelled."]
+            userInfo: [NSLocalizedDescriptionKey: "The mood. save was cancelled."]
         )
         extensionContext?.cancelRequest(withError: error)
     }

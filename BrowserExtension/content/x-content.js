@@ -28,7 +28,7 @@
     const button = document.createElement("button");
     button.type = "button";
     button.setAttribute(BUTTON_ATTRIBUTE, "true");
-    button.setAttribute("aria-label", "Save to Pinax");
+    button.setAttribute("aria-label", "Save to mood");
     button.dataset.state = "idle";
 
     const icon = createSVGElement("svg", {
@@ -41,7 +41,7 @@
     );
     const tooltip = document.createElement("span");
     tooltip.setAttribute("data-pinax-tooltip", "true");
-    tooltip.textContent = "Save to Pinax";
+    tooltip.textContent = "Save to mood.";
     button.append(icon, tooltip);
     slot.append(button);
     return slot;
@@ -180,16 +180,22 @@
     }
     button.dataset.state = state;
     button.disabled = state === "saving";
-    const labels = {
-      idle: "Save to Pinax",
-      saving: "Saving to Pinax",
-      success: "Saved to Pinax",
-      error: "Could not save to Pinax"
+    const visibleLabels = {
+      idle: "Save to mood.",
+      saving: "Saving to mood.…",
+      success: "Saved to mood.",
+      error: "Could not save to mood."
     };
-    button.setAttribute("aria-label", labels[state] || labels.idle);
+    const spokenLabels = {
+      idle: "Save to mood",
+      saving: "Saving to mood",
+      success: "Saved to mood",
+      error: "Could not save to mood"
+    };
+    button.setAttribute("aria-label", spokenLabels[state] || spokenLabels.idle);
     const tooltip = button.querySelector("[data-pinax-tooltip]");
     if (tooltip) {
-      tooltip.textContent = labels[state] || labels.idle;
+      tooltip.textContent = visibleLabels[state] || visibleLabels.idle;
     }
   }
 
@@ -198,15 +204,15 @@
       chrome.runtime.sendMessage({ type: "pinax.capture", item, trigger }, (response) => {
         const lastError = chrome.runtime.lastError;
         if (lastError) {
-          reject(new Error("Could not connect to the Pinax extension. Reload X and try again."));
+          reject(new Error("Could not connect to the mood. extension. Reload X and try again."));
           return;
         }
         if (!response || typeof response !== "object") {
-          reject(new Error("Pinax did not respond. Try again."));
+          reject(new Error("mood. did not respond. Try again."));
           return;
         }
         if (response.ok !== true) {
-          reject(new Error(response.error?.message || "Could not save to Pinax."));
+          reject(new Error(response.error?.message || "Could not save to mood."));
           return;
         }
         resolve(response);
@@ -226,13 +232,13 @@
       .then((response) => {
         const wasDuplicate = response.duplicate || response.duplicateClient;
         setButtonState(button, "success");
-        showToast(wasDuplicate ? "Already in Pinax" : "Saved to Pinax", "success");
+        showToast(wasDuplicate ? "Already in mood." : "Saved to mood.", "success");
         setTimeout(() => setButtonState(button, "idle"), 1_800);
         return response;
       })
       .catch((error) => {
         setButtonState(button, "error");
-        showToast(error?.message || "Could not save to Pinax.", "error");
+        showToast(error?.message || "Could not save to mood.", "error");
         setTimeout(() => setButtonState(button, "idle"), 2_800);
         return null;
       })

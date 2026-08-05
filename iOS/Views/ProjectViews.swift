@@ -17,7 +17,7 @@ struct ProjectManagerView: View {
                     ContentUnavailableView {
                         Label("No projects yet", systemImage: "folder.badge.plus")
                     } description: {
-                        Text("Projects keep inspiration for a product, brand, or idea together.")
+                        Text("Projects gather visuals for a product, space, brand, trip, or idea.")
                     } actions: {
                         Button("Create Project") { editor = .new }
                     }
@@ -108,7 +108,7 @@ struct ProjectManagerView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(project.name)
                         .foregroundStyle(.primary)
-                    Text("\(store.counts[project.id]) inspiration\(store.counts[project.id] == 1 ? "" : "s")")
+                    Text("\(store.counts[project.id]) visual\(store.counts[project.id] == 1 ? "" : "s")")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

@@ -27,11 +27,11 @@ extension LibraryRepositoryError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .appGroupUnavailable(let identifier):
-            "The shared Pinax container (\(identifier)) is unavailable. Check the App Group entitlement."
+            "The shared mood. container (\(identifier)) is unavailable. Check the App Group entitlement."
         case .invalidStorageFilename:
             "The library storage filename is invalid."
         case .unsupportedSchemaVersion(let version):
-            "This Pinax library uses unsupported schema version \(version)."
+            "This mood. library uses unsupported schema version \(version)."
         case .invalidProjectName:
             "A project name cannot be empty."
         case .duplicateProjectName:
@@ -39,15 +39,15 @@ extension LibraryRepositoryError: LocalizedError {
         case .projectNotFound:
             "The selected project no longer exists."
         case .inspirationNotFound:
-            "The selected inspiration no longer exists."
+            "The selected moodboard item no longer exists."
         case .duplicateCanonicalURL:
             "That URL is already saved in the library."
         case .invalidLocalImageFilename:
             "The local image filename is invalid."
         case .coordinatedAccessFailed(let message):
-            "The shared Pinax library could not be accessed: \(message)"
+            "The shared mood. library could not be accessed: \(message)"
         case .coordinatedAccessDidNotRun:
-            "The shared Pinax library coordinator did not run its operation."
+            "The shared mood. library coordinator did not run its operation."
         }
     }
 }

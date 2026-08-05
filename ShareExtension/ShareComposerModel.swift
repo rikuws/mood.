@@ -145,12 +145,12 @@ final class ShareComposerModel {
 
     private func storageMessage(for error: any Error) -> String {
         if case LibraryRepositoryError.appGroupUnavailable = error {
-            return "Pinax can't access its shared library. Enable the App Group \(PinaxStorage.appGroupIdentifier) for both Pinax and Save to Pinax, then try again."
+            return "mood. can't access its shared library. Enable the App Group \(PinaxStorage.appGroupIdentifier) for both the app and Share Extension, then try again."
         }
-        return "Pinax couldn't open its shared library: \(error.localizedDescription)"
+        return "mood. couldn't open its shared library: \(error.localizedDescription)"
     }
 
     private func storageMessage(for message: String) -> String {
-        "Pinax couldn't open its shared library: \(message)"
+        "mood. couldn't open its shared library: \(message)"
     }
 }

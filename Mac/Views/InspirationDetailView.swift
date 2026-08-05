@@ -209,7 +209,7 @@ struct InspirationDetailView: View {
         if !previewText.isEmpty { return previewText }
         if let xHandle { return "Post by @\(xHandle)" }
         if !title.isEmpty { return title }
-        return inspiration.url.host() ?? "Untitled inspiration"
+        return inspiration.url.host() ?? "Untitled item"
     }
 
     private var previewText: String {

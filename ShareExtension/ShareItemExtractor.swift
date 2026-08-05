@@ -27,7 +27,7 @@ enum ShareExtractionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .noURL:
-            "Pinax couldn't find a web link in this share."
+            "mood. couldn't find a web link in this share."
         }
     }
 }

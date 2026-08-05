@@ -120,7 +120,7 @@ public enum CaptureURLBuilderError: Error, Equatable, LocalizedError {
         case .missingHost:
             return "The capture URL must include a host."
         case .cannotConstructCaptureURL:
-            return "Pinax could not construct its capture URL."
+            return "mood. could not construct its capture URL."
         }
     }
 }

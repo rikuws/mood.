@@ -12,13 +12,13 @@ extension PinaxSyncStateStoreError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .invalidFilename:
-            "The Pinax sync-state filename is invalid."
+            "The mood. sync-state filename is invalid."
         case .unsupportedSchemaVersion(let version):
-            "Pinax sync state uses unsupported schema version \(version)."
+            "mood. sync state uses unsupported schema version \(version)."
         case .coordinatedAccessFailed(let message):
-            "Pinax sync state could not be accessed: \(message)"
+            "mood. sync state could not be accessed: \(message)"
         case .coordinatedAccessDidNotRun:
-            "The Pinax sync-state coordinator did not run its operation."
+            "The mood. sync-state coordinator did not run its operation."
         }
     }
 }

@@ -50,14 +50,14 @@ public enum BrowserIntegrationInstallerError: Error, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case let .helperMissing(url):
-            return "The Pinax native host helper is missing at \(url.path)."
+            return "The mood. native host helper is missing at \(url.path)."
         case let .helperNotExecutable(url):
-            return "The Pinax native host helper is not executable at \(url.path)."
+            return "The mood. native host helper is not executable at \(url.path)."
         case let .conflictingManifest(browser, url, existingName):
             let owner = existingName.map { " It declares the host \($0)." } ?? ""
-            return "Pinax did not change the unrelated \(browser.displayName) manifest at \(url.path).\(owner)"
+            return "mood. did not change the unrelated \(browser.displayName) manifest at \(url.path).\(owner)"
         case let .unreadableManifest(browser, url, message):
-            return "Pinax could not safely identify the existing \(browser.displayName) manifest at \(url.path): \(message)"
+            return "mood. could not safely identify the existing \(browser.displayName) manifest at \(url.path): \(message)"
         case let .verificationFailed(browser, url):
             return "The \(browser.displayName) native host manifest could not be verified after writing \(url.path)."
         }
@@ -222,7 +222,7 @@ public struct BrowserIntegrationInstaller {
     private var expectedManifest: NativeHostManifest {
         NativeHostManifest(
             name: PinaxBrowserIntegrationConfiguration.nativeHostName,
-            description: "Save web design inspiration to Pinax.",
+            description: "Save visual references from the web to mood.",
             path: helperExecutableURL.path,
             type: "stdio",
             allowedOrigins: [PinaxBrowserIntegrationConfiguration.chromiumExtensionOrigin]

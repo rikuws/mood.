@@ -360,7 +360,7 @@
 
     const baseURL = normalizeWebURL(pageURL || documentObject.location?.href);
     if (!baseURL) {
-      throw new Error("Pinax can only save HTTP or HTTPS pages");
+      throw new Error("mood. can only save HTTP or HTTPS pages");
     }
 
     const focusedElement = documentObject.activeElement;

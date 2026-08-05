@@ -1,6 +1,6 @@
 ---
-name: Pinax
-description: A native living moodbook for collecting visual inspiration and turning taste into usable context.
+name: mood.
+description: A native living visual moodboard for collecting what catches your eye and turning taste into usable context.
 colors:
   accent-plum: "#302A62"
   accent-plum-dark: "#7169B7"
@@ -130,17 +130,17 @@ components:
     height: "44pt minimum"
 ---
 
-# Design System: Pinax
+# Design System: mood.
 
 ## Overview
 
-**Creative North Star: "The Living Moodbook"**
+**Creative North Star: "The Living Moodboard"**
 
-Pinax feels like a personal folio that happens to be native software. Warm canvas surfaces and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery.
+mood. feels like a personal folio that happens to be native software. Warm canvas surfaces and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery.
 
-The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodbook character while preserving each platform's own layout and interaction conventions.
+The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodboard character while preserving each platform's own layout and interaction conventions.
 
-This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark manager, and a web-style SaaS dashboard. It also rejects engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved inspiration.
+This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark manager, and a web-style SaaS dashboard. It also rejects engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved items.
 
 **Key Characteristics:**
 
@@ -204,13 +204,13 @@ The palette is a warm-neutral gallery anchored by deep plum, with richer quotati
 - **Label** (`{typography.label}`): scope tabs, actions, and transient confirmation messages.
 - **Caption** (`{typography.caption}`): provenance, source, project counts, dates, and tertiary metadata.
 
-**The Serif Lives with Content Rule.** Serif is reserved for saved titles, quotations, editorial previews, and the quiet Pinax wordmark moment. Buttons, fields, navigation labels, and data remain SF Pro.
+**The Serif Lives with Content Rule.** Serif is reserved for saved titles, quotations, editorial previews, and the quiet mood. wordmark moment. Buttons, fields, navigation labels, and data remain SF Pro.
 
 **The Dynamic Type Rule.** iOS typography must use semantic styles or `ScaledMetric`; accessibility sizes collapse the canvas to one column and must never be defeated with fixed text.
 
 ## Elevation
 
-Pinax uses a hybrid of tonal layering and shallow ambient shadow. The gallery canvas, folio panels, and preview grounds establish most depth through color. Cards receive just enough soft shadow and a half-point dark hairline to read as prints resting on a surface; elevation increases only for hover, drag preview, selection context, or transient feedback.
+mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery canvas, folio panels, and preview grounds establish most depth through color. Cards receive just enough soft shadow and a half-point dark hairline to read as prints resting on a surface; elevation increases only for hover, drag preview, selection context, or transient feedback.
 
 ### Shadow Vocabulary
 
@@ -251,7 +251,7 @@ Pinax uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 ### Navigation
 
-- **iOS / iPadOS:** `NavigationStack`, inline Pinax title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
+- **iOS / iPadOS:** `NavigationStack`, inline mood. title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
 - **macOS:** native split view with a 190–280pt sidebar, toolbar search and actions, optional 340–470pt detail inspector, menus, context menus, drag and drop, and keyboard shortcuts.
 - **Iconography:** SF Symbols only, using semantic weights and platform alignment.
 
@@ -286,10 +286,10 @@ Pinch zoom interpolates the whole canvas continuously between adjacent column co
 
 ### Don't:
 
-- **Don't** make Pinax resemble a generic Pinterest clone; no engagement-driven feeds or social-feed mechanics.
-- **Don't** make Pinax resemble a utilitarian bookmark manager; anonymous thumbnail grids and bare links are prohibited.
-- **Don't** make Pinax resemble a web-style SaaS dashboard; dense administrative chrome, web-shaped controls, and dashboard ornament are prohibited.
-- **Don't** add decorative interface effects that compete with the saved inspiration.
+- **Don't** make mood. resemble a generic Pinterest clone; no engagement-driven feeds or social-feed mechanics.
+- **Don't** make mood. resemble a utilitarian bookmark manager; anonymous thumbnail grids and bare links are prohibited.
+- **Don't** make mood. resemble a web-style SaaS dashboard; dense administrative chrome, web-shaped controls, and dashboard ornament are prohibited.
+- **Don't** add decorative interface effects that compete with saved items.
 - **Don't** use artificial top staggering, masonry offsets, or rotation to manufacture personality in the resting library.
 - **Don't** use plum, rose, oxblood, forest, or umber as arbitrary decoration outside their named roles.
 - **Don't** put display serif type in buttons, fields, navigation labels, or data.

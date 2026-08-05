@@ -51,7 +51,7 @@ struct PinaxiOSApp: App {
             } else {
                 StorageUnavailableView(
                     message: initializationError
-                        ?? "Pinax couldn't open its shared library."
+                        ?? "mood. couldn't open its shared library."
                 )
             }
         }
@@ -142,7 +142,7 @@ private struct StorageUnavailableView: View {
             Label("Library unavailable", systemImage: "externaldrive.badge.exclamationmark")
         } description: {
             Text(message)
-            Text("Pinax and Save to Pinax must both use the App Group \(PinaxStorage.appGroupIdentifier).")
+            Text("The mood. app and its Share Extension must both use the App Group \(PinaxStorage.appGroupIdentifier).")
         }
         .padding(24)
     }

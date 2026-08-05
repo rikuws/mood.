@@ -19,11 +19,11 @@ extension PinaxAgentAPIError: LocalizedError {
         case .invalidArguments(let message):
             message
         case .projectNotFound(let reference):
-            "No Pinax project matches \"\(reference)\". Call `projects` to list available projects."
+            "No mood. project matches \"\(reference)\". Call `projects` to list available projects."
         case .ambiguousProject(let reference):
-            "More than one Pinax project matches \"\(reference)\". Use the project UUID instead."
+            "More than one mood. project matches \"\(reference)\". Use the project UUID instead."
         case .storageUnavailable(let message):
-            "The Pinax library could not be read: \(message)"
+            "The mood. library could not be read: \(message)"
         }
     }
 

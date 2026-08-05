@@ -23,7 +23,7 @@ struct InspirationEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Edit inspiration")
+            Text("Edit moodboard item")
                 .font(.title2.weight(.semibold))
                 .padding(22)
 

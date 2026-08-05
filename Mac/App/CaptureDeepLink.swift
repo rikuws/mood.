@@ -10,7 +10,7 @@ enum CaptureDeepLinkError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unsupportedRoute:
-            "Pinax received an unsupported link."
+            "mood. received an unsupported link."
         case .missingURL:
             "The capture did not include a web link."
         case .invalidURL:

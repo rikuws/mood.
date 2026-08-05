@@ -1,4 +1,4 @@
-# Pinax agent API
+# mood. agent API
 
 The macOS app bundles a read-only command-line API at:
 
@@ -6,7 +6,7 @@ The macOS app bundles a read-only command-line API at:
 Pinax.app/Contents/Helpers/pinax-agent
 ```
 
-It reads the same coordinated App Group repository as the Pinax UI. The app does not need
+It reads the same coordinated App Group repository as the mood. UI. The app does not need
 to be running, no network listener is opened, and the API never mutates the library. A
 signed helper carries the `group.com.rikuwikman.pinax` entitlement so it can read the
 production library. An unsigned Debug helper follows the app's normal development fallback
@@ -44,7 +44,7 @@ return a structured error and exit `2`. `--pretty` changes formatting only.
 ## Fetch a project's inspirations
 
 Pass either the project's name or UUID. Name matching trims whitespace and ignores case
-and diacritics. Results are newest-first, matching the Pinax library.
+and diacritics. Results are newest-first, matching the mood. library.
 
 ```sh
 /Applications/Pinax.app/Contents/Helpers/pinax-agent \
@@ -97,7 +97,7 @@ be absent.
   "apiVersion": 1,
   "error": {
     "code": "project_not_found",
-    "message": "No Pinax project matches \"Unknown\". Call `projects` to list available projects."
+    "message": "No mood. project matches \"Unknown\". Call `projects` to list available projects."
   },
   "ok": false
 }

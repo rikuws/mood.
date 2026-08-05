@@ -219,7 +219,7 @@ public actor CloudKitSyncBackend: PinaxSyncBackend, PinaxRemoteChangeSubscriptio
             )
             guard let result = results.saveResults[zoneID] else {
                 throw PinaxSyncBackendError.operationFailed(
-                    "CloudKit returned no result while creating the Pinax record zone."
+                    "CloudKit returned no result while creating the mood. record zone."
                 )
             }
             _ = try result.get()

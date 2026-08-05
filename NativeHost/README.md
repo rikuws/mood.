@@ -1,12 +1,12 @@
-# Pinax native messaging host
+# mood. native messaging host
 
-`PinaxNativeHost` is the stdio bridge between the Pinax Chromium extension and the
+`PinaxNativeHost` is the compatibility-preserved stdio bridge between the mood. Chromium extension and the
 native macOS app. It contains no persistence logic. It validates the web URL, creates a
-percent-encoded `pinax://capture` URL, targets the containing Pinax app, and waits for a
+percent-encoded `pinax://capture` URL, targets the containing `Pinax.app` bundle, and waits for a
 request-correlated acknowledgement written after the app's repository transaction.
 
 The implementation follows Chromium's [native messaging protocol](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging): a four-byte little-endian
-payload length followed by UTF-8 JSON. Input and output are both limited to 1 MiB by Pinax.
+payload length followed by UTF-8 JSON. Input and output are both limited to 1 MiB by mood.
 The stricter input limit is intentional even though Chrome currently permits larger
 browser-to-host messages.
 

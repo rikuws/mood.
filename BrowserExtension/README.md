@@ -1,8 +1,8 @@
-# Pinax Chromium extension
+# mood. Chromium extension
 
-The Pinax extension saves the current web page from its toolbar button and adds a dedicated Pinax control to every post on X. Clicking X's own **Bookmark** control also saves that post to Pinax; clicking **Remove bookmark** never does.
+The mood. extension saves the current web page from its toolbar button and adds a dedicated mood. control to every post on X. Clicking X's own **Bookmark** control also saves that post to mood.; clicking **Remove bookmark** never does.
 
-It is a source-only Manifest V3 extension with no remote code, analytics, or network backend. Captures travel directly from the extension service worker to the installed Pinax macOS app through Chromium native messaging.
+It is a source-only Manifest V3 extension with no remote code, analytics, or network backend. Captures travel directly from the extension service worker to the installed mood. macOS app through Chromium native messaging.
 
 ## Supported browsers
 
@@ -14,7 +14,7 @@ The same unpacked build works in current Chromium-based browsers:
 - Arc
 - Vivaldi
 
-The Pinax app's installer must register `com.pinax.native_host` in each installed browser's vendor-specific `NativeMessagingHosts` directory. The extension has a fixed development identity:
+The mood. app's installer must register the compatibility-preserved `com.pinax.native_host` identity in each installed browser's vendor-specific `NativeMessagingHosts` directory. The extension has a fixed development identity:
 
 ```text
 ohhhjpbfjecipcnkahlhaggckmdjfndg
@@ -50,7 +50,7 @@ Open the browser's extensions page, enable developer mode, choose **Load unpacke
 - Chrome/Brave/Arc/Vivaldi: `chrome://extensions`
 - Edge: `edge://extensions`
 
-Open the Pinax macOS app once so it can install the native messaging host. Pin the extension if you want one-click capture from any HTTP(S) page.
+Open the mood. macOS app once so it can install the native messaging host. Pin the extension if you want one-click capture from any HTTP(S) page.
 
 ## Capture behavior
 
@@ -59,12 +59,12 @@ The toolbar action temporarily receives access only to the active tab through `a
 On `x.com` and legacy `twitter.com`, a narrowly scoped content script:
 
 1. observes X's recycled post DOM and SPA navigation;
-2. adds a Pinax button beside the native post actions;
+2. adds a mood. button beside the native post actions;
 3. captures the post synchronously when the button is used;
 4. observes clicks on `[data-testid="bookmark"]` but deliberately ignores `[data-testid="removeBookmark"]`;
 5. extracts the canonical `https://x.com/<handle>/status/<id>` URL, post text, author, handle, and first post image/video preview.
 
-Both the content script and service worker coalesce rapid repeat captures. X gets an in-page status toast and button state; toolbar captures get an in-page toast plus a short action badge. “Saved to Pinax” appears only after the Mac app acknowledges its repository commit; native-host connection, dispatch, save, and confirmation failures produce an actionable error instead of silently dropping the capture.
+Both the content script and service worker coalesce rapid repeat captures. X gets an in-page status toast and button state; toolbar captures get an in-page toast plus a short action badge. “Saved to mood.” appears only after the Mac app acknowledges its repository commit; native-host connection, dispatch, save, and confirmation failures produce an actionable error instead of silently dropping the capture.
 
 ## Native message protocol
 
@@ -127,7 +127,7 @@ The host must always emit exactly one response object before exiting. User-safe 
 
 - `activeTab`: temporary access after an explicit toolbar click, instead of persistent access to every site.
 - `scripting`: injects the page extractor and status feedback into that active tab.
-- `nativeMessaging`: sends the capture to the local Pinax app.
+- `nativeMessaging`: sends the capture to the local mood. app.
 - Static content-script matches are limited to `https://x.com/*` and `https://twitter.com/*` so X integration can survive SPA navigation.
 
 There is intentionally no `tabs`, `storage`, `<all_urls>`, cookies, web request, clipboard, or remote-code permission.

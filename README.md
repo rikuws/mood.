@@ -1,15 +1,15 @@
-# Pinax
+# mood.
 
-Pinax is a local-first moodbook for collecting visual inspiration from X and the web. The native macOS and iOS apps share one library model with General and project collections, search, editing, drag-and-drop or manual link capture, and private CloudKit sync.
+mood. is a local-first visual moodboard for collecting anything that catches your eye on X and the web—from interfaces and typography to interiors, fashion, objects, places, and art. The native macOS and iOS apps share one library model with General and Projects, search, editing, drag-and-drop or manual link capture, and private CloudKit sync.
 
 Capture surfaces are included for:
 
 - a Chromium toolbar action for the current page;
-- a Pinax action beside posts on X;
+- a mood. action beside posts on X;
 - X's own Bookmark action (Remove bookmark is ignored);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
-See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a read-only [agent API](Documentation/AGENT_API.md) for fetching projects and their inspirations as versioned JSON.
+See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a read-only [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON.
 
 ## Requirements
 
@@ -19,11 +19,13 @@ See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, 
 - Node.js 20 or newer for the Chromium extension;
 - an Apple Developer team for signed App Group and CloudKit builds.
 
-No npm packages, server, API key, or Pinax account are required.
+No npm packages, server, API key, or mood. account are required.
 
 ## Generate and build
 
 Build the browser extension before the Mac app so Xcode can copy the current `dist` bundle into `Pinax.app`:
+
+The rebrand is deliberately user-visible only. Compatibility-sensitive project, bundle, helper, storage, CloudKit, URL-scheme, and extension identifiers retain their existing Pinax names so installed libraries and integrations keep working.
 
 ```sh
 cd BrowserExtension
@@ -72,26 +74,26 @@ iOS Share Extension: com.rikuwikman.Pinax.ShareExtension
 
 Create or register the App Group, iCloud container, and bundle identifiers in the Apple Developer account, add them to the profiles used by every target, and let Xcode resolve signing. A local Apple Development certificate and automatic signing are still required even though the entitlement files and XcodeGen configuration are already present.
 
-Pinax uses the signed-in user's private CloudKit database. Shipping outside the development environment also requires deploying the CloudKit schema to production through Apple's CloudKit tooling. The repository has deterministic sync tests, but a live CloudKit round trip has not been claimed or verified without a signed, provisioned container and an iCloud account.
+mood. uses the signed-in user's private CloudKit database. Shipping outside the development environment also requires deploying the CloudKit schema to production through Apple's CloudKit tooling. The repository has deterministic sync tests, but a live CloudKit round trip has not been claimed or verified without a signed, provisioned container and an iCloud account.
 
 ## Chromium setup on macOS
 
-Pinax supports Google Chrome, Chromium, Brave, Microsoft Edge, Arc, and Vivaldi.
+mood. supports Google Chrome, Chromium, Brave, Microsoft Edge, Arc, and Vivaldi.
 
 1. Build and launch the signed/direct Mac app. The app bundle contains both `Contents/Helpers/PinaxNativeHost` and `Contents/Resources/BrowserExtension`.
-2. In Pinax, open **Browser Setup** and choose **Install for all browsers** (or install one browser). This writes only Pinax's user-level `com.pinax.native_host.json` manifest, pointing to the helper inside the current app bundle.
-3. In the browser, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose **Load unpacked**, and select the BrowserExtension folder shown by Pinax. During repository development, `BrowserExtension/dist` is the equivalent folder.
-4. Pin the extension if desired. Its toolbar button saves the active HTTP(S) page. On X, use the injected Pinax action or add the post to X Bookmarks.
+2. In mood., open **Browser Setup** and choose **Install for all browsers** (or install one browser). This writes only the app's user-level `com.pinax.native_host.json` manifest, pointing to the helper inside the current app bundle.
+3. In the browser, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose **Load unpacked**, and select the BrowserExtension folder shown by mood. During repository development, `BrowserExtension/dist` is the equivalent folder.
+4. Pin the extension if desired. Its toolbar button saves the active HTTP(S) page. On X, use the injected mood. action or add the post to X Bookmarks.
 
 The unpacked extension has the fixed ID `ohhhjpbfjecipcnkahlhaggckmdjfndg`; the installed native-host manifest authorizes that exact origin. Rerun Browser Setup after moving the app, because Chromium manifests contain an absolute helper path.
 
-The native host validates a capture and targets the Pinax app bundled around it with `pinax://capture`. It waits for a request-ID-correlated acknowledgement written only after the app's coordinated repository transaction, then returns the real item ID and duplicate state. Browser feedback saying “Saved to Pinax” therefore means the local library commit succeeded; dispatch failures, save errors, and confirmation timeouts are shown as errors.
+The native host validates a capture and targets the containing `Pinax.app` bundle with the compatibility-preserved `pinax://capture` route. It waits for a request-ID-correlated acknowledgement written only after the app's coordinated repository transaction, then returns the real item ID and duplicate state. Browser feedback saying “Saved to mood.” therefore means the local library commit succeeded; dispatch failures, save errors, and confirmation timeouts are shown as errors.
 
 ## Agent API on macOS
 
 The Mac app bundles `Contents/Helpers/pinax-agent`, a local read-only JSON API intended for
 agent skills and other automation. It reads through `LibraryRepository`, so requests see the
-same coordinated App Group snapshot as the UI without requiring Pinax to be open.
+same coordinated App Group snapshot as the UI without requiring mood. to be open.
 
 ```sh
 /Applications/Pinax.app/Contents/Helpers/pinax-agent projects --pretty
@@ -103,9 +105,9 @@ schema, local-image paths, exit behavior, and stable error codes.
 
 ## Share from iOS and X
 
-1. Build, sign, and install the **PinaxiOS** scheme; the **Save to Pinax** Share Extension is embedded automatically.
-2. Open Pinax once and create any projects you want available in the share composer.
-3. In X, tap the post's Share action, choose **Share via…**, then select **Save to Pinax**. If it is hidden, choose **More** and enable it.
+1. Build, sign, and install the **PinaxiOS** scheme; the **Save to mood.** Share Extension is embedded automatically.
+2. Open mood. once and create any projects you want available in the share composer.
+3. In X, tap the post's Share action, choose **Share via…**, then select **Save to mood.** If it is hidden, choose **More** and enable it.
 4. Review the title and note, choose General or a project, and tap **Save**.
 
 The extension also accepts HTTP(S) links shared by other iOS apps. It commits to the App Group library first, then attempts a short best-effort CloudKit upload; a failed or timed-out upload does not discard the local save, and the next app activation retries normal sync.

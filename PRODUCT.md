@@ -10,27 +10,27 @@ adaptive
 
 ## Users
 
-Pinax is primarily for an individual creative or design-minded person building a personal visual-reference library while browsing X and the web. They use native iOS, iPadOS, and macOS surfaces to capture ideas without breaking their flow, organize them into projects, and return to them when developing something later.
+mood. is for anyone building a personal visual world: a place for art, interiors, fashion, travel, objects, typography, brands, products, interfaces, and any other image or idea that shapes their taste. Native iOS, iPadOS, and macOS surfaces let them capture without breaking their flow, keep loose finds in General, gather related material into Projects, and return to it later.
 
 ## Product Purpose
 
-Pinax is a local-first moodbook for capturing visual inspiration with almost no friction, organizing it into meaningful collections, and reliably rediscovering it across Apple devices. Captured references should preserve the imagery, text, author, source, and context that made them useful—not collapse into anonymous links.
+mood. is a local-first visual moodboard for collecting anything that catches your eye with almost no friction, organizing it into meaningful collections, and reliably rediscovering it across Apple devices. Saved items should preserve the imagery, text, author, source, and context that made them useful—not collapse into anonymous links.
 
-The product should evolve beyond passive storage: selected inspiration should become structured, agent-readable design context through a Pinax agent skill. This lets a person bring their own curated taste into an agent-assisted development workflow without manually reconstructing the reference set or its intent.
+The product should evolve beyond passive storage: selected moodboards can become structured, agent-readable creative context. UI direction is one useful output, alongside brand, spatial, editorial, styling, travel, and other forms of visual direction; the collection itself stays open-ended.
 
-Success means capture feels immediate and dependable, the library remains pleasant to browse as it grows, private cross-device continuity works without demanding a Pinax account, and a future development agent can use the person's chosen references as actionable design direction.
+Success means capture feels immediate and dependable, the moodboard remains pleasant to browse as it grows, private cross-device continuity works without demanding a mood. account, and a person or agent can later turn chosen references into useful creative direction without narrowing what belongs in the collection.
 
 ## Positioning
 
-Pinax is the native moodbook that turns human-curated visual inspiration into usable context for both people and development agents.
+mood. is the native visual moodboard that keeps personal taste close at hand and makes it useful when a creative direction is needed.
 
 ## Brand Personality
 
-Artful, human, and collectible. Pinax should feel like a premium personal design collection: expressive imagery, editorial typography, provenance, and material richness sit inside restrained, familiar native controls. The interface is calm and minimal without making the collected work feel sterile.
+Artful, human, and collectible. mood. should feel like a premium personal visual collection: expressive imagery, editorial typography, provenance, and material richness sit inside restrained, familiar native controls. The interface is calm and minimal without making the collected world feel sterile.
 
 ## Anti-references
 
-Pinax should not resemble a generic Pinterest clone, a utilitarian bookmark manager, or a web-style SaaS dashboard. Avoid engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with the saved inspiration.
+mood. should not resemble a generic Pinterest clone, a utilitarian bookmark manager, or a web-style SaaS dashboard. Avoid engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved items.
 
 ## Design Principles
 
@@ -38,7 +38,7 @@ Pinax should not resemble a generic Pinterest clone, a utilitarian bookmark mana
 2. **Capture first, organize without friction.** Saving an idea must remain fast and reliable, while projects and search make later retrieval natural.
 3. **Preserve why a reference mattered.** Keep authorship, source, text, imagery, and user notes visible enough to restore context rather than presenting bare links.
 4. **Be native where expectations matter.** Use familiar Apple navigation, controls, menus, gestures, sharing, keyboard behavior, and platform-specific layout patterns.
-5. **Make taste portable.** Structure selected inspiration so both a person and a development agent can understand and apply the intended design direction.
+5. **Make taste portable.** Structure selected moodboards so people and agents can understand and apply the intended creative direction without reducing the collection to UI references.
 
 ## Accessibility & Inclusion
 

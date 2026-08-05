@@ -41,12 +41,12 @@ struct IOSLibraryView: View {
                         .zIndex(2)
                 }
             }
-            .navigationTitle("Pinax")
+            .navigationTitle(Text(ProductIdentity.displayName))
             .navigationBarTitleDisplayMode(.inline)
             .searchable(
                 text: $store.searchText,
                 placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search inspiration"
+                prompt: "Search your moodboard"
             )
             .toolbar { toolbarContent }
             .tint(.pinaxPlum)
@@ -66,7 +66,7 @@ struct IOSLibraryView: View {
                     initialProjectID: selectedProjectID
                 ) { payload in
                     let result = try await store.capture(payload)
-                    showMessage(result.inserted ? "Saved to Pinax" : "Updated in Pinax")
+                    showMessage(result.inserted ? "Saved to mood." : "Updated in mood.")
                     requestSync()
                 }
             case .projects:
@@ -83,7 +83,7 @@ struct IOSLibraryView: View {
             }
         }
         .confirmationDialog(
-            "Delete this inspiration?",
+            "Delete this item?",
             isPresented: Binding(
                 get: { inspirationToDelete != nil },
                 set: { if !$0 { inspirationToDelete = nil } }
@@ -96,10 +96,10 @@ struct IOSLibraryView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { _ in
-            Text("This removes it from your Pinax library.")
+            Text("This removes the item from your moodboard.")
         }
         .alert(
-            "Pinax couldn't complete that",
+            "mood. couldn't complete that",
             isPresented: Binding(
                 get: {
                     operationError != nil
@@ -210,11 +210,11 @@ struct IOSLibraryView: View {
     private var emptyState: some View {
         if store.snapshot.inspirations.isEmpty {
             ContentUnavailableView {
-                Label("Build your moodbook", systemImage: "sparkles.rectangle.stack")
+                Label("Start your moodboard", systemImage: "sparkles.rectangle.stack")
             } description: {
                 VStack(spacing: 8) {
-                    Text("Save visual ideas from X and the web into Pinax.")
-                    Text("In the X app, tap Share on a post, choose Share via…, then choose Save to Pinax. If it isn't visible, tap More to enable it.")
+                    Text("Collect visual ideas from X and the web — from interfaces and type to interiors, fashion, objects, and art.")
+                    Text("In the X app, tap Share on a post, choose Share via…, then choose Save to mood. If it isn't visible, tap More to enable it.")
                 }
             } actions: {
                 Button {
@@ -235,7 +235,7 @@ struct IOSLibraryView: View {
             ContentUnavailableView {
                 Label("Nothing here yet", systemImage: "rectangle.stack")
             } description: {
-                Text("Move saved inspiration here or save a new link to this collection.")
+                Text("Move saved visuals here or add a new link to this project.")
             } actions: {
                 Button {
                     sheet = .manualCapture
@@ -250,9 +250,10 @@ struct IOSLibraryView: View {
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
         ToolbarItem(placement: .principal) {
-            Text("Pinax")
+            Text(ProductIdentity.displayName)
                 .font(.system(.headline, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityLabel(Text(ProductIdentity.spokenName))
         }
 
         ToolbarItem(placement: .topBarTrailing) {
@@ -270,7 +271,7 @@ struct IOSLibraryView: View {
             } label: {
                 Image(systemName: "plus")
             }
-            .accessibilityLabel("Add to Pinax")
+            .accessibilityLabel("Add to mood")
         }
     }
 
@@ -496,7 +497,7 @@ struct IOSLibraryView: View {
         inspirationToDelete = nil
         do {
             _ = try await store.deleteInspiration(id: inspiration.id)
-            showMessage("Inspiration deleted")
+            showMessage("Item deleted")
             requestSync()
         } catch {
             operationError = error.localizedDescription
@@ -508,7 +509,7 @@ struct IOSLibraryView: View {
             do {
                 let payload = try IOSCaptureDeepLink.payload(from: url)
                 let result = try await store.capture(payload)
-                showMessage(result.inserted ? "Saved to Pinax" : "Updated in Pinax")
+                showMessage(result.inserted ? "Saved to mood." : "Updated in mood.")
                 requestSync()
             } catch {
                 operationError = error.localizedDescription
@@ -829,7 +830,7 @@ private struct ScopeBar: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(title), \(count) inspiration\(count == 1 ? "" : "s")")
+        .accessibilityLabel("\(title), \(count) visual\(count == 1 ? "" : "s")")
         .accessibilityAddTraits(store.scope == scope ? .isSelected : [])
     }
 }

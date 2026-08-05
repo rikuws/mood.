@@ -33,7 +33,7 @@ function extensionIDFromKey(encodedKey) {
 
 const manifest = JSON.parse(await readFile(path.join(rootDirectory, "manifest.json"), "utf8"));
 if (manifest.manifest_version !== 3) {
-  throw new Error("Pinax must remain a Manifest V3 extension");
+  throw new Error("The mood. browser extension must remain Manifest V3");
 }
 
 const extensionID = extensionIDFromKey(manifest.key);

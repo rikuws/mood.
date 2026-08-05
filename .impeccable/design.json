@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-07-30T14:48:55+03:00",
-  "title": "Design System: Pinax",
+  "title": "Design System: mood.",
   "extensions": {
     "colorMeta": {
       "accent-plum": {
@@ -212,13 +212,13 @@
       "kind": "custom",
       "refersTo": "toast",
       "description": "A compact, transient status capsule with a semantic symbol and no persistent chrome.",
-      "html": "<div class=\"ds-toast\" role=\"status\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"m8 12 2.5 2.5L16 9\"></path></svg><span>Saved to Pinax</span></div>",
+      "html": "<div class=\"ds-toast\" role=\"status\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"m8 12 2.5 2.5L16 9\"></path></svg><span>Saved to mood.</span></div>",
       "css": ".ds-toast { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; border-radius: 999px; background: rgba(0,0,0,0.82); color: #FFFFFF; box-shadow: 0 5px 12px rgba(0,0,0,0.16); font: 500 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: opacity 180ms ease-out, transform 180ms ease-out; } .ds-toast svg { width: 18px; height: 18px; fill: currentColor; stroke: #000000; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-toast:hover { background: rgba(0,0,0,0.88); } .ds-toast:focus-visible { outline: 3px solid rgba(48,42,98,0.35); outline-offset: 3px; }"
     }
   ],
   "narrative": {
-    "northStar": "The Living Moodbook",
-    "overview": "Pinax feels like a personal folio that happens to be native software. Warm canvas surfaces and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery. The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodbook character while preserving each platform's own layout and interaction conventions. This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark manager, and a web-style SaaS dashboard. It also rejects engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved inspiration.",
+    "northStar": "The Living Moodboard",
+    "overview": "mood. feels like a personal folio that happens to be native software. Warm canvas surfaces and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery. The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodboard character while preserving each platform's own layout and interaction conventions. This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark manager, and a web-style SaaS dashboard. It also rejects engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved items.",
     "keyCharacteristics": [
       "Collected content is the expressive layer; native controls are restrained and familiar.",
       "Warm paper-like neutrals support permanent white card mats in both appearances.",
@@ -231,7 +231,7 @@
       {"name": "The Quiet Frame Rule", "body": "Interface chrome must disappear into the task; personality comes from the collection, not invented controls.", "section": "overview"},
       {"name": "The One Plum Rule", "body": "Plum identifies interaction and current state. It must never become a decorative wash across inactive surfaces.", "section": "colors"},
       {"name": "The Content Color Rule", "body": "Saturated oxblood, forest, and umber belong inside captured-content previews only; application chrome stays semantic and neutral.", "section": "colors"},
-      {"name": "The Serif Lives with Content Rule", "body": "Serif is reserved for saved titles, quotations, editorial previews, and the quiet Pinax wordmark moment. Buttons, fields, navigation labels, and data remain SF Pro.", "section": "typography"},
+      {"name": "The Serif Lives with Content Rule", "body": "Serif is reserved for saved titles, quotations, editorial previews, and the quiet mood. wordmark moment. Buttons, fields, navigation labels, and data remain SF Pro.", "section": "typography"},
       {"name": "The Dynamic Type Rule", "body": "iOS typography must use semantic styles or ScaledMetric; accessibility sizes collapse the canvas to one column and must never be defeated with fixed text.", "section": "typography"},
       {"name": "The Print, Not Plastic Rule", "body": "Shadows stay soft, low-opacity, and close to the surface. If a card looks glossy, floating, or web-dashboard-like, the elevation is too strong.", "section": "elevation"},
       {"name": "The Natural Shelf Rule", "body": "Every column begins at the same top edge. Never add decorative per-column offsets; varying card heights already create the collected rhythm.", "section": "components"},
@@ -248,10 +248,10 @@
       "Do preserve provenance so future human and agent readers can understand why a reference mattered."
     ],
     "donts": [
-      "Don't make Pinax resemble a generic Pinterest clone; no engagement-driven feeds or social-feed mechanics.",
-      "Don't make Pinax resemble a utilitarian bookmark manager; anonymous thumbnail grids and bare links are prohibited.",
-      "Don't make Pinax resemble a web-style SaaS dashboard; dense administrative chrome, web-shaped controls, and dashboard ornament are prohibited.",
-      "Don't add decorative interface effects that compete with the saved inspiration.",
+      "Don't make mood. resemble a generic Pinterest clone; no engagement-driven feeds or social-feed mechanics.",
+      "Don't make mood. resemble a utilitarian bookmark manager; anonymous thumbnail grids and bare links are prohibited.",
+      "Don't make mood. resemble a web-style SaaS dashboard; dense administrative chrome, web-shaped controls, and dashboard ornament are prohibited.",
+      "Don't add decorative interface effects that compete with saved items.",
       "Don't use artificial top staggering, masonry offsets, or rotation to manufacture personality in the resting library.",
       "Don't use plum, rose, oxblood, forest, or umber as arbitrary decoration outside their named roles.",
       "Don't put display serif type in buttons, fields, navigation labels, or data.",
