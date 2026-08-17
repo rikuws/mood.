@@ -76,6 +76,7 @@ targets:
     sources:
       - path: Mac/App
       - path: Mac/Views
+      - path: AppUI
       - path: Mac/BrowserIntegration/Sources/BrowserIntegration
       - path: Mac/Resources/Assets.xcassets
     dependencies:
@@ -188,6 +189,7 @@ targets:
     platform: iOS
     sources:
       - path: iOS
+      - path: AppUI
     dependencies:
       - package: PinaxCore
         product: PinaxCore

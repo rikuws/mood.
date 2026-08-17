@@ -38,13 +38,16 @@
 		809C5A169D6E95099CF74F42 /* PinaxAgentCommand.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F84370F3981D431F5EE5CA5 /* PinaxAgentCommand.swift */; };
 		81CE1A7DC0937ED4B0F374C9 /* CaptureAcknowledgement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2BE334042550ABD6F1DCA236 /* CaptureAcknowledgement.swift */; };
 		857E6662F3C6D450C7F1EB5D /* PinaxCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = EF743463125AA850541A25AC /* PinaxCloudSync */; };
+		85E3C2D9A842D78A9E702611 /* DownsampledPreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */; };
 		88A55C06F3EF3C046245C248 /* CaptureSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6648723837BCA939AED69373 /* CaptureSheet.swift */; };
 		8BE6A1A67DDBF566ACDC6804 /* ShareItemExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494362440C606F731D799661 /* ShareItemExtractor.swift */; };
 		90352325B39E119D59DD0EA6 /* ManualCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9370C9FA3FD878E74665DC1D /* ManualCaptureView.swift */; };
 		95F5C17544DA4F8D868954C3 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
 		9C30AAC70E2EC527A4BFEF16 /* IOSLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */; };
+		9F808341195D5464403ECE33 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2DE16D20D12390630B19973E /* InfoPlist.strings */; };
 		A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D31782EDBB792389D4E078 /* InspirationDetailView.swift */; };
 		AA3AA7434D18E11432B6F55B /* NativeMessagingHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */; };
+		BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */; };
 		C2101F612D9D9B0B3E47B2B1 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
 		C3218466F0C3E53D077F8381 /* NativeMessageFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */; };
 		D326BFE9105DAC73BFA33491 /* PinaxiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */; };
@@ -115,6 +118,7 @@
 		17C1D1168232960E08F0EF78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxMacApp.swift; sourceTree = "<group>"; };
 		1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareComposerModel.swift; sourceTree = "<group>"; };
+		1E408A9C49BD6A50F5BCF15A /* mood. */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mood.; path = .; sourceTree = SOURCE_ROOT; };
 		20E065F91541EA756088B649 /* InspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationCard.swift; sourceTree = "<group>"; };
 		263D8443E92573DF427FC129 /* PinaxiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PinaxiOS.entitlements; sourceTree = "<group>"; };
 		26A6BB955B165ECDBD094F80 /* PinaxNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = PinaxNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -138,6 +142,7 @@
 		8B5ACF2847F8BBF82E223584 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9034FF366C8E265E756471AC /* PinaxShareExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = PinaxShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9370C9FA3FD878E74665DC1D /* ManualCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualCaptureView.swift; sourceTree = "<group>"; };
+		A1359FF6D257D6766A8B9586 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		A1AA5E7CFC59C03308728E50 /* ProjectEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectEditorSheet.swift; sourceTree = "<group>"; };
 		A76EBC41EDA62971A91B555B /* ShareComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareComposerView.swift; sourceTree = "<group>"; };
 		AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserSetupView.swift; sourceTree = "<group>"; };
@@ -148,8 +153,8 @@
 		C5F25D0B681D7DBDF140A01D /* IOSInspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSInspirationCard.swift; sourceTree = "<group>"; };
 		C7A3B85355F1E375738700D9 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		CC8DDFF167230CD3E1900605 /* InspirationEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationEditorView.swift; sourceTree = "<group>"; };
+		DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownsampledPreviewImage.swift; sourceTree = "<group>"; };
 		E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPinaxNativeMessaging.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		E381B8FDDF23409C8327A77D /* pinax */ = {isa = PBXFileReference; lastKnownFileType = folder; name = pinax; path = .; sourceTree = SOURCE_ROOT; };
 		ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxiOSApp.swift; sourceTree = "<group>"; };
 		F24D43E728BC7634B5C7B482 /* ProjectViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViews.swift; sourceTree = "<group>"; };
 		FB19603294E74AE12164816C /* PinaxMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PinaxMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -219,6 +224,7 @@
 			isa = PBXGroup;
 			children = (
 				689B0AA868D7D35F48237232 /* AgentAPI */,
+				DE4BD7EEE066FC39C5EB832F /* AppUI */,
 				BE168406D125AB44663BDF15 /* iOS */,
 				8B67ADE2F4A8F3C36D729137 /* Mac */,
 				6FFAC8A9AD5A71E66D85C10E /* NativeHost */,
@@ -393,8 +399,17 @@
 				7913E82468644892D4F1181A /* Assets.xcassets */,
 				BDA09240C82D4486947662C8 /* Info.plist */,
 				263D8443E92573DF427FC129 /* PinaxiOS.entitlements */,
+				2DE16D20D12390630B19973E /* InfoPlist.strings */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		DE4BD7EEE066FC39C5EB832F /* AppUI */ = {
+			isa = PBXGroup;
+			children = (
+				DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */,
+			);
+			path = AppUI;
 			sourceTree = "<group>";
 		};
 		E02D31DBE491E194DCC08529 /* Views */ = {
@@ -422,7 +437,7 @@
 		F863CC857B1E6EF6C79A0A3F /* Packages */ = {
 			isa = PBXGroup;
 			children = (
-				E381B8FDDF23409C8327A77D /* pinax */,
+				1E408A9C49BD6A50F5BCF15A /* mood. */,
 			);
 			name = Packages;
 			sourceTree = "<group>";
@@ -633,6 +648,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				4AB66A454FE40AF632B1F850 /* Assets.xcassets in Resources */,
+				9F808341195D5464403ECE33 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -708,6 +724,7 @@
 				312DA1B67C7F6D8A15267A53 /* CaptureDeepLink.swift in Sources */,
 				88A55C06F3EF3C046245C248 /* CaptureSheet.swift in Sources */,
 				714C8665CF2D2DA117CE4953 /* ChromiumBrowser.swift in Sources */,
+				BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */,
 				F032156F85D35F16E09BC0DE /* InspirationCard.swift in Sources */,
 				A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */,
 				3362098A689B1307870FBB19 /* InspirationEditorSheet.swift in Sources */,
@@ -749,6 +766,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				51F572CFE0AC517C495F09CB /* CaptureDeepLink.swift in Sources */,
+				85E3C2D9A842D78A9E702611 /* DownsampledPreviewImage.swift in Sources */,
 				7C08894180141C033FB39F8F /* IOSInspirationCard.swift in Sources */,
 				766943FF83FB37B560E51A5D /* IOSInspirationDetailView.swift in Sources */,
 				9C30AAC70E2EC527A4BFEF16 /* IOSLibraryView.swift in Sources */,
@@ -790,6 +808,17 @@
 			targetProxy = 3844DF139CE54974D6141340 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		2DE16D20D12390630B19973E /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1359FF6D257D6766A8B9586 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		0A68C12C9D880A19D7CB3975 /* Debug */ = {
