@@ -50,6 +50,7 @@ are decoded again after the write before success is returned.
 | Brave | `Library/Application Support/BraveSoftware/Brave-Browser/NativeMessagingHosts` |
 | Microsoft Edge | `Library/Application Support/Microsoft Edge/NativeMessagingHosts` |
 | Arc | `Library/Application Support/Arc/User Data/NativeMessagingHosts` |
+| Dia | `Library/Application Support/Dia/User Data/NativeMessagingHosts` |
 | Vivaldi | `Library/Application Support/Vivaldi/NativeMessagingHosts` |
 
 Each directory receives only `com.pinax.native_host.json`. Chrome documents the Chrome and
@@ -69,6 +70,6 @@ cd Mac/BrowserIntegration
 swift test
 ```
 
-The tests use temporary home/app directories and verify all six locations, manifest contents,
+The tests use temporary home/app directories and verify all seven locations, manifest contents,
 relocation updates, helper permissions, idempotency, removal, and preservation of unrelated or
 unreadable files.

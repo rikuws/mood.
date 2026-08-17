@@ -4,7 +4,7 @@ const NATIVE_HOST_NAME = "com.pinax.native_host";
 const PROTOCOL_VERSION = 1;
 const RAPID_CAPTURE_WINDOW_MS = 1_800;
 const NATIVE_RESPONSE_TIMEOUT_MS = 15_000;
-const VALID_TRIGGERS = new Set(["toolbar", "pinax_button", "x_bookmark"]);
+const VALID_TRIGGERS = new Set(["toolbar", "pinax_button"]);
 const recentCaptures = new Map();
 
 class PinaxCaptureError extends Error {

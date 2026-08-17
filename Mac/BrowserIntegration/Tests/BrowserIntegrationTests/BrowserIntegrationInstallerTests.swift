@@ -13,6 +13,7 @@ final class BrowserIntegrationInstallerTests: XCTestCase {
             .brave: "Library/Application Support/BraveSoftware/Brave-Browser/NativeMessagingHosts/com.pinax.native_host.json",
             .edge: "Library/Application Support/Microsoft Edge/NativeMessagingHosts/com.pinax.native_host.json",
             .arc: "Library/Application Support/Arc/User Data/NativeMessagingHosts/com.pinax.native_host.json",
+            .dia: "Library/Application Support/Dia/User Data/NativeMessagingHosts/com.pinax.native_host.json",
             .vivaldi: "Library/Application Support/Vivaldi/NativeMessagingHosts/com.pinax.native_host.json"
         ]
 

@@ -17,6 +17,10 @@ const outputDirectory = path.join(rootDirectory, "dist");
 const expectedExtensionID = "ohhhjpbfjecipcnkahlhaggckmdjfndg";
 const runtimeFiles = [
   "manifest.json",
+  "icons/icon-16.png",
+  "icons/icon-32.png",
+  "icons/icon-48.png",
+  "icons/icon-128.png",
   "background/service-worker.js",
   "content/x-content.css",
   "content/x-content.js",

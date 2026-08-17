@@ -6,6 +6,7 @@ public enum ChromiumBrowser: String, CaseIterable, Codable, Hashable, Identifiab
     case brave
     case edge
     case arc
+    case dia
     case vivaldi
 
     public var id: String { rawValue }
@@ -17,6 +18,7 @@ public enum ChromiumBrowser: String, CaseIterable, Codable, Hashable, Identifiab
         case .brave: "Brave"
         case .edge: "Microsoft Edge"
         case .arc: "Arc"
+        case .dia: "Dia"
         case .vivaldi: "Vivaldi"
         }
     }
@@ -34,6 +36,8 @@ public enum ChromiumBrowser: String, CaseIterable, Codable, Hashable, Identifiab
             ["Library", "Application Support", "Microsoft Edge", "NativeMessagingHosts"]
         case .arc:
             ["Library", "Application Support", "Arc", "User Data", "NativeMessagingHosts"]
+        case .dia:
+            ["Library", "Application Support", "Dia", "User Data", "NativeMessagingHosts"]
         case .vivaldi:
             ["Library", "Application Support", "Vivaldi", "NativeMessagingHosts"]
         }

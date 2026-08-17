@@ -83,7 +83,7 @@ struct BrowserSetupView: View {
                         .padding(12)
                         .background(.quaternary.opacity(0.45), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
 
-                        Label("Pin the extension for one-click saves. On X, mood. also appears beside each post and follows X’s Bookmark button.", systemImage: "checkmark.circle")
+                        Label("Pin the extension for one-click saves. On X, use the dedicated mood. button beside each post.", systemImage: "checkmark.circle")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }

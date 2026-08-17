@@ -55,9 +55,10 @@ struct PinaxMacApp: App {
 }
 
 @MainActor
-final class PinaxAppDelegate: NSObject, NSApplicationDelegate {
+final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     static var libraryStore: LibraryStore?
     static var syncCoordinator: PinaxSyncCoordinator?
+    private static let mainWindowFrameAutosaveName = "PinaxLibraryWindow"
 
     private var fallbackWindowController: NSWindowController?
     private let acknowledgementStore = FileCaptureAcknowledgementStore()
@@ -241,8 +242,13 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate {
         window.minSize = NSSize(width: 820, height: 560)
         window.toolbarStyle = .unified
         window.contentViewController = hostingController
-        window.setFrameAutosaveName("PinaxLibraryWindow")
-        window.center()
+        let frameAutosaveName = Self.mainWindowFrameAutosaveName
+        let restoredSavedFrame = window.setFrameUsingName(frameAutosaveName)
+        window.setFrameAutosaveName(frameAutosaveName)
+        if !restoredSavedFrame {
+            window.center()
+        }
+        window.delegate = self
 
         let controller = NSWindowController(window: window)
         fallbackWindowController = controller
@@ -251,6 +257,12 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate {
         logger.notice(
             "Created fallback main window; visible=\(window.isVisible), number=\(window.windowNumber, privacy: .public)"
         )
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              window === fallbackWindowController?.window else { return }
+        window.saveFrame(usingName: Self.mainWindowFrameAutosaveName)
     }
 }
 
