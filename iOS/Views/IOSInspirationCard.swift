@@ -1,4 +1,3 @@
-import ImageIO
 import PinaxCore
 import SwiftUI
 
@@ -9,8 +8,6 @@ struct IOSInspirationCard: View {
 
     @ScaledMetric(relativeTo: .subheadline) private var titleFontSize = 13.0
     @ScaledMetric(relativeTo: .caption2) private var insetLabelFontSize = 9.0
-
-    private static let aspectRatioCache = NSCache<NSURL, NSNumber>()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -203,25 +200,12 @@ struct IOSInspirationCard: View {
     }
 
     private var imagePreviewAspectRatio: CGFloat {
-        if let localImageURL {
-            let cacheKey = localImageURL as NSURL
-            if let cached = Self.aspectRatioCache.object(forKey: cacheKey) {
-                return CGFloat(cached.doubleValue)
-            }
-
-            if let source = CGImageSourceCreateWithURL(localImageURL as CFURL, nil),
-               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil)
-                as? [CFString: Any],
-               let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
-               let height = properties[kCGImagePropertyPixelHeight] as? NSNumber,
-               height.doubleValue > 0 {
-                let ratio = min(
-                    max(CGFloat(width.doubleValue / height.doubleValue), 0.8),
-                    1.35
-                )
-                Self.aspectRatioCache.setObject(NSNumber(value: ratio), forKey: cacheKey)
-                return ratio
-            }
+        if let localImageURL,
+           let ratio = PreviewImageDecoder.aspectRatio(
+            at: localImageURL,
+            clampedTo: 0.8...1.35
+           ) {
+            return ratio
         }
 
         let ratios: [CGFloat] = [0.82, 0.96, 1.12, 1.28]

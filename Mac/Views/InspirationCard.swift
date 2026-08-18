@@ -1,4 +1,3 @@
-import ImageIO
 import PinaxCore
 import SwiftUI
 
@@ -12,13 +11,6 @@ struct InspirationCard: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovering = false
-
-    private static let localImageCache: NSCache<NSURL, NSImage> = {
-        let cache = NSCache<NSURL, NSImage>()
-        cache.totalCostLimit = 256 * 1_024 * 1_024
-        return cache
-    }()
-    private static let localImageMaximumPixelSize = 2_048
 
     var body: some View {
         Button(action: onSelect) {
@@ -75,27 +67,22 @@ struct InspirationCard: View {
             .aspectRatio(previewAspectRatio, contentMode: .fit)
             .overlay {
                 Group {
-                    if let localImage {
-                        previewImage(Image(nsImage: localImage))
-                    } else if let imageURL = inspiration.imageURL {
-                        AsyncImage(
-                            url: imageURL,
-                            transaction: Transaction(animation: .easeOut(duration: 0.2))
-                        ) { phase in
-                            switch phase {
-                            case .empty:
-                                fallbackPreview(for: density)
-                                    .opacity(0.72)
-                                    .redacted(reason: .placeholder)
-                            case .success(let image):
-                                previewImage(image)
-                                    .transition(.opacity)
-                            case .failure:
-                                fallbackPreview(for: density)
-                            @unknown default:
-                                fallbackPreview(for: density)
-                            }
+                    if localImageURL != nil || inspiration.imageURL != nil {
+                        DownsampledPreviewImage(
+                            localURL: localImageURL,
+                            remoteURL: inspiration.imageURL
+                        ) {
+                            fallbackPreview(for: density)
+                                .opacity(0.72)
+                                .redacted(reason: .placeholder)
+                        } failure: {
+                            fallbackPreview(for: density)
                         }
+                        .scaleEffect(isHovering && !reduceMotion ? 1.018 : 1)
+                        .animation(
+                            reduceMotion ? nil : .easeOut(duration: 0.2),
+                            value: isHovering
+                        )
                     } else {
                         fallbackPreview(for: density)
                     }
@@ -103,14 +90,6 @@ struct InspirationCard: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .clipped()
-    }
-
-    private func previewImage(_ image: Image) -> some View {
-        image
-            .resizable()
-            .scaledToFill()
-            .scaleEffect(isHovering && !reduceMotion ? 1.018 : 1)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: isHovering)
     }
 
     @ViewBuilder
@@ -246,37 +225,6 @@ struct InspirationCard: View {
         )
     }
 
-    private var localImage: NSImage? {
-        guard let localImageURL else { return nil }
-        let cacheKey = localImageURL as NSURL
-        if let cached = Self.localImageCache.object(forKey: cacheKey) {
-            return cached
-        }
-
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceShouldCacheImmediately: true,
-            kCGImageSourceThumbnailMaxPixelSize: Self.localImageMaximumPixelSize,
-        ]
-        guard let source = CGImageSourceCreateWithURL(localImageURL as CFURL, nil),
-              let cgImage = CGImageSourceCreateThumbnailAtIndex(
-                source,
-                0,
-                options as CFDictionary
-              ) else {
-            return nil
-        }
-
-        let image = NSImage(cgImage: cgImage, size: .zero)
-        Self.localImageCache.setObject(
-            image,
-            forKey: cacheKey,
-            cost: cgImage.bytesPerRow * cgImage.height
-        )
-        return image
-    }
-
     private var previewText: String {
         inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
@@ -332,8 +280,12 @@ struct InspirationCard: View {
     }
 
     private var previewAspectRatio: CGFloat {
-        if let localImage, localImage.size.height > 0 {
-            return min(max(localImage.size.width / localImage.size.height, 0.8), 1.35)
+        if let localImageURL,
+           let ratio = PreviewImageDecoder.aspectRatio(
+            at: localImageURL,
+            clampedTo: 0.8...1.35
+           ) {
+            return ratio
         }
 
         let ratios: [CGFloat] = [0.82, 0.96, 1.12, 1.28]

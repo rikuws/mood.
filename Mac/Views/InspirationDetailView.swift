@@ -77,22 +77,15 @@ struct InspirationDetailView: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .fill(PinaxCatalogPalette.previewSurface(for: colorScheme))
 
-            if let localImageURL, let image = NSImage(contentsOf: localImageURL) {
-                Image(nsImage: image)
-                    .resizable()
-                    .scaledToFit()
-            } else if let imageURL = inspiration.imageURL {
-                AsyncImage(url: imageURL) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                    case .failure:
-                        previewPlaceholder
-                    @unknown default:
-                        previewPlaceholder
-                    }
+            if localImageURL != nil || inspiration.imageURL != nil {
+                DownsampledPreviewImage(
+                    localURL: localImageURL,
+                    remoteURL: inspiration.imageURL,
+                    contentMode: .fit
+                ) {
+                    ProgressView()
+                } failure: {
+                    previewPlaceholder
                 }
             } else {
                 previewPlaceholder

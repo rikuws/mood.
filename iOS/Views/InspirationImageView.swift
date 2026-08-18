@@ -1,6 +1,5 @@
 import PinaxCore
 import SwiftUI
-import UIKit
 
 struct InspirationImageView: View {
     let inspiration: Inspiration
@@ -9,37 +8,22 @@ struct InspirationImageView: View {
     var showsFallbackMetadata = true
     var compactFallback = false
 
-    private static let localImageCache = NSCache<NSURL, UIImage>()
-
     var body: some View {
         ZStack {
             Rectangle()
                 .fill(Color.pinaxPreviewSurface)
 
-            if let localImage {
-                Image(uiImage: localImage)
-                    .resizable()
-                    .aspectRatio(contentMode: contentMode)
-            } else if let imageURL = inspiration.imageURL {
-                AsyncImage(
-                    url: imageURL,
-                    transaction: Transaction(animation: .easeOut(duration: 0.2))
-                ) { phase in
-                    switch phase {
-                    case .empty:
-                        ProgressView()
-                            .controlSize(.small)
-                            .tint(.secondary)
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: contentMode)
-                            .transition(.opacity)
-                    case .failure:
-                        fallbackPreview
-                    @unknown default:
-                        fallbackPreview
-                    }
+            if localImageURL != nil || inspiration.imageURL != nil {
+                DownsampledPreviewImage(
+                    localURL: localImageURL,
+                    remoteURL: inspiration.imageURL,
+                    contentMode: contentMode
+                ) {
+                    ProgressView()
+                        .controlSize(.small)
+                        .tint(.secondary)
+                } failure: {
+                    fallbackPreview
                 }
             } else {
                 fallbackPreview
@@ -48,17 +32,6 @@ struct InspirationImageView: View {
         .clipped()
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(previewAccessibilityLabel)
-    }
-
-    private var localImage: UIImage? {
-        guard let localImageURL else { return nil }
-        let cacheKey = localImageURL as NSURL
-        if let cached = Self.localImageCache.object(forKey: cacheKey) {
-            return cached
-        }
-        guard let image = UIImage(contentsOfFile: localImageURL.path) else { return nil }
-        Self.localImageCache.setObject(image, forKey: cacheKey)
-        return image
     }
 
     @ViewBuilder
