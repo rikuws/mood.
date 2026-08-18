@@ -38,6 +38,9 @@ test("presents mood. as a general visual moodboard", () => {
   assert.doesNotMatch(manifest.description, /UI|design inspiration/i);
   assert.match(xContent, /tooltip\.textContent = "Save to mood\."/);
   assert.match(xContent, /aria-label", "Save to mood"/);
+  assert.match(xContent, /viewBox: "0 0 32 16"/);
+  assert.match(xContent, /createSVGElement\("circle"/);
+  assert.doesNotMatch(xContent, /M7\.75 4\.25h8\.5/);
   assert.doesNotMatch(xContent, /x_bookmark/);
   assert.doesNotMatch(serviceWorker, /x_bookmark/);
 });
