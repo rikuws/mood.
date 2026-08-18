@@ -3,7 +3,7 @@
 The macOS app bundles a read-only command-line API at:
 
 ```text
-Pinax.app/Contents/Helpers/pinax-agent
+mood.app/Contents/Helpers/pinax-agent
 ```
 
 It reads the same coordinated App Group repository as the mood. UI. The app does not need
@@ -20,7 +20,7 @@ return a structured error and exit `2`. `--pretty` changes formatting only.
 ## Discover projects
 
 ```sh
-/Applications/Pinax.app/Contents/Helpers/pinax-agent projects --pretty
+/Applications/mood.app/Contents/Helpers/pinax-agent projects --pretty
 ```
 
 ```json
@@ -47,7 +47,7 @@ Pass either the project's name or UUID. Name matching trims whitespace and ignor
 and diacritics. Results are newest-first, matching the mood. library.
 
 ```sh
-/Applications/Pinax.app/Contents/Helpers/pinax-agent \
+/Applications/mood.app/Contents/Helpers/pinax-agent \
   inspirations --project "Website refresh" --pretty
 ```
 

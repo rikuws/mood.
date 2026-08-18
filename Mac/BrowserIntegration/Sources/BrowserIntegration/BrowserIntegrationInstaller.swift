@@ -93,7 +93,7 @@ public struct BrowserIntegrationInstaller {
     private let encoder: JSONEncoder
     private let decoder: JSONDecoder
 
-    /// Creates an installer for the currently running Pinax app bundle.
+    /// Creates an installer for the currently running mood. app bundle.
     public init(bundle: Bundle = .main, fileManager: FileManager = .default) {
         self.init(
             homeDirectoryURL: fileManager.homeDirectoryForCurrentUser,

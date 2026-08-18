@@ -78,7 +78,10 @@ targets:
       - path: Mac/Views
       - path: AppUI
       - path: Mac/BrowserIntegration/Sources/BrowserIntegration
-      - path: Mac/Resources/Assets.xcassets
+      - path: Mac/Resources
+        excludes:
+          - Info.plist
+          - "*.entitlements"
     dependencies:
       - package: PinaxCore
         product: PinaxCore
@@ -96,6 +99,7 @@ targets:
         CFBundleName: mood.
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSHasLocalizedDisplayName: true
         LSApplicationCategoryType: public.app-category.graphics-design
         LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
         NSHumanReadableCopyright: "Copyright © 2026 Riku Wikman"
@@ -116,7 +120,7 @@ targets:
           - CloudKit
     settings:
       base:
-        PRODUCT_NAME: Pinax
+        PRODUCT_NAME: mood
         PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax
         PRODUCT_MODULE_NAME: PinaxMac
         MACOSX_DEPLOYMENT_TARGET: "14.0"
@@ -204,6 +208,7 @@ targets:
         CFBundleName: mood.
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSHasLocalizedDisplayName: true
         UILaunchScreen: {}
         UIBackgroundModes:
           - fetch
@@ -229,7 +234,7 @@ targets:
           - CloudKit
     settings:
       base:
-        PRODUCT_NAME: Pinax
+        PRODUCT_NAME: mood
         PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax
         PRODUCT_MODULE_NAME: PinaxiOS
         IPHONEOS_DEPLOYMENT_TARGET: "17.0"

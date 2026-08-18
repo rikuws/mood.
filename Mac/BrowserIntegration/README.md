@@ -4,7 +4,7 @@
 mood. It always points at the compatibility-preserved helper bundled at:
 
 ```text
-Pinax.app/Contents/Helpers/PinaxNativeHost
+mood.app/Contents/Helpers/PinaxNativeHost
 ```
 
 The fixed native host is `com.pinax.native_host`. The only allowed extension origin is:

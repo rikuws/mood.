@@ -227,7 +227,7 @@ final class BrowserIntegrationInstallerTests: XCTestCase {
         let root = FileManager.default.temporaryDirectory
             .appendingPathComponent("PinaxBrowserIntegrationTests-\(UUID().uuidString)", isDirectory: true)
         let home = root.appendingPathComponent("home", isDirectory: true)
-        let helper = root.appendingPathComponent("Pinax.app/Contents/Helpers/PinaxNativeHost")
+        let helper = root.appendingPathComponent("mood.app/Contents/Helpers/PinaxNativeHost")
         try FileManager.default.createDirectory(at: home, withIntermediateDirectories: true)
         try makeExecutable(at: helper)
 
