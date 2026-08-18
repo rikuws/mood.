@@ -2,7 +2,7 @@
 
 `PinaxNativeHost` is the compatibility-preserved stdio bridge between the mood. Chromium extension and the
 native macOS app. It contains no persistence logic. It validates the web URL, creates a
-percent-encoded `pinax://capture` URL, targets the containing `Pinax.app` bundle, and waits for a
+percent-encoded `pinax://capture` URL, targets the containing `mood.app` bundle, and waits for a
 request-correlated acknowledgement written after the app's repository transaction.
 
 The implementation follows Chromium's [native messaging protocol](https://developer.chrome.com/docs/extensions/develop/concepts/native-messaging): a four-byte little-endian
@@ -87,7 +87,7 @@ Copy the release executable into the application at this exact relative path and
 executable bit:
 
 ```text
-Pinax.app/Contents/Helpers/PinaxNativeHost
+mood.app/Contents/Helpers/PinaxNativeHost
 ```
 
 The nested executable must be code signed before the outer application is signed. In an

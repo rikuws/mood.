@@ -1,0 +1,3 @@
+/* Localized names shown in the macOS menu bar, Dock, Finder, and About panel. */
+"CFBundleName" = "mood.";
+"CFBundleDisplayName" = "mood.";

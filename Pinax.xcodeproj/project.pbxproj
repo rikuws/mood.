@@ -43,6 +43,7 @@
 		8BE6A1A67DDBF566ACDC6804 /* ShareItemExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 494362440C606F731D799661 /* ShareItemExtractor.swift */; };
 		90352325B39E119D59DD0EA6 /* ManualCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9370C9FA3FD878E74665DC1D /* ManualCaptureView.swift */; };
 		95F5C17544DA4F8D868954C3 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
+		9B948BD82847B05F3C73177E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C8C875C281DD95BFDE4C4BC6 /* InfoPlist.strings */; };
 		9C30AAC70E2EC527A4BFEF16 /* IOSLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */; };
 		9F808341195D5464403ECE33 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2DE16D20D12390630B19973E /* InfoPlist.strings */; };
 		A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D31782EDBB792389D4E078 /* InspirationDetailView.swift */; };
@@ -130,6 +131,7 @@
 		494362440C606F731D799661 /* ShareItemExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareItemExtractor.swift; sourceTree = "<group>"; };
 		5414C354714BAA860E2A8775 /* BrowserIntegrationConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserIntegrationConfiguration.swift; sourceTree = "<group>"; };
 		592A3D408D85B45AB3FA2D98 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		59329A54B4B5A6A868950E94 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PinaxiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
 		6648723837BCA939AED69373 /* CaptureSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSheet.swift; sourceTree = "<group>"; };
@@ -289,6 +291,7 @@
 			isa = PBXGroup;
 			children = (
 				17C1D1168232960E08F0EF78 /* Assets.xcassets */,
+				C8C875C281DD95BFDE4C4BC6 /* InfoPlist.strings */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -657,6 +660,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				54E3D7C8346BD2E7C0BB984C /* Assets.xcassets in Resources */,
+				9B948BD82847B05F3C73177E /* InfoPlist.strings in Resources */,
 				6A0880524547DBAF265F67D3 /* PinaxNativeHost in Resources */,
 				43BAC225C5AD4F0A61AF4DDC /* PinaxAgent in Resources */,
 			);
@@ -818,6 +822,14 @@
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
 		};
+		C8C875C281DD95BFDE4C4BC6 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				59329A54B4B5A6A868950E94 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
@@ -858,7 +870,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
 				PRODUCT_MODULE_NAME = PinaxiOS;
-				PRODUCT_NAME = Pinax;
+				PRODUCT_NAME = mood;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -900,7 +912,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
 				PRODUCT_MODULE_NAME = PinaxMac;
-				PRODUCT_NAME = Pinax;
+				PRODUCT_NAME = mood;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 			};
@@ -983,7 +995,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
 				PRODUCT_MODULE_NAME = PinaxiOS;
-				PRODUCT_NAME = Pinax;
+				PRODUCT_NAME = mood;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1167,7 +1179,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax;
 				PRODUCT_MODULE_NAME = PinaxMac;
-				PRODUCT_NAME = Pinax;
+				PRODUCT_NAME = mood;
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = macosx;
 			};

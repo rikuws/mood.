@@ -23,9 +23,9 @@ No npm packages, server, API key, or mood. account are required.
 
 ## Generate and build
 
-Build the browser extension before the Mac app so Xcode can copy the current `dist` bundle into `Pinax.app`:
+Build the browser extension before the Mac app so Xcode can copy the current `dist` bundle into `mood.app`:
 
-The rebrand is deliberately user-visible only. Compatibility-sensitive project, bundle, helper, storage, CloudKit, URL-scheme, and extension identifiers retain their existing Pinax names so installed libraries and integrations keep working.
+User-visible names are mood. The Mac app wrapper is `mood.app` so Finder, Dock, and the application menu match. Compatibility-sensitive project, bundle identifier, helper, storage, CloudKit, URL-scheme, and extension identities retain their existing Pinax names so installed libraries and integrations keep working. Replace any leftover `/Applications/Pinax.app` after installing, then rerun Browser Setup so native-host manifests point at the new bundle path.
 
 ```sh
 cd BrowserExtension
@@ -87,7 +87,7 @@ mood. supports Google Chrome, Chromium, Brave, Microsoft Edge, Arc, and Vivaldi.
 
 The unpacked extension has the fixed ID `ohhhjpbfjecipcnkahlhaggckmdjfndg`; the installed native-host manifest authorizes that exact origin. Rerun Browser Setup after moving the app, because Chromium manifests contain an absolute helper path.
 
-The native host validates a capture and targets the containing `Pinax.app` bundle with the compatibility-preserved `pinax://capture` route. It waits for a request-ID-correlated acknowledgement written only after the app's coordinated repository transaction, then returns the real item ID and duplicate state. Browser feedback saying “Saved to mood.” therefore means the local library commit succeeded; dispatch failures, save errors, and confirmation timeouts are shown as errors.
+The native host validates a capture and targets the containing `mood.app` bundle with the compatibility-preserved `pinax://capture` route. It waits for a request-ID-correlated acknowledgement written only after the app's coordinated repository transaction, then returns the real item ID and duplicate state. Browser feedback saying “Saved to mood.” therefore means the local library commit succeeded; dispatch failures, save errors, and confirmation timeouts are shown as errors.
 
 ## Agent API on macOS
 
@@ -96,8 +96,8 @@ agent skills and other automation. It reads through `LibraryRepository`, so requ
 same coordinated App Group snapshot as the UI without requiring mood. to be open.
 
 ```sh
-/Applications/Pinax.app/Contents/Helpers/pinax-agent projects --pretty
-/Applications/Pinax.app/Contents/Helpers/pinax-agent inspirations --project "Website refresh" --pretty
+/Applications/mood.app/Contents/Helpers/pinax-agent projects --pretty
+/Applications/mood.app/Contents/Helpers/pinax-agent inspirations --project "Website refresh" --pretty
 ```
 
 See [Documentation/AGENT_API.md](Documentation/AGENT_API.md) for the version 1 response

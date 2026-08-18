@@ -37,7 +37,7 @@ Chromium toolbar / X mood. action / confirmed X Bookmark
                          X / Safari / any iOS share
 ```
 
-The Mac native host never edits the library. It validates the extension payload and opens a narrow app URL against the compatibility-preserved `Pinax.app` bundle that contains the helper, leaving canonicalization, deduplication, and persistence to mood. A request-ID-correlated acknowledgement file is written atomically only after that repository transaction. The host consumes it and returns the real item ID and duplicate state; dispatch, save, and timeout failures return structured errors instead of optimistic success.
+The Mac native host never edits the library. It validates the extension payload and opens a narrow app URL against the containing `mood.app` bundle, leaving canonicalization, deduplication, and persistence to mood. A request-ID-correlated acknowledgement file is written atomically only after that repository transaction. The host consumes it and returns the real item ID and duplicate state; dispatch, save, and timeout failures return structured errors instead of optimistic success.
 
 The iOS Share Extension writes directly to the same App Group library because a share extension cannot depend on launching its containing app. It saves locally before attempting a three-second best-effort CloudKit sync.
 
@@ -104,7 +104,7 @@ chrome-extension://ohhhjpbfjecipcnkahlhaggckmdjfndg/
 
 Requests use Chromium's native-messaging framing: a four-byte little-endian length followed by UTF-8 JSON. Version 1 sends an HTTP(S) item URL, source, metadata, request context, and capture trigger. The host rejects unsafe or oversized input, percent-encodes accepted fields into `pinax://capture`, emits exactly one JSON response, and writes no diagnostic text to stdout.
 
-The helper targets its containing `Pinax.app` explicitly, so another registered build cannot receive the capture by accident. It requests a non-activating open; a cold browser capture can launch mood. without opening its moodboard window, while a later Dock click or normal launch opens the native library as usual. The helper waits up to nine seconds for the app's repository acknowledgement, within the extension's fifteen-second native-response deadline.
+The helper targets its containing `mood.app` explicitly, so another registered build cannot receive the capture by accident. It requests a non-activating open; a cold browser capture can launch mood. without opening its moodboard window, while a later Dock click or normal launch opens the native library as usual. The helper waits up to nine seconds for the app's repository acknowledgement, within the extension's fifteen-second native-response deadline.
 
 The Mac build bundles the helper at `Contents/Helpers/PinaxNativeHost` and the built extension at `Contents/Resources/BrowserExtension`. Browser Setup writes a per-user native-host manifest for Chrome, Chromium, Brave, Edge, Arc, and Vivaldi. Each manifest contains the helper's absolute path and only the fixed allowed origin. Existing unrelated or unreadable manifests are not overwritten.
 
