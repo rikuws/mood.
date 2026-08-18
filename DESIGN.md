@@ -204,7 +204,7 @@ The palette is a warm-neutral gallery anchored by deep plum, with richer quotati
 - **Label** (`{typography.label}`): scope tabs, actions, and transient confirmation messages.
 - **Caption** (`{typography.caption}`): provenance, source, project counts, dates, and tertiary metadata.
 
-**The Serif Lives with Content Rule.** Serif is reserved for saved titles, quotations, editorial previews, and the quiet mood. wordmark moment. Buttons, fields, navigation labels, and data remain SF Pro.
+**The Serif Lives with Content Rule.** Serif is reserved for saved titles, quotations, editorial previews, the quiet mood. wordmark moment, and the macOS space identity heading. Buttons, fields, navigation labels, and data remain SF Pro.
 
 **The Dynamic Type Rule.** iOS typography must use semantic styles or `ScaledMetric`; accessibility sizes collapse the canvas to one column and must never be defeated with fixed text.
 
@@ -245,14 +245,14 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 ### Inputs / Fields
 
-- **Style:** use native searchable fields, `Form`, `TextField`, `Picker`, and grouped form presentation. Search stays visually prominent but platform-owned.
+- **Style:** use native searchable fields, `Form`, `TextField`, `Picker`, and grouped form presentation. On iOS, search stays visually prominent but platform-owned. On macOS, search appears when invoked rather than occupying a permanent toolbar.
 - **Focus:** use the operating system focus ring, keyboard focus order, submit labels, and semantic tint.
 - **Error / Disabled:** errors use semantic red and explanatory text; saving disables conflicting actions and exposes a native progress state.
 
 ### Navigation
 
 - **iOS / iPadOS:** `NavigationStack`, inline mood. title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
-- **macOS:** native split view with a 190–280pt sidebar, toolbar search and actions, optional 340–470pt detail inspector, menus, context menus, drag and drop, and keyboard shortcuts.
+- **macOS:** the canvas occupies the window. A quiet editorial space heading (All inspiration, General, or the current project) opens a lightweight project switcher; Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Item editing appears as an overlay inspector only after selection. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no permanent sidebar or toolbar.
 - **Iconography:** SF Symbols only, using semantic weights and platform alignment.
 
 ### Stepped Caption Cutout
@@ -281,6 +281,7 @@ Pinch zoom interpolates the whole canvas continuously between adjacent column co
 - **Do** start all columns at the same top edge and let real card heights create variation.
 - **Do** use SF Pro for controls and system serif for saved-content moments.
 - **Do** use native Apple navigation, search, forms, menus, sheets, context menus, drag and drop, keyboard behavior, and SF Symbols.
+- **Do** let the macOS canvas occupy the window: project identity is a quiet editorial heading, and search, switching, and editing appear only when invoked.
 - **Do** support Dynamic Type, VoiceOver, Reduce Motion, sufficient contrast, Dark Mode, 44×44pt iOS targets, and macOS keyboard navigation.
 - **Do** preserve provenance so future human and agent readers can understand why a reference mattered.
 
@@ -290,6 +291,7 @@ Pinch zoom interpolates the whole canvas continuously between adjacent column co
 - **Don't** make mood. resemble a utilitarian bookmark manager; anonymous thumbnail grids and bare links are prohibited.
 - **Don't** make mood. resemble a web-style SaaS dashboard; dense administrative chrome, web-shaped controls, and dashboard ornament are prohibited.
 - **Don't** add decorative interface effects that compete with saved items.
+- **Don't** give the macOS library a permanent sidebar, or treat Projects as folders in file-manager chrome.
 - **Don't** use artificial top staggering, masonry offsets, or rotation to manufacture personality in the resting library.
 - **Don't** use plum, rose, oxblood, forest, or umber as arbitrary decoration outside their named roles.
 - **Don't** put display serif type in buttons, fields, navigation labels, or data.

@@ -16,10 +16,12 @@ struct MacLibraryView: View {
     @State private var pendingProjectDeletion: Project?
     @State private var toast: ToastMessage?
     @State private var isDropTargeted = false
-    @State private var isSidebarVisible = true
+    @State private var isSearching = false
+    @State private var isProjectSwitcherPresented = false
     @State private var canvasWidth: CGFloat = 0
     @State private var canvasGesturePresentation = MacCanvasGesturePresentation.inactive
     @State private var canvasInteractionPhase = MacCanvasInteractionPhase.idle
+    @State private var searchActivation = UUID()
     @AppStorage("libraryCanvasZoom") private var canvasZoom = 0.5
 
     private static let defaultCanvasZoom = 0.5
@@ -29,49 +31,47 @@ struct MacLibraryView: View {
     private let maximumCanvasColumns = 8
 
     var body: some View {
-        HSplitView {
-            if isSidebarVisible {
-                sidebar
-                    .frame(minWidth: 190, idealWidth: 220, maxWidth: 280)
-                    .background(.bar)
-            }
-
-            HStack(spacing: 0) {
+        ZStack(alignment: .trailing) {
+            VStack(spacing: 0) {
+                canvasChrome
                 libraryContent
-
-                if let selectedInspiration {
-                    Divider()
-                    InspirationDetailView(
-                        inspiration: selectedInspiration,
-                        localImageURL: store.localImageURL(for: selectedInspiration),
-                        project: selectedInspiration.projectID.flatMap(project(with:)),
-                        projects: projects,
-                        onMove: { projectID in move(selectedInspiration, to: projectID) },
-                        onEdit: { sheet = .editInspiration(selectedInspiration) },
-                        onDelete: { pendingInspirationDeletion = selectedInspiration },
-                        onClose: {
-                            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                                selectedInspirationID = nil
-                            }
-                        }
-                    )
-                    .transition(
-                        reduceMotion
-                            ? .opacity
-                            : .move(edge: .trailing).combined(with: .opacity)
-                    )
-                }
             }
-            .animation(
-                reduceMotion ? nil : .easeOut(duration: 0.22),
-                value: selectedInspirationID
-            )
+
+            if let selectedInspiration {
+                InspirationDetailView(
+                    inspiration: selectedInspiration,
+                    localImageURL: store.localImageURL(for: selectedInspiration),
+                    project: selectedInspiration.projectID.flatMap(project(with:)),
+                    projects: projects,
+                    onMove: { projectID in move(selectedInspiration, to: projectID) },
+                    onEdit: { sheet = .editInspiration(selectedInspiration) },
+                    onDelete: { pendingInspirationDeletion = selectedInspiration },
+                    onClose: {
+                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                            selectedInspirationID = nil
+                        }
+                    }
+                )
+                .frame(width: 380)
+                .overlay(alignment: .leading) {
+                    Divider()
+                }
+                .transition(
+                    reduceMotion
+                        ? .opacity
+                        : .move(edge: .trailing).combined(with: .opacity)
+                )
+                .zIndex(1)
+            }
         }
-        .navigationTitle(scopeTitle)
+        .animation(
+            reduceMotion ? nil : .easeOut(duration: 0.22),
+            value: selectedInspirationID
+        )
+        .background(PinaxCatalogPalette.canvas(for: colorScheme))
+        .background(MacCanvasWindowConfigurator())
         .accentColor(PinaxCatalogPalette.accent(for: colorScheme))
         .tint(PinaxCatalogPalette.accent(for: colorScheme))
-        .searchable(text: $store.searchText, placement: .toolbar, prompt: "Search your moodboard")
-        .toolbar { toolbar }
         .overlay(alignment: .bottom) { toastOverlay }
         .sheet(item: $sheet) { destination in
             sheetContent(destination)
@@ -101,7 +101,7 @@ struct MacLibraryView: View {
         .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureSucceeded)) { notification in
             guard let result = notification.object as? CaptureResult else { return }
             selectedInspirationID = result.inspiration.id
-            store.scope = .all
+            reveal(result.inspiration)
             showToast(result.inserted ? "Saved from browser" : "Already in mood. — refreshed")
         }
         .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureFailed)) { notification in
@@ -126,86 +126,80 @@ struct MacLibraryView: View {
         .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomReset)) { _ in
             resetCanvasZoom()
         }
-        .frame(minWidth: 820, minHeight: 560)
+        .onReceive(NotificationCenter.default.publisher(for: .pinaxFind)) { _ in
+            beginSearch()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .pinaxSwitchProject)) { _ in
+            isProjectSwitcherPresented = true
+        }
+        .onExitCommand(perform: handleExitCommand)
+        .accessibilityAction(named: "Search") { beginSearch() }
+        .accessibilityAction(named: "Switch Project") { isProjectSwitcherPresented = true }
+        .frame(minWidth: 720, minHeight: 520)
     }
 
-    private var sidebar: some View {
-        List(selection: $store.scope) {
-            Section("Library") {
-                sidebarRow("All Visuals", icon: "square.grid.2x2", count: store.counts.total)
-                    .tag(LibraryScope.all)
-                sidebarRow("General", icon: "tray", count: store.counts.general)
-                    .tag(LibraryScope.general)
+    private var canvasChrome: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 18) {
+            MacSpaceIdentityButton(
+                title: scopeTitle,
+                colorHex: currentProjectColorHex,
+                isExpanded: isProjectSwitcherPresented
+            ) {
+                isProjectSwitcherPresented.toggle()
             }
-
-            Section {
-                ForEach(projects) { project in
-                    HStack(spacing: 8) {
-                        Circle()
-                            .fill(Color(hex: project.colorHex ?? "#5E5CE6"))
-                            .frame(width: 9, height: 9)
-                        Text(project.name).lineLimit(1)
-                        Spacer()
-                        Text("\(store.counts[project.id])")
-                            .font(.caption2)
-                            .foregroundStyle(.tertiary)
+            .contextMenu {
+                Button("New Project…") { sheet = .newProject }
+                if let project = currentProjectID.flatMap(project(with:)) {
+                    Button("Edit “\(project.name)”…") { sheet = .editProject(project) }
+                    Button("Delete “\(project.name)”", role: .destructive) {
+                        pendingProjectDeletion = project
                     }
-                    .tag(LibraryScope.project(project.id))
-                    .contextMenu {
-                        Button("Edit…") { sheet = .editProject(project) }
-                        Divider()
-                        Button("Delete", role: .destructive) { pendingProjectDeletion = project }
-                    }
+                    Divider()
                 }
-            } header: {
-                HStack {
-                    Text("Projects")
-                    Spacer()
-                    Button {
+                Button("Save a Link…") { sheet = .capture }
+                Button("Browser Setup…") { sheet = .browserSetup }
+            }
+            .popover(isPresented: $isProjectSwitcherPresented, arrowEdge: .bottom) {
+                MacProjectSwitcher(
+                    projects: projects,
+                    counts: store.counts,
+                    currentScope: store.scope,
+                    onSelect: { scope in
+                        selectSpace(scope)
+                    },
+                    onCreate: {
+                        isProjectSwitcherPresented = false
                         sheet = .newProject
-                    } label: {
-                        Image(systemName: "plus")
+                    },
+                    onEdit: { project in
+                        isProjectSwitcherPresented = false
+                        sheet = .editProject(project)
+                    },
+                    onDelete: { project in
+                        isProjectSwitcherPresented = false
+                        pendingProjectDeletion = project
                     }
-                    .buttonStyle(.borderless)
-                    .help("New project")
-                }
+                )
             }
 
-            Spacer(minLength: 12)
-
-            Section {
-                Button {
-                    sheet = .browserSetup
-                } label: {
-                    Label("Browser Setup", systemImage: "puzzlepiece.extension")
-                }
-                .buttonStyle(.plain)
+            if isSearching || !store.searchText.isEmpty {
+                MacCanvasSearchField(
+                    text: $store.searchText,
+                    activation: searchActivation,
+                    onDismiss: {
+                        store.searchText = ""
+                        isSearching = false
+                    }
+                )
+                .transition(.opacity)
             }
-        }
-        .listStyle(.sidebar)
-        .scrollContentBackground(.hidden)
-        .background(Color.clear)
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                sheet = .capture
-            } label: {
-                Label("Save a link", systemImage: "plus")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .padding(12)
-        }
-    }
 
-    private func sidebarRow(_ title: String, icon: String, count: Int) -> some View {
-        HStack {
-            Label(title, systemImage: icon)
-            Spacer()
-            Text("\(count)")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+            Spacer(minLength: 0)
         }
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
+        .padding(.bottom, 4)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isSearching)
     }
 
     @ViewBuilder
@@ -262,7 +256,7 @@ struct MacLibraryView: View {
                             anchor: canvasGesturePresentation.anchor
                         )
                         .padding(.horizontal, canvasHorizontalPadding)
-                        .padding(.top, 18)
+                        .padding(.top, 8)
                         .padding(.bottom, 28)
                     }
                     .contentShape(Rectangle())
@@ -350,38 +344,6 @@ struct MacLibraryView: View {
         }
     }
 
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            Button {
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) {
-                    isSidebarVisible.toggle()
-                }
-            } label: {
-                Image(systemName: "sidebar.leading")
-            }
-            .help(isSidebarVisible ? "Hide sidebar" : "Show sidebar")
-        }
-
-        ToolbarItem(placement: .navigation) {
-            Button {
-                sheet = .capture
-            } label: {
-                Label("Save Link", systemImage: "plus")
-            }
-            .help("Save a link (⇧⌘S)")
-        }
-
-        ToolbarItem(placement: .navigation) {
-            Button {
-                sheet = .browserSetup
-            } label: {
-                Image(systemName: "puzzlepiece.extension")
-            }
-            .help("Browser setup")
-        }
-    }
-
     @ViewBuilder
     private func cardContextMenu(for inspiration: Inspiration) -> some View {
         Button("Open Original") { NSWorkspace.shared.open(inspiration.url) }
@@ -463,10 +425,14 @@ struct MacLibraryView: View {
 
     private var scopeTitle: String {
         switch store.scope {
-        case .all: "All Visuals"
+        case .all: "All inspiration"
         case .general: "General"
         case .project(let id): project(with: id)?.name ?? "Project"
         }
+    }
+
+    private var currentProjectColorHex: String? {
+        currentProjectID.flatMap { project(with: $0)?.colorHex }
     }
 
     private var currentProjectID: Project.ID? {
@@ -562,6 +528,43 @@ struct MacLibraryView: View {
             } catch {
                 showToast(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
             }
+        }
+    }
+
+    private func beginSearch() {
+        isSearching = true
+        searchActivation = UUID()
+    }
+
+    private func selectSpace(_ scope: LibraryScope) {
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+            store.scope = scope
+            if let selectedInspiration, !scope.contains(selectedInspiration) {
+                selectedInspirationID = nil
+            }
+        }
+        isProjectSwitcherPresented = false
+    }
+
+    private func handleExitCommand() {
+        if isProjectSwitcherPresented {
+            isProjectSwitcherPresented = false
+        } else if selectedInspirationID != nil {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
+                selectedInspirationID = nil
+            }
+        } else if isSearching {
+            if store.searchText.isEmpty {
+                isSearching = false
+            } else {
+                store.searchText = ""
+            }
+        }
+    }
+
+    private func reveal(_ inspiration: Inspiration) {
+        if !store.scope.contains(inspiration) {
+            store.scope = .space(containing: inspiration)
         }
     }
 
@@ -1083,4 +1086,6 @@ extension Notification.Name {
     static let pinaxCanvasZoomIn = Notification.Name("Pinax.canvasZoomIn")
     static let pinaxCanvasZoomOut = Notification.Name("Pinax.canvasZoomOut")
     static let pinaxCanvasZoomReset = Notification.Name("Pinax.canvasZoomReset")
+    static let pinaxFind = Notification.Name("Pinax.find")
+    static let pinaxSwitchProject = Notification.Name("Pinax.switchProject")
 }

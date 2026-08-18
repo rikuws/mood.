@@ -73,4 +73,29 @@ final class ModelCodableTests: XCTestCase {
         XCTAssertTrue(snapshot.projects.isEmpty)
         XCTAssertTrue(snapshot.inspirations.isEmpty)
     }
+
+    func testLibraryScopeTreatsProjectsAsSpacesRatherThanFolders() {
+        let projectID = UUID()
+        let url = URL(string: "https://example.com/item")!
+        let general = Inspiration(
+            source: .web,
+            url: url,
+            canonicalURL: url
+        )
+        let inProject = Inspiration(
+            source: .web,
+            url: url,
+            canonicalURL: url,
+            projectID: projectID
+        )
+
+        XCTAssertTrue(LibraryScope.all.contains(general))
+        XCTAssertTrue(LibraryScope.all.contains(inProject))
+        XCTAssertTrue(LibraryScope.general.contains(general))
+        XCTAssertFalse(LibraryScope.general.contains(inProject))
+        XCTAssertTrue(LibraryScope.project(projectID).contains(inProject))
+        XCTAssertFalse(LibraryScope.project(projectID).contains(general))
+        XCTAssertEqual(LibraryScope.space(containing: general), .general)
+        XCTAssertEqual(LibraryScope.space(containing: inProject), .project(projectID))
+    }
 }

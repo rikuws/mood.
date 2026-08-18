@@ -52,6 +52,24 @@ public enum LibraryScope: Hashable, Sendable {
     case all
     case general
     case project(Project.ID)
+
+    public func contains(_ inspiration: Inspiration) -> Bool {
+        switch self {
+        case .all:
+            true
+        case .general:
+            inspiration.projectID == nil
+        case .project(let id):
+            inspiration.projectID == id
+        }
+    }
+
+    public static func space(containing inspiration: Inspiration) -> LibraryScope {
+        if let projectID = inspiration.projectID {
+            return .project(projectID)
+        }
+        return .general
+    }
 }
 
 public struct ProjectCounts: Equatable, Sendable {

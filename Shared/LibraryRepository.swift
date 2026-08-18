@@ -468,16 +468,7 @@ public actor LibraryRepository {
     ) -> [Inspiration] {
         let needle = searchKey(query)
         return snapshot.inspirations.filter { inspiration in
-            let isInScope: Bool
-            switch scope {
-            case .all:
-                isInScope = true
-            case .general:
-                isInScope = inspiration.projectID == nil
-            case .project(let projectID):
-                isInScope = inspiration.projectID == projectID
-            }
-            guard isInScope else { return false }
+            guard scope.contains(inspiration) else { return false }
             guard !needle.isEmpty else { return true }
 
             let searchable = [
