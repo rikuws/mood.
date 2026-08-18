@@ -58,8 +58,6 @@ struct InspirationDetailView: View {
 
     private var header: some View {
         HStack {
-            Text("Details")
-                .font(.headline)
             Spacer()
             Button(action: onClose) {
                 Image(systemName: "xmark")
@@ -69,7 +67,7 @@ struct InspirationDetailView: View {
             .keyboardShortcut(.escape, modifiers: [])
         }
         .padding(.horizontal, 16)
-        .frame(height: 50)
+        .frame(height: 40)
     }
 
     private var preview: some View {

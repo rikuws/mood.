@@ -239,8 +239,9 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
             defer: false
         )
         window.title = ProductIdentity.displayName
-        window.minSize = NSSize(width: 820, height: 560)
-        window.toolbarStyle = .unified
+        window.titleVisibility = .hidden
+        window.titlebarAppearsTransparent = true
+        window.minSize = NSSize(width: 720, height: 520)
         window.contentViewController = hostingController
         let frameAutosaveName = Self.mainWindowFrameAutosaveName
         let restoredSavedFrame = window.setFrameUsingName(frameAutosaveName)
@@ -268,6 +269,13 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
 
 private struct PinaxCommands: Commands {
     var body: some Commands {
+        CommandGroup(after: .textEditing) {
+            Button("Find…") {
+                NotificationCenter.default.post(name: .pinaxFind, object: nil)
+            }
+            .keyboardShortcut("f", modifiers: .command)
+        }
+
         CommandMenu("Moodboard") {
             Button("Save a Link…") {
                 NotificationCenter.default.post(name: .pinaxQuickCapture, object: nil)
@@ -278,6 +286,17 @@ private struct PinaxCommands: Commands {
                 NotificationCenter.default.post(name: .pinaxNewProject, object: nil)
             }
             .keyboardShortcut("n", modifiers: [.command, .shift])
+
+            Button("Switch Project…") {
+                NotificationCenter.default.post(name: .pinaxSwitchProject, object: nil)
+            }
+            .keyboardShortcut("k", modifiers: .command)
+
+            Divider()
+
+            Button("Browser Setup…") {
+                NotificationCenter.default.post(name: .pinaxBrowserSetup, object: nil)
+            }
         }
 
         CommandGroup(after: .toolbar) {
