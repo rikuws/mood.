@@ -3,6 +3,7 @@ import SwiftUI
 
 struct BrowserSetupView: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     @State private var statuses: [BrowserIntegrationStatus] = []
     @State private var errorMessage: String?
     @State private var copiedPath = false
@@ -112,9 +113,9 @@ struct BrowserSetupView: View {
         HStack(alignment: .top, spacing: 14) {
             Text("\(number)")
                 .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(colorScheme == .dark ? Color.black : Color.white)
                 .frame(width: 25, height: 25)
-                .background(Color.accentColor, in: Circle())
+                .background(Color.primary, in: Circle())
 
             VStack(alignment: .leading, spacing: 12) {
                 Text(title).font(.headline)

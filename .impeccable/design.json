@@ -4,41 +4,29 @@
   "title": "Design System: mood.",
   "extensions": {
     "colorMeta": {
-      "accent-plum": {
+      "accent-ink": {
         "role": "primary",
-        "displayName": "Archive Plum",
-        "canonical": "#302A62",
-        "tonalRamp": ["oklch(15% 0.096 284.6)", "oklch(27% 0.096 284.6)", "oklch(39% 0.096 284.6)", "oklch(51% 0.096 284.6)", "oklch(63% 0.096 284.6)", "oklch(75% 0.096 284.6)", "oklch(87% 0.096 284.6)", "oklch(95% 0.096 284.6)"]
+        "displayName": "Ink",
+        "canonical": "#000000",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
-      "accent-plum-dark": {
+      "accent-paper": {
         "role": "primary",
-        "displayName": "Evening Plum",
-        "canonical": "#7169B7",
-        "tonalRamp": ["oklch(15% 0.118 286.6)", "oklch(27% 0.118 286.6)", "oklch(39% 0.118 286.6)", "oklch(51% 0.118 286.6)", "oklch(63% 0.118 286.6)", "oklch(75% 0.118 286.6)", "oklch(87% 0.118 286.6)", "oklch(95% 0.118 286.6)"]
-      },
-      "accent-ink-dark": {
-        "role": "primary",
-        "displayName": "Lavender Selection Ink",
-        "canonical": "#B2A8ED",
-        "tonalRamp": ["oklch(15% 0.098 290.5)", "oklch(27% 0.098 290.5)", "oklch(39% 0.098 290.5)", "oklch(51% 0.098 290.5)", "oklch(63% 0.098 290.5)", "oklch(75% 0.098 290.5)", "oklch(87% 0.098 290.5)", "oklch(95% 0.098 290.5)"]
-      },
-      "rose-detail": {
-        "role": "secondary",
-        "displayName": "Provenance Rose",
-        "canonical": "#E25D8B",
-        "tonalRamp": ["oklch(15% 0.171 1.4)", "oklch(27% 0.171 1.4)", "oklch(39% 0.171 1.4)", "oklch(51% 0.171 1.4)", "oklch(63% 0.171 1.4)", "oklch(75% 0.171 1.4)", "oklch(87% 0.171 1.4)", "oklch(95% 0.171 1.4)"]
+        "displayName": "Paper",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
       "canvas-light": {
         "role": "neutral",
-        "displayName": "Warm Gallery Canvas Light",
-        "canonical": "#F4F4F2",
-        "tonalRamp": ["oklch(15% 0.003 106.4)", "oklch(27% 0.003 106.4)", "oklch(39% 0.003 106.4)", "oklch(51% 0.003 106.4)", "oklch(63% 0.003 106.4)", "oklch(75% 0.003 106.4)", "oklch(87% 0.003 106.4)", "oklch(95% 0.003 106.4)"]
+        "displayName": "Gallery Canvas Light",
+        "canonical": "#F5F5F5",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
       "canvas-dark": {
         "role": "neutral",
-        "displayName": "Warm Gallery Canvas Dark",
-        "canonical": "#141319",
-        "tonalRamp": ["oklch(15% 0.012 292.9)", "oklch(27% 0.012 292.9)", "oklch(39% 0.012 292.9)", "oklch(51% 0.012 292.9)", "oklch(63% 0.012 292.9)", "oklch(75% 0.012 292.9)", "oklch(87% 0.012 292.9)", "oklch(95% 0.012 292.9)"]
+        "displayName": "Gallery Canvas Dark",
+        "canonical": "#000000",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
       "folio-light": {
         "role": "neutral",
@@ -49,74 +37,44 @@
       "folio-dark": {
         "role": "neutral",
         "displayName": "Folio Paper Dark",
-        "canonical": "#201F25",
-        "tonalRamp": ["oklch(15% 0.011 293.2)", "oklch(27% 0.011 293.2)", "oklch(39% 0.011 293.2)", "oklch(51% 0.011 293.2)", "oklch(63% 0.011 293.2)", "oklch(75% 0.011 293.2)", "oklch(87% 0.011 293.2)", "oklch(95% 0.011 293.2)"]
+        "canonical": "#111111",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
-      "preview-light-ios": {
+      "preview-light": {
         "role": "neutral",
-        "displayName": "iOS Preview Ground Light",
-        "canonical": "#E8E7E4",
-        "tonalRamp": ["oklch(15% 0.004 91.4)", "oklch(27% 0.004 91.4)", "oklch(39% 0.004 91.4)", "oklch(51% 0.004 91.4)", "oklch(63% 0.004 91.4)", "oklch(75% 0.004 91.4)", "oklch(87% 0.004 91.4)", "oklch(95% 0.004 91.4)"]
+        "displayName": "Preview Ground Light",
+        "canonical": "#F0F0F0",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
-      "preview-dark-ios": {
+      "preview-dark": {
         "role": "neutral",
-        "displayName": "iOS Preview Ground Dark",
-        "canonical": "#29272F",
-        "tonalRamp": ["oklch(15% 0.015 296.9)", "oklch(27% 0.015 296.9)", "oklch(39% 0.015 296.9)", "oklch(51% 0.015 296.9)", "oklch(63% 0.015 296.9)", "oklch(75% 0.015 296.9)", "oklch(87% 0.015 296.9)", "oklch(95% 0.015 296.9)"]
+        "displayName": "Preview Ground Dark",
+        "canonical": "#1A1A1A",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
-      "preview-light-mac": {
-        "role": "neutral",
-        "displayName": "Mac Preview Ground Light",
-        "canonical": "#ECECE9",
-        "tonalRamp": ["oklch(15% 0.004 100)", "oklch(27% 0.004 100)", "oklch(39% 0.004 100)", "oklch(51% 0.004 100)", "oklch(63% 0.004 100)", "oklch(75% 0.004 100)", "oklch(87% 0.004 100)", "oklch(95% 0.004 100)"]
-      },
-      "preview-dark-mac": {
-        "role": "neutral",
-        "displayName": "Mac Preview Ground Dark",
-        "canonical": "#27252D",
-        "tonalRamp": ["oklch(15% 0.015 297)", "oklch(27% 0.015 297)", "oklch(39% 0.015 297)", "oklch(51% 0.015 297)", "oklch(63% 0.015 297)", "oklch(75% 0.015 297)", "oklch(87% 0.015 297)", "oklch(95% 0.015 297)"]
-      },
-      "quote-surface-light": {
-        "role": "neutral",
-        "displayName": "Quote Paper Light",
-        "canonical": "#EFEDF3",
-        "tonalRamp": ["oklch(15% 0.010 296)", "oklch(27% 0.010 296)", "oklch(39% 0.010 296)", "oklch(51% 0.010 296)", "oklch(63% 0.010 296)", "oklch(75% 0.010 296)", "oklch(87% 0.010 296)", "oklch(95% 0.010 296)"]
-      },
-      "quote-surface-dark": {
-        "role": "neutral",
-        "displayName": "Quote Paper Dark",
-        "canonical": "#2A2733",
-        "tonalRamp": ["oklch(15% 0.020 296)", "oklch(27% 0.020 296)", "oklch(39% 0.020 296)", "oklch(51% 0.020 296)", "oklch(63% 0.020 296)", "oklch(75% 0.020 296)", "oklch(87% 0.020 296)", "oklch(95% 0.020 296)"]
-      },
-      "web-surface-light": {
-        "role": "neutral",
-        "displayName": "Web Paper Light",
-        "canonical": "#EFEFED",
-        "tonalRamp": ["oklch(15% 0.003 106)", "oklch(27% 0.003 106)", "oklch(39% 0.003 106)", "oklch(51% 0.003 106)", "oklch(63% 0.003 106)", "oklch(75% 0.003 106)", "oklch(87% 0.003 106)", "oklch(95% 0.003 106)"]
-      },
-      "web-surface-dark": {
-        "role": "neutral",
-        "displayName": "Web Paper Dark",
-        "canonical": "#25252A",
-        "tonalRamp": ["oklch(15% 0.010 286)", "oklch(27% 0.010 286)", "oklch(39% 0.010 286)", "oklch(51% 0.010 286)", "oklch(63% 0.010 286)", "oklch(75% 0.010 286)", "oklch(87% 0.010 286)", "oklch(95% 0.010 286)"]
-      },
-      "quote-oxblood": {
+      "quote-ink": {
         "role": "tertiary",
-        "displayName": "Oxblood Quote",
-        "canonical": "#6F2B37",
-        "tonalRamp": ["oklch(15% 0.097 11.9)", "oklch(27% 0.097 11.9)", "oklch(39% 0.097 11.9)", "oklch(51% 0.097 11.9)", "oklch(63% 0.097 11.9)", "oklch(75% 0.097 11.9)", "oklch(87% 0.097 11.9)", "oklch(95% 0.097 11.9)"]
+        "displayName": "Quote Ink",
+        "canonical": "#000000",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
-      "quote-forest": {
+      "quote-charcoal": {
         "role": "tertiary",
-        "displayName": "Archive Forest",
-        "canonical": "#1A4F4B",
-        "tonalRamp": ["oklch(15% 0.056 188.2)", "oklch(27% 0.056 188.2)", "oklch(39% 0.056 188.2)", "oklch(51% 0.056 188.2)", "oklch(63% 0.056 188.2)", "oklch(75% 0.056 188.2)", "oklch(87% 0.056 188.2)", "oklch(95% 0.056 188.2)"]
+        "displayName": "Quote Charcoal",
+        "canonical": "#111111",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
-      "quote-umber": {
+      "quote-graphite": {
         "role": "tertiary",
-        "displayName": "Leather Umber",
-        "canonical": "#70482A",
-        "tonalRamp": ["oklch(15% 0.070 56.6)", "oklch(27% 0.070 56.6)", "oklch(39% 0.070 56.6)", "oklch(51% 0.070 56.6)", "oklch(63% 0.070 56.6)", "oklch(75% 0.070 56.6)", "oklch(87% 0.070 56.6)", "oklch(95% 0.070 56.6)"]
+        "displayName": "Quote Graphite",
+        "canonical": "#1F1F1F",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "quote-slate": {
+        "role": "tertiary",
+        "displayName": "Quote Slate",
+        "canonical": "#2C2C2C",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
       },
       "card-ink": {
         "role": "neutral",
@@ -171,9 +129,9 @@
       "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "Native-feeling prominent action using Archive Plum and a comfortable minimum target.",
+      "description": "Native-feeling prominent action using inverted ink and a comfortable minimum target.",
       "html": "<button class=\"ds-button-primary\">Save</button>",
-      "css": ".ds-button-primary { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #302A62; color: #FFFFFF; font: 600 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: filter 180ms ease-out, transform 180ms ease-out; } .ds-button-primary:hover { filter: brightness(1.08); } .ds-button-primary:active { transform: scale(0.985); filter: brightness(0.96); } .ds-button-primary:focus-visible { outline: 3px solid rgba(48,42,98,0.34); outline-offset: 2px; } .ds-button-primary:disabled { opacity: 0.45; }"
+      "css": ".ds-button-primary { min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #000000; color: #FFFFFF; font: 600 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: filter 180ms ease-out, transform 180ms ease-out; } .ds-button-primary:hover { filter: brightness(1.08); } .ds-button-primary:active { transform: scale(0.985); filter: brightness(0.96); } .ds-button-primary:focus-visible { outline: 3px solid rgba(0,0,0,0.34); outline-offset: 2px; } .ds-button-primary:disabled { opacity: 0.45; }"
     },
     {
       "name": "Search Field",
@@ -181,15 +139,15 @@
       "refersTo": "search-field",
       "description": "A platform-owned, visually prominent library search field.",
       "html": "<label class=\"ds-search\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"11\" cy=\"11\" r=\"7\"></circle><path d=\"m20 20-4-4\"></path></svg><input aria-label=\"Search inspiration\" placeholder=\"Search inspiration\"></label>",
-      "css": ".ds-search { min-height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; color: rgba(60,60,67,0.6); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.04); font: 400 17px/1.25 -apple-system, BlinkMacSystemFont, sans-serif; } .ds-search svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; } .ds-search input { min-width: 220px; border: 0; outline: 0; background: transparent; color: #1C1C1E; font: inherit; } .ds-search:focus-within { box-shadow: inset 0 0 0 2px rgba(48,42,98,0.34); }"
+      "css": ".ds-search { min-height: 44px; display: flex; align-items: center; gap: 9px; padding: 0 14px; border-radius: 999px; background: #FFFFFF; color: rgba(60,60,67,0.6); box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.04); font: 400 17px/1.25 -apple-system, BlinkMacSystemFont, sans-serif; } .ds-search svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; } .ds-search input { min-width: 220px; border: 0; outline: 0; background: transparent; color: #1C1C1E; font: inherit; } .ds-search:focus-within { box-shadow: inset 0 0 0 2px rgba(0,0,0,0.34); }"
     },
     {
       "name": "Active Scope Tab",
       "kind": "nav",
       "refersTo": "scope-tab-active",
-      "description": "Text-first navigation with count, optional project dot, and a restrained plum underline.",
+      "description": "Text-first navigation with count, optional project dot, and a restrained ink underline.",
       "html": "<button class=\"ds-scope-tab\"><span>All</span><span class=\"ds-scope-count\">12</span></button>",
-      "css": ".ds-scope-tab { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; border-bottom: 2px solid #302A62; background: transparent; color: #1C1C1E; font: 600 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: color 160ms ease-out, border-color 160ms ease-out; } .ds-scope-count { color: rgba(60,60,67,0.6); font-size: 11px; font-variant-numeric: tabular-nums; } .ds-scope-tab:hover { color: #302A62; } .ds-scope-tab:focus-visible { outline: 3px solid rgba(48,42,98,0.3); outline-offset: 4px; border-radius: 4px; }"
+      "css": ".ds-scope-tab { min-height: 44px; display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; border-bottom: 2px solid #000000; background: transparent; color: #1C1C1E; font: 600 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: color 160ms ease-out, border-color 160ms ease-out; } .ds-scope-count { color: rgba(60,60,67,0.6); font-size: 11px; font-variant-numeric: tabular-nums; } .ds-scope-tab:hover { color: #000000; } .ds-scope-tab:focus-visible { outline: 3px solid rgba(0,0,0,0.3); outline-offset: 4px; border-radius: 4px; }"
     },
     {
       "name": "Collected Inspiration Card",
@@ -197,7 +155,7 @@
       "refersTo": "collection-card",
       "description": "The signature white print mat with imagery and a stepped lower-left editorial caption.",
       "html": "<article class=\"ds-card\"><div class=\"ds-card-preview\"><div class=\"ds-card-cutout\"><strong>@alex_barashkov</strong></div></div></article>",
-      "css": ".ds-card { width: 280px; padding: 8px; border: 0.5px solid rgba(0,0,0,0.10); border-radius: 4px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.09); transition: transform 180ms ease-out, box-shadow 180ms ease-out; } .ds-card-preview { position: relative; height: 220px; overflow: hidden; border-radius: 2px; background: #E8E7E4 linear-gradient(145deg,#1A4F4B,#302A62); } .ds-card-cutout { position: absolute; left: 0; bottom: 0; max-width: calc(100% - 24px); padding: 5.5px 7.5px 5.5px 5.5px; border-radius: 0 10px 0 0; background: #FFFFFF; color: rgba(0,0,0,0.90); font: 600 18px/1.15 Georgia, serif; } .ds-card:hover { transform: translateY(-2px); box-shadow: 0 5px 8px rgba(0,0,0,0.14); } .ds-card:focus-within { outline: 2px solid #302A62; outline-offset: 2px; }"
+      "css": ".ds-card { width: 280px; padding: 8px; border: 0.5px solid rgba(0,0,0,0.10); border-radius: 4px; background: #FFFFFF; box-shadow: 0 1px 2px rgba(0,0,0,0.09); transition: transform 180ms ease-out, box-shadow 180ms ease-out; } .ds-card-preview { position: relative; height: 220px; overflow: hidden; border-radius: 2px; background: #F0F0F0; } .ds-card-cutout { position: absolute; left: 0; bottom: 0; max-width: calc(100% - 24px); padding: 5.5px 7.5px 5.5px 5.5px; border-radius: 0 10px 0 0; background: #FFFFFF; color: rgba(0,0,0,0.90); font: 600 18px/1.15 Georgia, serif; } .ds-card:hover { transform: translateY(-2px); box-shadow: 0 5px 8px rgba(0,0,0,0.14); } .ds-card:focus-within { outline: 2px solid #000000; outline-offset: 2px; }"
     },
     {
       "name": "Text-only X Preview",
@@ -205,7 +163,7 @@
       "refersTo": "quote-preview",
       "description": "A first-class serif quotation preview for captures without an image.",
       "html": "<article class=\"ds-quote\"><span class=\"ds-quote-mark\">“</span><p>Collected words become visual material, not an empty thumbnail.</p><small>@author</small></article>",
-      "css": ".ds-quote { position: relative; width: 280px; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; padding: 18px; overflow: hidden; border-radius: 4px; background: #302A62; color: #FFFFFF; } .ds-quote-mark { position: absolute; left: 14px; top: 0; color: rgba(255,255,255,0.18); font: 400 62px/1 Georgia, serif; } .ds-quote p { position: relative; margin: 24px 0 0; font: 500 16px/1.25 Georgia, serif; } .ds-quote small { color: rgba(255,255,255,0.78); font: 600 12px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; } .ds-quote:hover { filter: brightness(1.04); } .ds-quote:focus-visible { outline: 3px solid rgba(48,42,98,0.35); outline-offset: 3px; }"
+      "css": ".ds-quote { position: relative; width: 280px; min-height: 180px; display: flex; flex-direction: column; justify-content: flex-end; gap: 12px; padding: 18px; overflow: hidden; border-radius: 4px; background: #000000; color: #FFFFFF; } .ds-quote-mark { position: absolute; left: 14px; top: 0; color: rgba(255,255,255,0.18); font: 400 62px/1 Georgia, serif; } .ds-quote p { position: relative; margin: 24px 0 0; font: 500 16px/1.25 Georgia, serif; } .ds-quote small { color: rgba(255,255,255,0.78); font: 600 12px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; } .ds-quote:hover { filter: brightness(1.04); } .ds-quote:focus-visible { outline: 3px solid rgba(0,0,0,0.35); outline-offset: 3px; }"
     },
     {
       "name": "Confirmation Toast",
@@ -213,15 +171,15 @@
       "refersTo": "toast",
       "description": "A compact, transient status capsule with a semantic symbol and no persistent chrome.",
       "html": "<div class=\"ds-toast\" role=\"status\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"9\"></circle><path d=\"m8 12 2.5 2.5L16 9\"></path></svg><span>Saved to mood.</span></div>",
-      "css": ".ds-toast { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; border-radius: 999px; background: rgba(0,0,0,0.82); color: #FFFFFF; box-shadow: 0 5px 12px rgba(0,0,0,0.16); font: 500 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: opacity 180ms ease-out, transform 180ms ease-out; } .ds-toast svg { width: 18px; height: 18px; fill: currentColor; stroke: #000000; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-toast:hover { background: rgba(0,0,0,0.88); } .ds-toast:focus-visible { outline: 3px solid rgba(48,42,98,0.35); outline-offset: 3px; }"
+      "css": ".ds-toast { min-height: 44px; display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; border-radius: 999px; background: rgba(0,0,0,0.82); color: #FFFFFF; box-shadow: 0 5px 12px rgba(0,0,0,0.16); font: 500 15px/1.2 -apple-system, BlinkMacSystemFont, sans-serif; transition: opacity 180ms ease-out, transform 180ms ease-out; } .ds-toast svg { width: 18px; height: 18px; fill: currentColor; stroke: #000000; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-toast:hover { background: rgba(0,0,0,0.88); } .ds-toast:focus-visible { outline: 3px solid rgba(0,0,0,0.35); outline-offset: 3px; }"
     }
   ],
   "narrative": {
     "northStar": "The Living Moodboard",
-    "overview": "mood. feels like a personal folio that happens to be native software. Warm canvas surfaces and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery. The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodboard character while preserving each platform's own layout and interaction conventions. This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark manager, and a web-style SaaS dashboard. It also rejects engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved items.",
+    "overview": "mood. feels like a personal folio that happens to be native software. A black-and-white canvas and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery. The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodboard character while preserving each platform's own layout and interaction conventions. This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark manager, and a web-style SaaS dashboard. It also rejects engagement-driven feeds, anonymous thumbnail grids, dense administrative chrome, and decorative interface effects that compete with saved items.",
     "keyCharacteristics": [
       "Collected content is the expressive layer; native controls are restrained and familiar.",
-      "Warm paper-like neutrals support permanent white card mats in both appearances.",
+      "Neutral black, white, and gray surfaces support permanent white card mats in both appearances.",
       "Editorial serif type belongs to saved content and select identity moments; SF Pro carries the interface.",
       "Cards feel printed and collectible through shallow depth, fine borders, and stepped captions.",
       "Layout density adapts to device, accessibility settings, and user-controlled pinch zoom.",
@@ -229,8 +187,8 @@
     ],
     "rules": [
       {"name": "The Quiet Frame Rule", "body": "Interface chrome must disappear into the task; personality comes from the collection, not invented controls.", "section": "overview"},
-      {"name": "The One Plum Rule", "body": "Plum identifies interaction and current state. It must never become a decorative wash across inactive surfaces.", "section": "colors"},
-      {"name": "The Content Color Rule", "body": "Saturated oxblood, forest, and umber belong inside captured-content previews only; application chrome stays semantic and neutral.", "section": "colors"},
+      {"name": "The Ink Rule", "body": "Black in Light Mode and white in Dark Mode identify interaction and current state. They must never become a decorative wash across inactive surfaces.", "section": "colors"},
+      {"name": "The Content Color Rule", "body": "Chromatic color belongs to captured imagery. Application chrome and text-only quote fills stay black, white, or gray.", "section": "colors"},
       {"name": "The Serif Lives with Content Rule", "body": "Serif is reserved for saved titles, quotations, editorial previews, and the quiet mood. wordmark moment. Buttons, fields, navigation labels, and data remain SF Pro.", "section": "typography"},
       {"name": "The Dynamic Type Rule", "body": "iOS typography must use semantic styles or ScaledMetric; accessibility sizes collapse the canvas to one column and must never be defeated with fixed text.", "section": "typography"},
       {"name": "The Print, Not Plastic Rule", "body": "Shadows stay soft, low-opacity, and close to the surface. If a card looks glossy, floating, or web-dashboard-like, the elevation is too strong.", "section": "elevation"},
@@ -239,7 +197,7 @@
     ],
     "dos": [
       "Do let imagery, quotations, source, author, and notes carry the expressive weight.",
-      "Do use the adaptive plum tint only for primary action, current selection, and focus.",
+      "Do use inverted ink (black in Light Mode, white in Dark Mode) only for primary action, current selection chrome, and focus.",
       "Do preserve the white card mat, half-point hairline, density-aware insets, and complete lower-left cutout mask.",
       "Do start all columns at the same top edge and let real card heights create variation.",
       "Do use SF Pro for controls and system serif for saved-content moments.",
@@ -253,7 +211,7 @@
       "Don't make mood. resemble a web-style SaaS dashboard; dense administrative chrome, web-shaped controls, and dashboard ornament are prohibited.",
       "Don't add decorative interface effects that compete with saved items.",
       "Don't use artificial top staggering, masonry offsets, or rotation to manufacture personality in the resting library.",
-      "Don't use plum, rose, oxblood, forest, or umber as arbitrary decoration outside their named roles.",
+      "Don't introduce chromatic chrome; color in the interface belongs to captured imagery and user-chosen project dots.",
       "Don't put display serif type in buttons, fields, navigation labels, or data.",
       "Don't invent custom switches, pickers, alerts, back gestures, scrollbars, or modals when SwiftUI already provides the expected control.",
       "Don't use heavy, sharp, glossy shadows; if a card looks like floating plastic instead of paper, it is wrong.",

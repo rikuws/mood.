@@ -23,7 +23,7 @@ struct InspirationCard: View {
 
                     if isSelected {
                         cardShape.strokeBorder(
-                            PinaxCatalogPalette.accentInk(for: colorScheme),
+                            PinaxCatalogPalette.selectionInk,
                             lineWidth: 2
                         )
                     }
@@ -299,13 +299,7 @@ struct InspirationCard: View {
     }
 
     private var quoteBackground: Color {
-        let palette: [Color] = [
-            Color(red: 48 / 255, green: 42 / 255, blue: 98 / 255),
-            Color(red: 111 / 255, green: 43 / 255, blue: 55 / 255),
-            Color(red: 26 / 255, green: 79 / 255, blue: 75 / 255),
-            Color(red: 112 / 255, green: 72 / 255, blue: 42 / 255),
-        ]
-        return palette[layoutSeed % palette.count]
+        PinaxCatalogPalette.quoteFill(seed: layoutSeed)
     }
 
     private func compactDisplayTitle(for density: Int) -> String {
@@ -563,47 +557,44 @@ private struct SteppedCaptionInsetShape: Shape {
 }
 
 enum PinaxCatalogPalette {
-    static let plum = Color(red: 48 / 255, green: 42 / 255, blue: 98 / 255)
+    /// Black keyline on the permanent white card mat.
+    static let selectionInk = Color.black
 
     static func canvas(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 20 / 255, green: 19 / 255, blue: 25 / 255)
-            : Color(red: 244 / 255, green: 244 / 255, blue: 242 / 255)
+        colorScheme == .dark ? .black : Color(white: 0.96)
     }
 
     static func folio(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 32 / 255, green: 31 / 255, blue: 37 / 255)
-            : .white
+        colorScheme == .dark ? Color(white: 0.067) : .white
     }
 
     static func accent(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 113 / 255, green: 105 / 255, blue: 183 / 255)
-            : plum
+        colorScheme == .dark ? .white : .black
     }
 
     static func accentInk(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 178 / 255, green: 168 / 255, blue: 237 / 255)
-            : plum
+        accent(for: colorScheme)
     }
 
     static func previewSurface(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 39 / 255, green: 37 / 255, blue: 45 / 255)
-            : Color(red: 236 / 255, green: 236 / 255, blue: 233 / 255)
+        colorScheme == .dark ? Color(white: 0.102) : Color(white: 0.941)
     }
 
     static func quoteSurface(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 42 / 255, green: 39 / 255, blue: 51 / 255)
-            : Color(red: 239 / 255, green: 237 / 255, blue: 243 / 255)
+        previewSurface(for: colorScheme)
     }
 
     static func webSurface(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark
-            ? Color(red: 37 / 255, green: 37 / 255, blue: 42 / 255)
-            : Color(red: 239 / 255, green: 239 / 255, blue: 237 / 255)
+        previewSurface(for: colorScheme)
+    }
+
+    static func quoteFill(seed: Int) -> Color {
+        let palette: [Color] = [
+            .black,
+            Color(white: 0.067),
+            Color(white: 0.122),
+            Color(white: 0.173),
+        ]
+        return palette[abs(seed) % palette.count]
     }
 }

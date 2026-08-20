@@ -8,3 +8,4 @@ BrowserExtension/node_modules/
 *.ipa
 *.dSYM.zip
 *.xcarchive
+.markup

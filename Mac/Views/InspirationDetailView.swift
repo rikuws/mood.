@@ -13,142 +13,191 @@ struct InspirationDetailView: View {
 
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
         VStack(spacing: 0) {
-            header
-            Divider()
+            hero
+                .frame(maxWidth: .infinity, minHeight: 240, maxHeight: .infinity)
+                .layoutPriority(1)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    preview
+            details
+                .padding(.horizontal, 22)
+                .padding(.top, 6)
+                .padding(.bottom, 18)
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text(displayTitle)
-                            .font(.system(size: 28, weight: .semibold, design: .serif))
-                            .textSelection(.enabled)
-
-                        if let byline {
-                            Text(byline)
-                                .font(.callout)
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                        }
-
-                        if !inspiration.text.isEmpty, inspiration.text != inspiration.title {
-                            Text(inspiration.text)
-                                .font(.body)
-                                .foregroundStyle(.secondary)
-                                .textSelection(.enabled)
-                                .lineSpacing(3)
-                        }
-                    }
-
-                    metadata
-                }
-                .padding(18)
-            }
-
-            Divider()
             actionBar
         }
-        .background(PinaxCatalogPalette.folio(for: colorScheme))
-        .frame(minWidth: 340, idealWidth: 400, maxWidth: 470)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .background(folio)
+        .overlay(alignment: .topTrailing) { closeButton }
+        .frame(minWidth: 360, idealWidth: 420, maxWidth: 480)
+        .accessibilityElement(children: .contain)
     }
 
-    private var header: some View {
-        HStack {
-            Spacer()
-            Button(action: onClose) {
-                Image(systemName: "xmark")
-            }
-            .buttonStyle(.borderless)
-            .help("Close details")
-            .keyboardShortcut(.escape, modifiers: [])
-        }
-        .padding(.horizontal, 16)
-        .frame(height: 40)
-    }
+    private var hero: some View {
+        GeometryReader { geometry in
+            let topFade = min(88, max(52, geometry.size.height * 0.12))
+            let bottomFade = min(160, max(72, geometry.size.height * 0.22))
 
-    private var preview: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(PinaxCatalogPalette.previewSurface(for: colorScheme))
+            ZStack {
+                folio
 
-            if localImageURL != nil || inspiration.imageURL != nil {
-                DownsampledPreviewImage(
-                    localURL: localImageURL,
-                    remoteURL: inspiration.imageURL,
-                    contentMode: .fit
-                ) {
-                    ProgressView()
-                } failure: {
+                if hasPreviewImage, !reduceTransparency {
+                    DownsampledPreviewImage(
+                        localURL: localImageURL,
+                        remoteURL: inspiration.imageURL,
+                        contentMode: .fill
+                    ) {
+                        Color.clear
+                    } failure: {
+                        Color.clear
+                    }
+                    .scaleEffect(1.16)
+                    .blur(radius: 32)
+                    .overlay(wash)
+                }
+
+                if hasPreviewImage {
+                    DownsampledPreviewImage(
+                        localURL: localImageURL,
+                        remoteURL: inspiration.imageURL,
+                        contentMode: .fit
+                    ) {
+                        ProgressView()
+                    } failure: {
+                        previewPlaceholder
+                    }
+                } else {
                     previewPlaceholder
                 }
-            } else {
-                previewPlaceholder
+
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [
+                            Color.black.opacity(colorScheme == .dark ? 0.38 : 0.16),
+                            Color.clear,
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: topFade)
+
+                    Spacer(minLength: 0)
+
+                    LinearGradient(
+                        stops: [
+                            .init(color: folio.opacity(0), location: 0),
+                            .init(color: folio.opacity(0.55), location: 0.52),
+                            .init(color: folio, location: 1),
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: bottomFade)
+                }
+                .allowsHitTesting(false)
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+            .clipped()
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 280)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.primary.opacity(0.09), lineWidth: 0.5)
-        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(previewAccessibilityLabel)
+        .accessibilityAddTraits(.isImage)
     }
 
-    private var previewPlaceholder: some View {
+    private var details: some View {
         VStack(alignment: .leading, spacing: 14) {
-            if inspiration.source != .x {
-                Label(sourceLabel, systemImage: "globe")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(displayTitle)
+                    .font(.system(size: 26, weight: .semibold, design: .serif))
+                    .tracking(-0.3)
+                    .lineSpacing(2)
+                    .textSelection(.enabled)
+                    .accessibilityAddTraits(.isHeader)
+
+                if let byline {
+                    Text(byline)
+                        .font(.title3)
+                        .foregroundStyle(.secondary)
+                        .textSelection(.enabled)
+                }
+
+                if let bodyText {
+                    Text(bodyText)
+                        .font(bodyFont)
+                        .foregroundStyle(.primary)
+                        .lineSpacing(5)
+                        .lineLimit(8)
+                        .textSelection(.enabled)
+                }
             }
 
-            Text(previewText.isEmpty ? displayTitle : previewText)
-                .font(.system(size: 19, weight: .medium, design: .serif))
-                .lineSpacing(3)
-                .lineLimit(7)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            metadata
         }
-        .padding(22)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .background(
-            inspiration.source == .x
-                ? PinaxCatalogPalette.quoteSurface(for: colorScheme)
-                : PinaxCatalogPalette.webSurface(for: colorScheme)
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var metadata: some View {
-        VStack(alignment: .leading, spacing: 11) {
-            Label(project?.name ?? "General", systemImage: project == nil ? "tray" : "folder")
-            Label(inspiration.createdAt.formatted(date: .abbreviated, time: .shortened), systemImage: "calendar")
-            Label(sourceLabel, systemImage: "link")
-                .lineLimit(1)
+        VStack(alignment: .leading, spacing: 10) {
+            metadataRow(project?.name ?? "General") {
+                if let project, let colorHex = project.colorHex {
+                    Circle()
+                        .fill(Color(hex: colorHex))
+                        .frame(width: 8, height: 8)
+                } else if project != nil {
+                    Image(systemName: "folder")
+                        .font(.system(size: 12, weight: .medium))
+                } else {
+                    Image(systemName: "tray")
+                        .font(.system(size: 12, weight: .medium))
+                }
+            }
+
+            metadataRow(
+                inspiration.createdAt.formatted(date: .abbreviated, time: .shortened),
+                systemImage: "clock"
+            )
+
+            metadataRow(sourceLabel, systemImage: "link")
                 .help(inspiration.url.absoluteString)
+
             if inspiration.captureCount > 1 {
-                Label("Saved \(inspiration.captureCount) times", systemImage: "square.stack.3d.up")
+                metadataRow(
+                    "Saved \(inspiration.captureCount) times",
+                    systemImage: "square.stack.3d.up"
+                )
             }
         }
-        .font(.caption)
+        .font(.callout)
         .foregroundStyle(.secondary)
+        .padding(.top, 4)
     }
 
     private var actionBar: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 8) {
             Button {
                 openURL(inspiration.url)
             } label: {
                 Label("Open", systemImage: "arrow.up.right.square")
+                    .padding(.horizontal, 6)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .keyboardShortcut(.return, modifiers: [.command])
+            .help("Open original")
+
+            Spacer(minLength: 8)
 
             ShareLink(item: inspiration.url) {
                 Image(systemName: "square.and.arrow.up")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.borderless)
             .help("Share")
+            .accessibilityLabel("Share")
 
             Menu {
                 Button("General") { onMove(nil) }
@@ -158,24 +207,130 @@ struct InspirationDetailView: View {
                 }
             } label: {
                 Image(systemName: "folder")
+                    .font(.system(size: 14, weight: .medium))
+                    .frame(width: 32, height: 32)
+                    .contentShape(Rectangle())
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
             .help("Move to project")
+            .accessibilityLabel("Move to project")
 
-            Button(action: onEdit) {
-                Image(systemName: "pencil")
-            }
-            .help("Edit")
+            toolbarButton("pencil", help: "Edit", action: onEdit)
 
-            Spacer()
-
-            Button(role: .destructive, action: onDelete) {
-                Image(systemName: "trash")
-            }
-            .help("Delete")
+            toolbarButton("trash", help: "Delete", role: .destructive, action: onDelete)
         }
-        .labelStyle(.titleAndIcon)
-        .padding(.horizontal, 14)
-        .frame(height: 52)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(.primary.opacity(0.08))
+                .frame(height: 0.5)
+        }
+    }
+
+    private var closeButton: some View {
+        Button(action: onClose) {
+            Image(systemName: "xmark")
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 28, height: 28)
+                .background(.ultraThinMaterial, in: Circle())
+                .overlay {
+                    Circle().strokeBorder(.primary.opacity(0.14), lineWidth: 0.5)
+                }
+        }
+        .buttonStyle(.plain)
+        .help("Close details")
+        .keyboardShortcut(.escape, modifiers: [])
+        .accessibilityLabel("Close details")
+        .padding(.top, 14)
+        .padding(.trailing, 12)
+    }
+
+    private var previewPlaceholder: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if inspiration.source != .x {
+                Label(sourceLabel, systemImage: "globe")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+            }
+
+            Text(placeholderText)
+                .font(.system(size: 22, weight: .medium, design: .serif))
+                .lineSpacing(5)
+                .lineLimit(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(28)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .background(
+            inspiration.source == .x
+                ? PinaxCatalogPalette.quoteSurface(for: colorScheme)
+                : PinaxCatalogPalette.webSurface(for: colorScheme)
+        )
+    }
+
+    private func metadataRow(_ title: String, systemImage: String) -> some View {
+        metadataRow(title) {
+            Image(systemName: systemImage)
+                .font(.system(size: 12, weight: .medium))
+        }
+    }
+
+    private func metadataRow<Icon: View>(
+        _ title: String,
+        @ViewBuilder icon: () -> Icon
+    ) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            icon()
+                .frame(width: 16, alignment: .center)
+            Text(title)
+                .textSelection(.enabled)
+                .lineLimit(1)
+        }
+    }
+
+    private func toolbarButton(
+        _ systemImage: String,
+        help: String,
+        role: ButtonRole? = nil,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(role: role, action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 32, height: 32)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless)
+        .help(help)
+        .accessibilityLabel(help)
+    }
+
+    private var folio: Color {
+        PinaxCatalogPalette.folio(for: colorScheme)
+    }
+
+    private var wash: Color {
+        colorScheme == .dark
+            ? Color.black.opacity(0.46)
+            : Color.white.opacity(0.34)
+    }
+
+    private var hasPreviewImage: Bool {
+        localImageURL != nil || inspiration.imageURL != nil
+    }
+
+    private var bodyFont: Font {
+        inspiration.source == .x
+            ? .system(size: 17, weight: .medium, design: .serif)
+            : .system(size: 16, weight: .regular)
+    }
+
+    private var bodyText: String? {
+        let text = inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, text != inspiration.title, text != displayTitle else { return nil }
+        return text
     }
 
     private var byline: String? {
@@ -197,14 +352,24 @@ struct InspirationDetailView: View {
         let title = inspiration.title.trimmingCharacters(in: .whitespacesAndNewlines)
         let host = inspiration.url.host()?.lowercased()
         if !title.isEmpty, title.lowercased() != (host ?? "") { return title }
+        let previewText = inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
         if !previewText.isEmpty { return previewText }
         if let xHandle { return "Post by @\(xHandle)" }
         if !title.isEmpty { return title }
         return inspiration.url.host() ?? "Untitled item"
     }
 
-    private var previewText: String {
-        inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
+    private var placeholderText: String {
+        let text = inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty { return text }
+        return displayTitle
+    }
+
+    private var previewAccessibilityLabel: String {
+        if let bodyText {
+            return "\(displayTitle). \(bodyText)"
+        }
+        return displayTitle
     }
 
     private var sourceLabel: String {

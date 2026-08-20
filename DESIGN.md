@@ -2,25 +2,18 @@
 name: mood.
 description: A native living visual moodboard for collecting what catches your eye and turning taste into usable context.
 colors:
-  accent-plum: "#302A62"
-  accent-plum-dark: "#7169B7"
-  accent-ink-dark: "#B2A8ED"
-  rose-detail: "#E25D8B"
-  canvas-light: "#F4F4F2"
-  canvas-dark: "#141319"
+  accent-ink: "#000000"
+  accent-paper: "#FFFFFF"
+  canvas-light: "#F5F5F5"
+  canvas-dark: "#000000"
   folio-light: "#FFFFFF"
-  folio-dark: "#201F25"
-  preview-light-ios: "#E8E7E4"
-  preview-dark-ios: "#29272F"
-  preview-light-mac: "#ECECE9"
-  preview-dark-mac: "#27252D"
-  quote-surface-light: "#EFEDF3"
-  quote-surface-dark: "#2A2733"
-  web-surface-light: "#EFEFED"
-  web-surface-dark: "#25252A"
-  quote-oxblood: "#6F2B37"
-  quote-forest: "#1A4F4B"
-  quote-umber: "#70482A"
+  folio-dark: "#111111"
+  preview-light: "#F0F0F0"
+  preview-dark: "#1A1A1A"
+  quote-ink: "#000000"
+  quote-charcoal: "#111111"
+  quote-graphite: "#1F1F1F"
+  quote-slate: "#2C2C2C"
   card-ink: "#000000E6"
   card-stroke: "#0000001A"
   toast-ink: "#000000D1"
@@ -94,8 +87,8 @@ spacing:
   xl: "22pt"
 components:
   button-primary:
-    backgroundColor: "{colors.accent-plum}"
-    textColor: "{colors.folio-light}"
+    backgroundColor: "{colors.accent-ink}"
+    textColor: "{colors.accent-paper}"
     typography: "{typography.label}"
     height: "44pt minimum on iOS; platform default on macOS"
   collection-card:
@@ -105,14 +98,14 @@ components:
     rounded: "{rounded.card-standard}"
     padding: "{spacing.card-mat-standard}"
   quote-preview:
-    backgroundColor: "{colors.accent-plum}"
-    textColor: "{colors.folio-light}"
+    backgroundColor: "{colors.quote-ink}"
+    textColor: "{colors.accent-paper}"
     typography: "{typography.quote}"
     rounded: "{rounded.card-standard}"
     padding: "{spacing.lg}"
   scope-tab-active:
     backgroundColor: "{colors.canvas-light}"
-    textColor: "{colors.accent-plum}"
+    textColor: "{colors.accent-ink}"
     typography: "{typography.label}"
     height: "44pt"
   search-field:
@@ -136,7 +129,7 @@ components:
 
 **Creative North Star: "The Living Moodboard"**
 
-mood. feels like a personal folio that happens to be native software. Warm canvas surfaces and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery.
+mood. feels like a personal folio that happens to be native software. A black-and-white canvas and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery.
 
 The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodboard character while preserving each platform's own layout and interaction conventions.
 
@@ -145,7 +138,7 @@ This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark
 **Key Characteristics:**
 
 - Collected content is the expressive layer; native controls are restrained and familiar.
-- Warm paper-like neutrals support permanent white card mats in both appearances.
+- Neutral black, white, and gray surfaces support permanent white card mats in both appearances.
 - Editorial serif type belongs to saved content and select identity moments; SF Pro carries the interface.
 - Cards feel printed and collectible through shallow depth, fine borders, and stepped captions.
 - Layout density adapts to device, accessibility settings, and user-controlled pinch zoom.
@@ -155,35 +148,31 @@ This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark
 
 ## Colors
 
-The palette is a warm-neutral gallery anchored by deep plum, with richer quotation colors reserved for content-generated moments.
+The palette is black and white, like a printed folio: true black canvas, white paper cards, and inverted ink for primary actions. Collected imagery supplies every chromatic moment.
 
 ### Primary
 
-- **Archive Plum** (`{colors.accent-plum}`): the light-appearance tint for current scope, primary actions, selection, and focus—not decoration.
-- **Evening Plum** (`{colors.accent-plum-dark}`): the dark-appearance interactive equivalent, lifted enough to remain legible on the near-black canvas.
-- **Lavender Selection Ink** (`{colors.accent-ink-dark}`): the dark-appearance selection outline and drop-target ink.
+- **Ink** (`{colors.accent-ink}`): the light-appearance tint for current scope, primary actions, and focus—not decoration. Primary buttons are black with white labels.
+- **Paper** (`{colors.accent-paper}`): the dark-appearance interactive equivalent. Primary buttons, tints, and drop-target ink invert to white on the black canvas.
 
 ### Secondary
 
-- **Provenance Rose** (`{colors.rose-detail}`): a tiny saved-reference marker. Its rarity preserves its meaning.
+- **Selection Ink** (`{colors.accent-ink}`): a black keyline on the permanent white card mat, so selection stays visible in both appearances.
 
 ### Tertiary
 
-- **Oxblood Quote**, **Archive Forest**, and **Leather Umber** (`{colors.quote-oxblood}`, `{colors.quote-forest}`, `{colors.quote-umber}`): deterministic backgrounds for text-only X references. They make missing imagery feel intentional, never like an error state.
+- **Quote Ink**, **Charcoal**, **Graphite**, and **Slate** (`{colors.quote-ink}`, `{colors.quote-charcoal}`, `{colors.quote-graphite}`, `{colors.quote-slate}`): deterministic grayscale backgrounds for text-only X references. They make missing imagery feel intentional, never like an error state.
 
 ### Neutral
 
-- **Warm Gallery Canvas** (`{colors.canvas-light}` / `{colors.canvas-dark}`): the library field behind the collection.
-- **Folio Paper** (`{colors.folio-light}` / `{colors.folio-dark}`): detail surfaces and native panels. The collected card mat itself remains Folio Paper in both appearances to preserve the physical-print metaphor.
-- **iOS Preview Ground** (`{colors.preview-light-ios}` / `{colors.preview-dark-ios}`): quiet image-loading and web-reference backing on iPhone and iPad.
-- **Mac Preview Ground** (`{colors.preview-light-mac}` / `{colors.preview-dark-mac}`): the slightly cooler equivalent on macOS.
-- **Quote Paper** (`{colors.quote-surface-light}` / `{colors.quote-surface-dark}`): low-chroma backing for expanded quote references.
-- **Web Paper** (`{colors.web-surface-light}` / `{colors.web-surface-dark}`): neutral backing for image-less web references.
+- **Gallery Canvas** (`{colors.canvas-light}` / `{colors.canvas-dark}`): the library field behind the collection. Dark appearance is true black (`#000000`), not a tinted near-black.
+- **Folio Paper** (`{colors.folio-light}` / `{colors.folio-dark}`): detail surfaces and native panels. The collected card mat itself remains white Folio Paper in both appearances to preserve the physical-print metaphor.
+- **Preview Ground** (`{colors.preview-light}` / `{colors.preview-dark}`): quiet image-loading and web-reference backing on every platform.
 - **Card Ink**, **Hairline Ink**, and **Toast Ink** (`{colors.card-ink}`, `{colors.card-stroke}`, `{colors.toast-ink}`): permanent ink for the white card mat, its half-point border, and transient confirmation capsules.
 
-**The One Plum Rule.** Plum identifies interaction and current state. It must never become a decorative wash across inactive surfaces.
+**The Ink Rule.** Black (light) and white (dark) identify interaction and current state. They must never become a decorative wash across inactive surfaces.
 
-**The Content Color Rule.** Saturated oxblood, forest, and umber belong inside captured-content previews only; application chrome stays semantic and neutral.
+**The Content Color Rule.** Chromatic color belongs to captured imagery. Application chrome and text-only quote fills stay black, white, or gray.
 
 ## Typography
 
@@ -226,14 +215,14 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 ### Buttons
 
 - **Shape:** use native SwiftUI button shapes and control sizes. Touch targets are at least 44×44pt on iOS; macOS controls preserve system sizing and keyboard focus.
-- **Primary:** `.borderedProminent` with the adaptive plum tint, used for the single clear action in empty states and save flows.
+- **Primary:** `.borderedProminent` with inverted ink (black on light, white on dark), used for the single clear action in empty states and save flows.
 - **Hover / Focus:** allow platform-native hover, focus ring, pressed, disabled, loading, destructive, and keyboard states. Never approximate them with custom web-style chrome.
 - **Secondary / Ghost:** plain, borderless, menu, toolbar, and standard bordered styles remain native. Destructive actions use the semantic destructive role.
 
 ### Chips
 
 - **Style:** project and scope selectors are text-first native controls with a 7pt project-color dot where relevant. Counts use tertiary caption text and monospaced digits.
-- **State:** the active scope gains semibold weight plus a 2pt Archive Plum underline; inactive scopes remain primary text without colored fill.
+- **State:** the active scope gains semibold weight plus a 2pt ink underline; inactive scopes remain primary text without colored fill.
 
 ### Cards / Containers
 
@@ -261,7 +250,7 @@ The signature collected-card caption grows from the preview's lower-left corner 
 
 ### Image-less Reference Preview
 
-Text-only X captures become serif quotation cards chosen deterministically from Archive Plum, Oxblood Quote, Archive Forest, and Leather Umber. Image-less web captures become quiet editorial title/excerpt/domain cards on Web Paper. Both are first-class collected objects, never placeholders that apologize for missing imagery.
+Text-only X captures become serif quotation cards chosen deterministically from Quote Ink, Charcoal, Graphite, and Slate. Image-less web captures become quiet editorial title/excerpt/domain cards on Preview Ground. Both are first-class collected objects, never placeholders that apologize for missing imagery.
 
 ### Motion and Density
 
@@ -276,7 +265,7 @@ Pinch zoom interpolates the whole canvas continuously between adjacent column co
 ### Do:
 
 - **Do** let imagery, quotations, source, author, and notes carry the expressive weight.
-- **Do** use the adaptive plum tint only for primary action, current selection, and focus.
+- **Do** use inverted ink (black in Light Mode, white in Dark Mode) only for primary action, current selection chrome, and focus.
 - **Do** preserve the white card mat, half-point hairline, density-aware insets, and complete lower-left cutout mask.
 - **Do** start all columns at the same top edge and let real card heights create variation.
 - **Do** use SF Pro for controls and system serif for saved-content moments.
@@ -293,7 +282,7 @@ Pinch zoom interpolates the whole canvas continuously between adjacent column co
 - **Don't** add decorative interface effects that compete with saved items.
 - **Don't** give the macOS library a permanent sidebar, or treat Projects as folders in file-manager chrome.
 - **Don't** use artificial top staggering, masonry offsets, or rotation to manufacture personality in the resting library.
-- **Don't** use plum, rose, oxblood, forest, or umber as arbitrary decoration outside their named roles.
+- **Don't** introduce chromatic chrome; color in the interface belongs to captured imagery and user-chosen project dots.
 - **Don't** put display serif type in buttons, fields, navigation labels, or data.
 - **Don't** invent custom switches, pickers, alerts, back gestures, scrollbars, or modals when SwiftUI already provides the expected control.
 - **Don't** use heavy, sharp, glossy shadows; if a card looks like floating plastic instead of paper, it is wrong.

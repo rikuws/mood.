@@ -204,10 +204,10 @@ struct InspirationImageView: View {
 
     private var quoteBackground: Color {
         let palette: [Color] = [
-            Color(red: 48.0 / 255.0, green: 42.0 / 255.0, blue: 98.0 / 255.0),
-            Color(red: 111.0 / 255.0, green: 43.0 / 255.0, blue: 55.0 / 255.0),
-            Color(red: 26.0 / 255.0, green: 79.0 / 255.0, blue: 75.0 / 255.0),
-            Color(red: 112.0 / 255.0, green: 72.0 / 255.0, blue: 42.0 / 255.0),
+            .black,
+            Color(white: 0.067),
+            Color(white: 0.122),
+            Color(white: 0.173),
         ]
         let index = inspiration.id.uuidString.unicodeScalars.reduce(0) {
             $0 + Int($1.value)

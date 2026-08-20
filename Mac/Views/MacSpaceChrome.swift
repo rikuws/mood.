@@ -161,7 +161,7 @@ struct MacProjectSwitcher: View {
                     .frame(maxHeight: 320)
                     .onChange(of: highlightedScope) { _, scope in
                         guard let scope else { return }
-                        proxy.scrollTo(scope, anchor: .nearest)
+                        proxy.scrollTo(scope)
                     }
                 }
             }
@@ -333,9 +333,9 @@ struct MacCanvasWindowConfigurator: NSViewRepresentable {
     private static let canvasBackground = NSColor(name: "PinaxCanvasWindowBackground") { appearance in
         let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
         if isDark {
-            return NSColor(srgbRed: 20 / 255, green: 19 / 255, blue: 25 / 255, alpha: 1)
+            return NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 1)
         }
-        return NSColor(srgbRed: 244 / 255, green: 244 / 255, blue: 242 / 255, alpha: 1)
+        return NSColor(srgbRed: 0.96, green: 0.96, blue: 0.96, alpha: 1)
     }
 }
 

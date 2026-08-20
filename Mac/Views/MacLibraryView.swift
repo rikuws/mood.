@@ -31,6 +31,85 @@ struct MacLibraryView: View {
     private let maximumCanvasColumns = 8
 
     var body: some View {
+        libraryCanvas
+            .frame(minWidth: 720, minHeight: 520)
+    }
+
+    private var libraryCanvas: some View {
+        styledCanvas
+            .sheet(item: $sheet, content: sheetContent)
+            .alert("Delete this item?", isPresented: inspirationDeleteAlert) {
+                Button("Delete", role: .destructive) { confirmInspirationDeletion() }
+                Button("Cancel", role: .cancel) { pendingInspirationDeletion = nil }
+            } message: {
+                Text("This removes the item from your moodboard. The original page is not affected.")
+            }
+            .alert("Delete project?", isPresented: projectDeleteAlert) {
+                Button("Delete", role: .destructive) { confirmProjectDeletion() }
+                Button("Cancel", role: .cancel) { pendingProjectDeletion = nil }
+            } message: {
+                Text("Its items will move back to General.")
+            }
+            .task { await syncAndReload() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { Task { await syncAndReload() } }
+            }
+            .onChange(of: store.inspirations) { _, inspirations in
+                if let selectedInspirationID,
+                   !inspirations.contains(where: { $0.id == selectedInspirationID }) {
+                    self.selectedInspirationID = nil
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureSucceeded)) { notification in
+                guard let result = notification.object as? CaptureResult else { return }
+                selectedInspirationID = result.inspiration.id
+                reveal(result.inspiration)
+                showToast(result.inserted ? "Saved from browser" : "Already in mood. — refreshed")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureFailed)) { notification in
+                guard let message = notification.object as? String else { return }
+                showToast(message, symbol: "exclamationmark.triangle.fill")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxQuickCapture)) { _ in
+                sheet = .capture
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxNewProject)) { _ in
+                sheet = .newProject
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxBrowserSetup)) { _ in
+                sheet = .browserSetup
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomIn)) { _ in
+                zoomCanvas(byColumnDelta: -1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomOut)) { _ in
+                zoomCanvas(byColumnDelta: 1)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomReset)) { _ in
+                resetCanvasZoom()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxFind)) { _ in
+                beginSearch()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxSwitchProject)) { _ in
+                isProjectSwitcherPresented = true
+            }
+            .onExitCommand(perform: handleExitCommand)
+            .accessibilityAction(named: "Search") { beginSearch() }
+            .accessibilityAction(named: "Switch Project") { isProjectSwitcherPresented = true }
+    }
+
+    private var styledCanvas: some View {
+        canvasStack
+            .animation(detailInspectorAnimation, value: selectedInspirationID)
+            .background(PinaxCatalogPalette.canvas(for: colorScheme))
+            .background(MacCanvasWindowConfigurator())
+            .accentColor(PinaxCatalogPalette.accent(for: colorScheme))
+            .tint(PinaxCatalogPalette.accent(for: colorScheme))
+            .overlay(alignment: .bottom) { toastOverlay }
+    }
+
+    private var canvasStack: some View {
         ZStack(alignment: .trailing) {
             VStack(spacing: 0) {
                 canvasChrome
@@ -38,6 +117,12 @@ struct MacLibraryView: View {
             }
 
             if let selectedInspiration {
+                Color.clear
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: closeDetailInspector)
+                    .accessibilityHidden(true)
+
                 InspirationDetailView(
                     inspiration: selectedInspiration,
                     localImageURL: store.localImageURL(for: selectedInspiration),
@@ -46,16 +131,32 @@ struct MacLibraryView: View {
                     onMove: { projectID in move(selectedInspiration, to: projectID) },
                     onEdit: { sheet = .editInspiration(selectedInspiration) },
                     onDelete: { pendingInspirationDeletion = selectedInspiration },
-                    onClose: {
-                        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                            selectedInspirationID = nil
-                        }
-                    }
+                    onClose: closeDetailInspector
                 )
-                .frame(width: 380)
-                .overlay(alignment: .leading) {
-                    Divider()
+                .id(selectedInspiration.id)
+                .frame(width: 420)
+                .clipShape(detailPanelShape)
+                .overlay {
+                    detailPanelShape.strokeBorder(detailPanelStroke, lineWidth: 1)
                 }
+                .background {
+                    detailPanelShape
+                        .fill(PinaxCatalogPalette.folio(for: colorScheme))
+                        .shadow(
+                            color: .black.opacity(colorScheme == .dark ? 0.48 : 0.12),
+                            radius: 18,
+                            x: -8,
+                            y: 4
+                        )
+                        .shadow(
+                            color: .black.opacity(colorScheme == .dark ? 0.28 : 0.08),
+                            radius: 4,
+                            x: -1,
+                            y: 1
+                        )
+                }
+                .contentShape(detailPanelShape)
+                .padding(12)
                 .transition(
                     reduceMotion
                         ? .opacity
@@ -64,78 +165,6 @@ struct MacLibraryView: View {
                 .zIndex(1)
             }
         }
-        .animation(
-            reduceMotion ? nil : .easeOut(duration: 0.22),
-            value: selectedInspirationID
-        )
-        .background(PinaxCatalogPalette.canvas(for: colorScheme))
-        .background(MacCanvasWindowConfigurator())
-        .accentColor(PinaxCatalogPalette.accent(for: colorScheme))
-        .tint(PinaxCatalogPalette.accent(for: colorScheme))
-        .overlay(alignment: .bottom) { toastOverlay }
-        .sheet(item: $sheet) { destination in
-            sheetContent(destination)
-        }
-        .alert("Delete this item?", isPresented: inspirationDeleteAlert) {
-            Button("Delete", role: .destructive) { confirmInspirationDeletion() }
-            Button("Cancel", role: .cancel) { pendingInspirationDeletion = nil }
-        } message: {
-            Text("This removes the item from your moodboard. The original page is not affected.")
-        }
-        .alert("Delete project?", isPresented: projectDeleteAlert) {
-            Button("Delete", role: .destructive) { confirmProjectDeletion() }
-            Button("Cancel", role: .cancel) { pendingProjectDeletion = nil }
-        } message: {
-            Text("Its items will move back to General.")
-        }
-        .task { await syncAndReload() }
-        .onChange(of: scenePhase) { _, phase in
-            if phase == .active { Task { await syncAndReload() } }
-        }
-        .onChange(of: store.inspirations) { _, inspirations in
-            if let selectedInspirationID,
-               !inspirations.contains(where: { $0.id == selectedInspirationID }) {
-                self.selectedInspirationID = nil
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureSucceeded)) { notification in
-            guard let result = notification.object as? CaptureResult else { return }
-            selectedInspirationID = result.inspiration.id
-            reveal(result.inspiration)
-            showToast(result.inserted ? "Saved from browser" : "Already in mood. — refreshed")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureFailed)) { notification in
-            guard let message = notification.object as? String else { return }
-            showToast(message, symbol: "exclamationmark.triangle.fill")
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxQuickCapture)) { _ in
-            sheet = .capture
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxNewProject)) { _ in
-            sheet = .newProject
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxBrowserSetup)) { _ in
-            sheet = .browserSetup
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomIn)) { _ in
-            zoomCanvas(byColumnDelta: -1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomOut)) { _ in
-            zoomCanvas(byColumnDelta: 1)
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomReset)) { _ in
-            resetCanvasZoom()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxFind)) { _ in
-            beginSearch()
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .pinaxSwitchProject)) { _ in
-            isProjectSwitcherPresented = true
-        }
-        .onExitCommand(perform: handleExitCommand)
-        .accessibilityAction(named: "Search") { beginSearch() }
-        .accessibilityAction(named: "Switch Project") { isProjectSwitcherPresented = true }
-        .frame(minWidth: 720, minHeight: 520)
     }
 
     private var canvasChrome: some View {
@@ -423,6 +452,27 @@ struct MacLibraryView: View {
         return store.inspirations.first { $0.id == selectedInspirationID }
     }
 
+    private var detailPanelShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+    }
+
+    private var detailPanelStroke: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.22)
+            : Color.black.opacity(0.16)
+    }
+
+    private var detailInspectorAnimation: Animation? {
+        reduceMotion ? nil : .easeOut(duration: 0.14)
+    }
+
+    private func closeDetailInspector() {
+        guard selectedInspirationID != nil else { return }
+        withAnimation(detailInspectorAnimation) {
+            selectedInspirationID = nil
+        }
+    }
+
     private var scopeTitle: String {
         switch store.scope {
         case .all: "All inspiration"
@@ -550,9 +600,7 @@ struct MacLibraryView: View {
         if isProjectSwitcherPresented {
             isProjectSwitcherPresented = false
         } else if selectedInspirationID != nil {
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-                selectedInspirationID = nil
-            }
+            closeDetailInspector()
         } else if isSearching {
             if store.searchText.isEmpty {
                 isSearching = false
