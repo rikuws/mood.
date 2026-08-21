@@ -51,7 +51,9 @@ struct InspirationCard: View {
     private func cardArtwork(for density: Int) -> some View {
         preview(for: density)
             .overlay(alignment: .bottomLeading) {
-                insetCaption(for: density)
+                if inspiration.source != .x {
+                    insetCaption(for: density)
+                }
             }
             .clipShape(
                 RoundedRectangle(
@@ -134,7 +136,7 @@ struct InspirationCard: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                Spacer(minLength: fallbackCaptionClearance(for: density))
+                Spacer(minLength: artworkPadding(for: density))
             }
             .padding(artworkPadding(for: density))
         }

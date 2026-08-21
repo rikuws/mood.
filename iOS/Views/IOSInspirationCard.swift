@@ -13,7 +13,9 @@ struct IOSInspirationCard: View {
         VStack(alignment: .leading, spacing: 0) {
             preview
                 .overlay(alignment: .bottomLeading) {
-                    imageInsetCaption
+                    if inspiration.source != .x {
+                        imageInsetCaption
+                    }
                 }
                 .clipShape(
                     RoundedRectangle(
@@ -22,13 +24,15 @@ struct IOSInspirationCard: View {
                     )
                 )
                 .overlay(alignment: .bottomLeading) {
-                    Rectangle()
-                        .fill(Color.white)
-                        .frame(
-                            width: innerCornerRadius + 1,
-                            height: innerCornerRadius + 1
-                        )
-                        .accessibilityHidden(true)
+                    if inspiration.source != .x {
+                        Rectangle()
+                            .fill(Color.white)
+                            .frame(
+                                width: innerCornerRadius + 1,
+                                height: innerCornerRadius + 1
+                            )
+                            .accessibilityHidden(true)
+                    }
                 }
         }
         .padding(matInset)
