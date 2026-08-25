@@ -11,7 +11,7 @@ let package = Package(
     products: [
         .library(name: "PinaxCore", targets: ["PinaxCore"]),
         .library(name: "PinaxCloudSync", targets: ["PinaxCloudSync"]),
-        .executable(name: "pinax-agent", targets: ["PinaxAgent"]),
+        .executable(name: "mood-agent", targets: ["PinaxAgent"]),
     ],
     targets: [
         .target(

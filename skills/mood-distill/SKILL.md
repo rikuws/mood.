@@ -1,7 +1,7 @@
 ---
 name: mood-distill
-description: Distill the mood, style, and creative direction from a mood. moodboard project using the local pinax-agent library. Use when the user wants to extract visual taste, palette, atmosphere, or direction from a moodboard, apply a mood. project to design or writing work, or asks to distill, capture the vibe, or turn saved references into portable creative context.
-compatibility: Requires macOS with mood.app installed (bundled pinax-agent) and local read access to the mood. library. Does not mutate the library.
+description: Distill the mood, style, and creative direction from a mood. moodboard project using the local mood-agent library. Use when the user wants to extract visual taste, palette, atmosphere, or direction from a moodboard, apply a mood. project to design or writing work, or asks to distill, capture the vibe, or turn saved references into portable creative context.
+compatibility: Requires macOS with mood.app installed (bundled mood-agent) and local read access to the mood. library. Does not mutate the library.
 metadata:
   version: "1.0"
   argument-hint: "<project-name-or-uuid>"
@@ -25,7 +25,7 @@ If the user only asked to distill, stop after the brief. If they asked to make o
 
 This is local and macOS-only. Cloud agents cannot see the user's mood. library.
 
-1. Locate `pinax-agent` by running [scripts/find-pinax-agent.sh](scripts/find-pinax-agent.sh) from this skill directory. If the script is missing, try `/Applications/mood.app/Contents/Helpers/pinax-agent`, then `$HOME/Applications/mood.app/Contents/Helpers/pinax-agent`. `PINAX_AGENT` overrides the path.
+1. Locate `mood-agent` by running [scripts/find-mood-agent.sh](scripts/find-mood-agent.sh) from this skill directory. If the script is missing, try `/Applications/mood.app/Contents/Helpers/mood-agent`, then `$HOME/Applications/mood.app/Contents/Helpers/mood-agent`. `MOOD_AGENT` overrides the path. Older installs may still ship `pinax-agent`; the finder accepts that name as a fallback.
 2. Confirm the helper runs. A signed install reads the App Group library. An unsigned Debug helper falls back to `~/Library/Application Support/Pinax` unless `PINAX_STORAGE_DIRECTORY` is set.
 3. Read [references/agent-api.md](references/agent-api.md) if you need response shapes or error codes.
 
@@ -33,7 +33,7 @@ This is local and macOS-only. Cloud agents cannot see the user's mood. library.
 
 If the user named a project, use that name or UUID. If they did not:
 
-1. Run `"$PINAX_AGENT" projects --pretty`.
+1. Run `"$MOOD_AGENT" projects --pretty`.
 2. If there is exactly one project, use it.
 3. If several projects exist, match against the user's wording (trim, case, and diacritics are ignored by the CLI). Prefer calling `inspirations` with the returned UUID.
 4. If nothing matches or several names collide, list the project names and counts. Do not invent a board.
@@ -43,7 +43,7 @@ General is the unsorted catch-all and is not a project. Distill a curated projec
 ## Fetch the board
 
 ```sh
-"$PINAX_AGENT" inspirations --project "<name-or-uuid>" --pretty
+"$MOOD_AGENT" inspirations --project "<name-or-uuid>" --pretty
 ```
 
 Reject the payload if `ok` is not true or `apiVersion` is not `1`. On `project_not_found` or `ambiguous_project`, call `projects` and resolve again.

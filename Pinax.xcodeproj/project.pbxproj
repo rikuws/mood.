@@ -151,7 +151,7 @@
 		AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserSetupView.swift; sourceTree = "<group>"; };
 		AEEDA3EB99E6CC5AD40A1785 /* PinaxColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxColor.swift; sourceTree = "<group>"; };
 		BDA09240C82D4486947662C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		C09FDC155FD3B7B1808DFF55 /* PinaxAgent */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = PinaxAgent; path = "pinax-agent"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C09FDC155FD3B7B1808DFF55 /* PinaxAgent */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = PinaxAgent; path = "mood-agent"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C421984B2C307DCC855CABA7 /* InspirationEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationEditorSheet.swift; sourceTree = "<group>"; };
 		C5F25D0B681D7DBDF140A01D /* IOSInspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSInspirationCard.swift; sourceTree = "<group>"; };
 		C7A3B85355F1E375738700D9 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -704,7 +704,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\nhelpers_dir=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers\"\nresources_dir=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nmkdir -p \"$helpers_dir\" \"$resources_dir\"\nditto \"$BUILT_PRODUCTS_DIR/PinaxNativeHost\" \"$helpers_dir/PinaxNativeHost\"\nchmod 755 \"$helpers_dir/PinaxNativeHost\"\nditto \"$BUILT_PRODUCTS_DIR/pinax-agent\" \"$helpers_dir/pinax-agent\"\nchmod 755 \"$helpers_dir/pinax-agent\"\nif [ -d \"$SRCROOT/BrowserExtension/dist\" ]; then\n  rm -rf \"$resources_dir/BrowserExtension\"\n  ditto \"$SRCROOT/BrowserExtension/dist\" \"$resources_dir/BrowserExtension\"\nfi\n";
+			shellScript = "set -eu\nhelpers_dir=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers\"\nresources_dir=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nmkdir -p \"$helpers_dir\" \"$resources_dir\"\nditto \"$BUILT_PRODUCTS_DIR/PinaxNativeHost\" \"$helpers_dir/PinaxNativeHost\"\nchmod 755 \"$helpers_dir/PinaxNativeHost\"\nditto \"$BUILT_PRODUCTS_DIR/mood-agent\" \"$helpers_dir/mood-agent\"\nchmod 755 \"$helpers_dir/mood-agent\"\nif [ -d \"$SRCROOT/BrowserExtension/dist\" ]; then\n  rm -rf \"$resources_dir/BrowserExtension\"\n  ditto \"$SRCROOT/BrowserExtension/dist\" \"$resources_dir/BrowserExtension\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -892,7 +892,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax.AgentAPI;
-				PRODUCT_NAME = "pinax-agent";
+				PRODUCT_NAME = "mood-agent";
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -1144,7 +1144,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.rikuwikman.Pinax.AgentAPI;
-				PRODUCT_NAME = "pinax-agent";
+				PRODUCT_NAME = "mood-agent";
 				SDKROOT = macosx;
 			};
 			name = Release;

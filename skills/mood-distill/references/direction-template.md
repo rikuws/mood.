@@ -4,7 +4,7 @@ Write the brief in this order. Omit a section only when the board gives no evide
 
 ## Project
 
-- Name, UUID, and item count from `pinax-agent`
+- Name, UUID, and item count from `mood-agent`
 - One line on what the collection actually contains (interiors, garments, interfaces, landscapes, objects, type, mixed)
 
 ## Thesis

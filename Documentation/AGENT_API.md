@@ -3,8 +3,11 @@
 The macOS app bundles a read-only command-line API at:
 
 ```text
-mood.app/Contents/Helpers/pinax-agent
+mood.app/Contents/Helpers/mood-agent
 ```
+
+Older Mac builds may still ship `pinax-agent` at the same Helpers path. The JSON
+contract is unchanged.
 
 It reads the same coordinated App Group repository as the mood. UI. The app does not need
 to be running, no network listener is opened, and the API never mutates the library. A
@@ -20,7 +23,7 @@ return a structured error and exit `2`. `--pretty` changes formatting only.
 ## Discover projects
 
 ```sh
-/Applications/mood.app/Contents/Helpers/pinax-agent projects --pretty
+/Applications/mood.app/Contents/Helpers/mood-agent projects --pretty
 ```
 
 ```json
@@ -47,7 +50,7 @@ Pass either the project's name or UUID. Name matching trims whitespace and ignor
 and diacritics. Results are newest-first, matching the mood. library.
 
 ```sh
-/Applications/mood.app/Contents/Helpers/pinax-agent \
+/Applications/mood.app/Contents/Helpers/mood-agent \
   inspirations --project "Website refresh" --pretty
 ```
 
@@ -117,7 +120,7 @@ forward-compatible additions and reject an `apiVersion` it does not support.
 
 ## Distill a project's mood
 
-`pinax-agent` is the read path, not a synthesizer. Distilling palette, atmosphere, and
+`mood-agent` is the read path, not a synthesizer. Distilling palette, atmosphere, and
 creative direction is an agent skill: fetch the project, look at local images and text,
 then write a portable brief.
 

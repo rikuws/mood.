@@ -66,7 +66,7 @@ targets:
           - group.com.rikuwikman.pinax
     settings:
       base:
-        PRODUCT_NAME: pinax-agent
+        PRODUCT_NAME: mood-agent
         PRODUCT_BUNDLE_IDENTIFIER: com.rikuwikman.Pinax.AgentAPI
         MACOSX_DEPLOYMENT_TARGET: "14.0"
 
@@ -136,8 +136,8 @@ targets:
           mkdir -p "$helpers_dir" "$resources_dir"
           ditto "$BUILT_PRODUCTS_DIR/PinaxNativeHost" "$helpers_dir/PinaxNativeHost"
           chmod 755 "$helpers_dir/PinaxNativeHost"
-          ditto "$BUILT_PRODUCTS_DIR/pinax-agent" "$helpers_dir/pinax-agent"
-          chmod 755 "$helpers_dir/pinax-agent"
+          ditto "$BUILT_PRODUCTS_DIR/mood-agent" "$helpers_dir/mood-agent"
+          chmod 755 "$helpers_dir/mood-agent"
           if [ -d "$SRCROOT/BrowserExtension/dist" ]; then
             rm -rf "$resources_dir/BrowserExtension"
             ditto "$SRCROOT/BrowserExtension/dist" "$resources_dir/BrowserExtension"

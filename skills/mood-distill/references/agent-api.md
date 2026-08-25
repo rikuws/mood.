@@ -1,4 +1,4 @@
-# pinax-agent (version 1)
+# mood-agent (version 1)
 
 Read-only JSON CLI bundled in mood. for Mac. It does not require the app process
 to be running, opens no network listener, and never mutates the library.
@@ -6,7 +6,7 @@ to be running, opens no network listener, and never mutates the library.
 Default helper path:
 
 ```text
-/Applications/mood.app/Contents/Helpers/pinax-agent
+/Applications/mood.app/Contents/Helpers/mood-agent
 ```
 
 All successful responses include `apiVersion: 1` and `ok: true`. Invalid input,
@@ -17,7 +17,7 @@ does not support. Treat unknown fields as forward-compatible additions.
 ## Discover projects
 
 ```sh
-"$PINAX_AGENT" projects --pretty
+"$MOOD_AGENT" projects --pretty
 ```
 
 ```json
@@ -44,7 +44,7 @@ Pass a project name or UUID. Name matching trims whitespace and ignores case
 and diacritics. Results are newest-first.
 
 ```sh
-"$PINAX_AGENT" inspirations --project "Website refresh" --pretty
+"$MOOD_AGENT" inspirations --project "Website refresh" --pretty
 ```
 
 Each inspiration may include:
