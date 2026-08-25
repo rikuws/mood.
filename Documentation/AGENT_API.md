@@ -114,3 +114,27 @@ Stable error codes in version 1 are:
 An agent skill should call `projects` when it needs to resolve user wording, then use the
 returned UUID with `inspirations --project <uuid>`. Treat unknown response fields as
 forward-compatible additions and reject an `apiVersion` it does not support.
+
+## Distill a project's mood
+
+`pinax-agent` is the read path, not a synthesizer. Distilling palette, atmosphere, and
+creative direction is an agent skill: fetch the project, look at local images and text,
+then write a portable brief.
+
+The skill lives at [`skills/mood-distill`](../skills/mood-distill). It follows the
+[Agent Skills](https://agentskills.io) format so Cursor, Claude Code, Codex, and other
+compatible agents can load it. Install it into an agent's skill directory, or from this
+repository:
+
+```sh
+npx skills add https://github.com/rikuws/mood. --skill mood-distill -g
+```
+
+```sh
+cp -R skills/mood-distill ~/.cursor/skills/mood-distill
+# or
+cp -R skills/mood-distill ~/.agents/skills/mood-distill
+```
+
+The helper must be able to read the same Mac library as mood. Cloud agents cannot see a
+user's local moodboards. The skill never writes `library.json` or `Media/`.

@@ -46,7 +46,10 @@ is a read-only, versioned JSON command API that discovers projects and fetches a
 project's inspirations. The helper reads through `LibraryRepository`, including coordinated
 file access and safe local-media path resolution; it does not require the app process to be
 running and does not expose a network listener. See [AGENT_API.md](AGENT_API.md) for its
-contract.
+contract. Distilling mood and style from those records is an Agent Skill
+([`skills/mood-distill`](../skills/mood-distill)), not a CLI computation: the helper
+returns JSON and local image paths; the agent looks at the collection and writes a
+portable brief.
 
 ## Local storage
 

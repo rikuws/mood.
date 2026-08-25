@@ -13,6 +13,7 @@ mood. is a local-first native macOS and iOS visual moodboard for collecting imag
 - `BrowserExtension/`: source-only Manifest V3 Chromium extension, Node tests/build script, and ignored generated `dist/`.
 - `NativeHost/`: separate Swift package and Xcode library/tool targets for framed native messaging and the `pinax://capture` bridge.
 - `AgentAPI/`: `pinax-agent` executable source; read-only JSON through `LibraryRepository`; bundled into the Mac app.
+- `skills/`: portable Agent Skills. `mood-distill` fetches a project through `pinax-agent` and synthesizes creative direction from saved imagery and notes.
 - `Tests/`: root `PinaxCoreTests`. Also `Sync/Tests`, `NativeHost/Tests`, `Mac/BrowserIntegration/Tests`, and `BrowserExtension/tests`.
 
 ## Generate and open
@@ -49,6 +50,7 @@ swift test
 (cd NativeHost && swift test)
 (cd Mac/BrowserIntegration && swift test)
 (cd BrowserExtension && npm run check)
+bash skills/mood-distill/tests/find-pinax-agent.test.sh
 ```
 
 `swift test` runs `PinaxCoreTests` and deterministic `PinaxCloudSyncTests`. Signed, provisioned targets are required for App Group and live CloudKit.

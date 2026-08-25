@@ -103,6 +103,15 @@ same coordinated App Group snapshot as the UI without requiring mood. to be open
 See [Documentation/AGENT_API.md](Documentation/AGENT_API.md) for the version 1 response
 schema, local-image paths, exit behavior, and stable error codes.
 
+To turn a project into portable creative direction, install the [`mood-distill`](skills/mood-distill)
+agent skill. It locates `pinax-agent`, reads the project's imagery and notes, and
+synthesizes a brief (palette, atmosphere, materials, composition, voice, constraints)
+without mutating the library.
+
+```sh
+npx skills add https://github.com/rikuws/mood. --skill mood-distill -g
+```
+
 ## Share from iOS and X
 
 1. Build, sign, and install the **PinaxiOS** scheme; the **Save to mood.** Share Extension is embedded automatically.
@@ -126,6 +135,9 @@ swift test
 
 # Extension tests, validation, and dist build
 (cd BrowserExtension && npm run check)
+
+# mood-distill helper lookup
+bash skills/mood-distill/tests/find-pinax-agent.test.sh
 ```
 
 ## Repository map
@@ -133,6 +145,7 @@ swift test
 ```text
 Shared/                 Local models, canonical URL dedupe, coordinated JSON repository
 AgentAPI/               Bundled read-only JSON command API for agent skills
+skills/                 Portable Agent Skills (mood-distill)
 Sync/                   CloudKit backend, merge engine, tombstones, sync state and tests
 Mac/                    Native macOS library UI and Chromium installer
 iOS/                    Native iOS library UI
