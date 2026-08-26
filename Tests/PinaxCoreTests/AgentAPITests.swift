@@ -110,6 +110,7 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         XCTAssertThrowsError(
             try PinaxAgentCommand.parse(arguments: ["inspirations", "Mobile App"])
         )
+        XCTAssertTrue(PinaxAgentCommand.usage.contains("mood-agent"))
     }
 
     private func makeRepository() throws -> LibraryRepository {

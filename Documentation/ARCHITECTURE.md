@@ -25,7 +25,7 @@ Chromium toolbar / X mood. action / confirmed X Bookmark
              library.json + Media/
                          ^  ^
                          |  |
-                         |  +--- pinax-agent (read-only JSON API)
+                         |  +--- mood-agent (read-only JSON API)
                          |
               shared App Group container
                          |
@@ -41,12 +41,15 @@ The Mac native host never edits the library. It validates the extension payload 
 
 The iOS Share Extension writes directly to the same App Group library because a share extension cannot depend on launching its containing app. It saves locally before attempting a three-second best-effort CloudKit sync.
 
-The macOS app also bundles `Contents/Helpers/pinax-agent` for local agent integrations. It
+The macOS app also bundles `Contents/Helpers/mood-agent` for local agent integrations. It
 is a read-only, versioned JSON command API that discovers projects and fetches a selected
 project's inspirations. The helper reads through `LibraryRepository`, including coordinated
 file access and safe local-media path resolution; it does not require the app process to be
 running and does not expose a network listener. See [AGENT_API.md](AGENT_API.md) for its
-contract.
+contract. Distilling mood and style from those records is an Agent Skill
+([`skills/mood-distill`](../skills/mood-distill)), not a CLI computation: the helper
+returns JSON and local image paths; the agent looks at the collection and writes a
+portable brief.
 
 ## Local storage
 

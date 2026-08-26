@@ -1,7 +1,7 @@
 import Foundation
 
 /// The read-only, machine-facing API exposed by the macOS app's bundled
-/// `pinax-agent` helper.
+/// `mood-agent` helper.
 public enum PinaxAgentAPIVersion {
     public static let current = 1
 }
@@ -310,5 +310,5 @@ public enum PinaxAgentCommand: Equatable, Sendable {
         }
     }
 
-    public static let usage = "Usage: pinax-agent projects [--pretty] | pinax-agent inspirations --project <name-or-uuid> [--pretty]"
+    public static let usage = "Usage: mood-agent projects [--pretty] | mood-agent inspirations --project <name-or-uuid> [--pretty]"
 }

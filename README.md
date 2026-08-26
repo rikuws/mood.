@@ -91,17 +91,26 @@ The native host validates a capture and targets the containing `mood.app` bundle
 
 ## Agent API on macOS
 
-The Mac app bundles `Contents/Helpers/pinax-agent`, a local read-only JSON API intended for
+The Mac app bundles `Contents/Helpers/mood-agent`, a local read-only JSON API intended for
 agent skills and other automation. It reads through `LibraryRepository`, so requests see the
 same coordinated App Group snapshot as the UI without requiring mood. to be open.
 
 ```sh
-/Applications/mood.app/Contents/Helpers/pinax-agent projects --pretty
-/Applications/mood.app/Contents/Helpers/pinax-agent inspirations --project "Website refresh" --pretty
+/Applications/mood.app/Contents/Helpers/mood-agent projects --pretty
+/Applications/mood.app/Contents/Helpers/mood-agent inspirations --project "Website refresh" --pretty
 ```
 
 See [Documentation/AGENT_API.md](Documentation/AGENT_API.md) for the version 1 response
 schema, local-image paths, exit behavior, and stable error codes.
+
+To turn a project into portable creative direction, install the [`mood-distill`](skills/mood-distill)
+agent skill. It locates `mood-agent`, reads the project's imagery and notes, and
+synthesizes a brief (palette, atmosphere, materials, composition, voice, constraints)
+without mutating the library.
+
+```sh
+npx skills add https://github.com/rikuws/mood. --skill mood-distill -g
+```
 
 ## Share from iOS and X
 
@@ -126,6 +135,9 @@ swift test
 
 # Extension tests, validation, and dist build
 (cd BrowserExtension && npm run check)
+
+# mood-distill helper lookup
+bash skills/mood-distill/tests/find-mood-agent.test.sh
 ```
 
 ## Repository map
@@ -133,6 +145,7 @@ swift test
 ```text
 Shared/                 Local models, canonical URL dedupe, coordinated JSON repository
 AgentAPI/               Bundled read-only JSON command API for agent skills
+skills/                 Portable Agent Skills (mood-distill)
 Sync/                   CloudKit backend, merge engine, tombstones, sync state and tests
 Mac/                    Native macOS library UI and Chromium installer
 iOS/                    Native iOS library UI
