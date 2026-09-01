@@ -154,6 +154,10 @@
       if (url.searchParams.has("name")) {
         url.searchParams.set("name", "large");
       }
+      const format = url.searchParams.get("format");
+      if (format && /^(avif|webp)$/i.test(format)) {
+        url.searchParams.set("format", "jpg");
+      }
     }
     return url.href;
   }
@@ -245,10 +249,13 @@
   }
 
   function findXPostLink(article, baseURL) {
-    const timeLink = article.querySelector("time")?.closest("a[href]");
+    const timeLink = article.querySelector?.("time")?.closest?.("a[href]");
+    const extraLinks = typeof article.querySelectorAll === "function"
+      ? Array.from(article.querySelectorAll('a[href*="/status/"]'))
+      : [];
     const candidates = [
       timeLink,
-      ...article.querySelectorAll('a[href*="/status/"]')
+      ...extraLinks
     ].filter(Boolean);
 
     for (const link of candidates) {
@@ -297,14 +304,30 @@
     };
   }
 
+  function collectMediaElements(root) {
+    if (!root || typeof root.querySelectorAll !== "function") {
+      return [];
+    }
+    return Array.from(root.querySelectorAll([
+      "img",
+      "source",
+      "video",
+      "[poster]",
+      "[srcset]",
+      '[style*="background-image"]',
+      '[style*="pbs.twimg.com"]'
+    ].join(", ")));
+  }
+
   function extractXImage(article, baseURL) {
     const selectors = [
-      '[data-testid="tweetPhoto"] img, [data-testid="tweetPhoto"] source, [data-testid="tweetPhoto"][style*="background-image"]',
+      '[data-testid="tweetPhoto"] img, [data-testid="tweetPhoto"] source, [data-testid="tweetPhoto"] [style*="background-image"], [data-testid="tweetPhoto"][style*="background-image"]',
       'video[poster]',
       '[data-testid="videoPlayer"] video, [data-testid="videoPlayer"] [style*="background-image"]',
       '[data-testid="card.wrapper"] img, [data-testid="card.wrapper"] source, [data-testid="card.wrapper"] [style*="background-image"]',
-      'a[href*="/photo/"] img, a[href*="/photo/"] source',
-      'img[src*="pbs.twimg.com/media"], img[srcset*="pbs.twimg.com/media"]'
+      'a[href*="/photo/"] img, a[href*="/photo/"] source, a[aria-label="Image"] img',
+      'img[src*="pbs.twimg.com/media"], img[srcset*="pbs.twimg.com/media"]',
+      'img[src*="pbs.twimg.com/amplify_video_thumb"], img[src*="pbs.twimg.com/ext_tw_video_thumb"], img[src*="pbs.twimg.com/tweet_video_thumb"]'
     ];
 
     for (const selector of selectors) {
@@ -315,6 +338,23 @@
       if (normalized) {
         return normalized;
       }
+    }
+
+    const fromArticle = firstUsefulElementImage(collectMediaElements(article), baseURL);
+    if (fromArticle) {
+      return fromArticle;
+    }
+
+    const documentObject = article.ownerDocument;
+    const pagePost = parseXStatusURL(baseURL);
+    const articlePost = findXPostLink(article, baseURL);
+    if (
+      documentObject
+      && pagePost
+      && articlePost
+      && pagePost.statusID === articlePost.statusID
+    ) {
+      return firstUsefulImage(documentObject, baseURL);
     }
 
     return null;
@@ -330,7 +370,11 @@
       throw new Error("Could not find the canonical URL for this X post");
     }
 
-    const text = truncateText(elementText(article.querySelector('[data-testid="tweetText"]')), 10_000);
+    const text = truncateText(
+      elementText(article.querySelector('[data-testid="tweetText"]'))
+        || elementText(article.querySelector('[itemprop="articleBody"], [itemprop="text"]')),
+      10_000
+    );
     const author = extractXAuthor(article, post);
     const imageURL = extractXImage(article, pageURL);
     const item = {
@@ -364,16 +408,21 @@
     }
 
     const focusedElement = documentObject.activeElement;
-    const focusedArticle = focusedElement?.closest?.('article[data-testid="tweet"]');
+    const focusedArticle = focusedElement?.closest?.(
+      'article[data-testid="tweet"], article[itemtype*="SocialMediaPosting"]'
+    );
     const pagePost = parseXStatusURL(baseURL);
+    const articles = Array.from(documentObject.querySelectorAll(
+      'article[data-testid="tweet"], article[itemtype*="SocialMediaPosting"]'
+    ));
     const matchingArticle = pagePost
-      ? Array.from(documentObject.querySelectorAll('article[data-testid="tweet"]')).find((article) => {
+      ? articles.find((article) => {
         return findXPostLink(article, baseURL)?.statusID === pagePost.statusID;
       })
       : null;
     const xArticle = focusedArticle
       || matchingArticle
-      || (pagePost ? documentObject.querySelector('article[data-testid="tweet"]') : null);
+      || (pagePost ? articles[0] || documentObject.querySelector('article[data-testid="tweet"]') : null);
     if (xArticle) {
       try {
         return extractXPost(xArticle, baseURL);

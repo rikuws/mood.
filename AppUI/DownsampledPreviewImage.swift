@@ -104,19 +104,18 @@ private enum PreviewImageLoading {
                 return existing
             }
             let created = Task.detached(priority: .userInitiated) {
-                let produced: CGImage?
+                var produced: CGImage?
                 if let localURL = request.localURL {
                     produced = PreviewImageDecoder.thumbnail(
                         fromFileURL: localURL,
                         maxPixelSize: request.maxPixelSize
                     )
-                } else if let remoteURL = request.remoteURL {
+                }
+                if produced == nil, let remoteURL = request.remoteURL {
                     produced = await remoteThumbnail(
                         from: remoteURL,
                         maxPixelSize: request.maxPixelSize
                     )
-                } else {
-                    produced = nil
                 }
 
                 if let produced {
@@ -151,6 +150,15 @@ private enum PreviewImageLoading {
         do {
             var request = URLRequest(url: url)
             request.timeoutInterval = 20
+            request.setValue(
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    + "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15",
+                forHTTPHeaderField: "User-Agent"
+            )
+            request.setValue(
+                "image/jpeg,image/jpg,image/png,image/webp,image/*,*/*;q=0.8",
+                forHTTPHeaderField: "Accept"
+            )
             let (data, response) = try await URLSession.shared.data(for: request)
             if let http = response as? HTTPURLResponse,
                !(200..<300).contains(http.statusCode) {

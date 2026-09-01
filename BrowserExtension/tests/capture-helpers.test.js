@@ -74,13 +74,20 @@ test("accepts useful HTTP images and rejects avatars or unsafe schemes", () => {
   assert.equal(capture.isUsefulImageURL("data:image/png;base64,AAAA"), false);
 });
 
-test("promotes X media URLs to a stable large rendition", () => {
+test("promotes X media URLs to a stable large JPEG rendition", () => {
   assert.equal(
     capture.normalizeXMediaURL(
       "https://pbs.twimg.com/media/HN1QBejaQAAr6Jn?format=jpg&name=small",
       "https://x.com/pinax/status/123"
     ),
     "https://pbs.twimg.com/media/HN1QBejaQAAr6Jn?format=jpg&name=large"
+  );
+  assert.equal(
+    capture.normalizeXMediaURL(
+      "https://pbs.twimg.com/media/HQy43uLaAAAABib?format=webp&name=small",
+      "https://x.com/pinax/status/123"
+    ),
+    "https://pbs.twimg.com/media/HQy43uLaAAAABib?format=jpg&name=large"
   );
   assert.equal(
     capture.normalizeXMediaURL(
@@ -100,6 +107,9 @@ test("extracts a usable X image after invalid candidates and from srcset", () =>
     ].join(", ")
   });
   const article = {
+    querySelector() {
+      return null;
+    },
     querySelectorAll(selector) {
       return selector.startsWith('[data-testid="tweetPhoto"]')
         ? [invalid, responsive]
@@ -110,6 +120,57 @@ test("extracts a usable X image after invalid candidates and from srcset", () =>
   assert.equal(
     capture.extractXImage(article, "https://x.com/pinax/status/123"),
     "https://pbs.twimg.com/media/example?format=jpg&name=large"
+  );
+});
+
+test("extracts X images from photo links when tweetPhoto test ids are absent", () => {
+  const img = fakeMedia({
+    src: "https://pbs.twimg.com/media/HQy43uLaAAAABib?format=webp&name=small",
+    srcset: [
+      "https://pbs.twimg.com/media/HQy43uLaAAAABib?format=webp&name=small 680w",
+      "https://pbs.twimg.com/media/HQy43uLaAAAABib?format=webp&name=large 2048w"
+    ].join(", ")
+  });
+  const article = {
+    querySelector() {
+      return null;
+    },
+    querySelectorAll(selector) {
+      return selector.includes("/photo/") || selector.includes('aria-label="Image"')
+        ? [img]
+        : [];
+    }
+  };
+
+  assert.equal(
+    capture.extractXImage(article, "https://x.com/akhakim_/status/2093251204705140809"),
+    "https://pbs.twimg.com/media/HQy43uLaAAAABib?format=jpg&name=large"
+  );
+});
+
+test("falls back to Open Graph image for the open status page", () => {
+  const documentObject = {
+    images: [],
+    querySelectorAll(selector) {
+      if (selector === 'meta[property="og:image"]') {
+        return [fakeMedia({ content: "https://pbs.twimg.com/media/post.jpg:large" })];
+      }
+      return [];
+    }
+  };
+  const article = {
+    ownerDocument: documentObject,
+    querySelector() {
+      return null;
+    },
+    querySelectorAll() {
+      return [];
+    }
+  };
+
+  assert.equal(
+    capture.extractXImage(article, "https://x.com/pinax/status/123"),
+    "https://pbs.twimg.com/media/post.jpg:large"
   );
 });
 

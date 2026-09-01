@@ -118,7 +118,10 @@ public struct WebPreviewFetcher: WebPreviewFetching, Sendable {
         do {
             var request = URLRequest(url: url)
             request.timeoutInterval = requestTimeout
-            request.setValue("image/avif,image/webp,image/apng,image/*,*/*;q=0.8", forHTTPHeaderField: "Accept")
+            request.setValue(
+                "image/jpeg,image/jpg,image/png,image/webp,image/*,*/*;q=0.8",
+                forHTTPHeaderField: "Accept"
+            )
             let (data, response) = try await session.data(for: request)
             guard let response = response as? HTTPURLResponse,
                   (200..<300).contains(response.statusCode),
@@ -372,8 +375,13 @@ public enum WebPreviewHTMLParser {
               scheme == "http" || scheme == "https" else {
             return nil
         }
-        if url.host()?.lowercased() == "abs.twimg.com",
-           url.path.lowercased().contains("/rweb/ssr/default/") {
+        let host = url.host()?.lowercased()
+        let path = url.path.lowercased()
+        if host == "abs.twimg.com", path.contains("/rweb/ssr/default/") {
+            return nil
+        }
+        if host == "pbs.twimg.com" || host?.hasSuffix(".twimg.com") == true,
+           path.contains("/profile_images/") {
             return nil
         }
         return url

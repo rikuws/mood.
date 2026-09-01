@@ -399,6 +399,7 @@ struct MacLibraryView: View {
         case .capture:
             CaptureSheet(projects: projects, initialProjectID: currentProjectID) { payload in
                 let result = try await store.capture(payload)
+                _ = await store.fillMissingPreview(for: result.inspiration.id)
                 selectedInspirationID = result.inspiration.id
                 showToast(result.inserted ? "Saved to mood." : "Already saved — details refreshed")
                 requestSync()
@@ -528,6 +529,7 @@ struct MacLibraryView: View {
                             assignProjectOnDuplicate: true
                         )
                     )
+                    _ = await store.fillMissingPreview(for: result.inspiration.id)
                     newest = result.inspiration
                 }
                 selectedInspirationID = newest?.id

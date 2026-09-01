@@ -42,14 +42,19 @@ The Mac native host never edits the library. It validates the extension payload 
 The iOS Share Extension writes directly to the same App Group library because a share extension cannot depend on launching its containing app. It saves locally before attempting a three-second best-effort CloudKit sync.
 
 The macOS app also bundles `Contents/Helpers/mood-agent` for local agent integrations. It
-is a read-only, versioned JSON command API that discovers projects and fetches a selected
-project's inspirations. The helper reads through `LibraryRepository`, including coordinated
-file access and safe local-media path resolution; it does not require the app process to be
-running and does not expose a network listener. See [AGENT_API.md](AGENT_API.md) for its
-contract. Distilling mood and style from those records is an Agent Skill
-([`skills/mood-distill`](../skills/mood-distill)), not a CLI computation: the helper
-returns JSON and local image paths; the agent looks at the collection and writes a
-portable brief.
+is a read-only, versioned JSON command API that discovers projects, fetches a selected
+project's inspirations, or resolves one exact saved item by UUID. The helper reads through
+`LibraryRepository`, including coordinated file access and safe local-media path resolution;
+it does not require the app process to be running and does not expose a network listener.
+See [AGENT_API.md](AGENT_API.md) for its contract.
+
+Design-essence extraction is an agent layer over that read-only API rather than an inference
+service inside the native app. [`skills/mood-distill`](../skills/mood-distill) inspects local
+media when available, discounts duplicates, and produces the versioned `DesignEssence` 1.0
+contract through evidence, abstraction, and directive passes. `mood-agent` also validates a
+temporary essence JSON file without opening the library. Generated claims are not written to
+`library.json` or CloudKit. See [DESIGN_ESSENCE.md](DESIGN_ESSENCE.md) for the schema and
+privacy boundary.
 
 ## Local storage
 

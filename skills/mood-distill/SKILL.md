@@ -1,78 +1,127 @@
 ---
 name: mood-distill
-description: Distill the mood, style, and creative direction from a mood. moodboard project using the local mood-agent library. Use when the user wants to extract visual taste, palette, atmosphere, or direction from a moodboard, apply a mood. project to design or writing work, or asks to distill, capture the vibe, or turn saved references into portable creative context.
-compatibility: Requires macOS with mood.app installed (bundled mood-agent) and local read access to the mood. library. Does not mutate the library.
+description: Extract an evidence-grounded, content-minimized design essence from a mood. project, one saved mood. item, or a single image. Use for visual style, expressed taste, design intent, creative direction, portable design rules, or applying references to later design work.
+compatibility: Requires image inspection. Saved mood. sources require macOS with mood.app installed and local library access. Extraction is read-only.
 metadata:
-  version: "1.0"
-  argument-hint: "<project-name-or-uuid>"
+  version: "2.0"
+  argument-hint: "<project-name-or-uuid | item-uuid | image-path>"
 ---
 
-# Distill a mood. project
+# Distill design essence with mood.
 
-Turn a curated mood. project into portable creative direction. mood. stores imagery, text, authorship, and source context; this skill reads that collection and synthesizes a brief a person or agent can apply. Distillation is a reading task—the CLI only fetches. Never write to the library.
+Turn visual references into portable creative direction. Treat the result as an artifact
+profile: what the selection visibly expresses. Do not claim to recover a creator's hidden
+intent or a person's complete, stable taste.
 
-The collection is open-ended. UI direction is one useful output, alongside brand, spatial, editorial, styling, travel, and other visual direction. Do not collapse a board into a generic UI kit, Tailwind palette, or Inter/SF Pro ramp unless those things are actually in the references.
+Keep the workflow read-only. Never write analysis into the mood. library, download remote
+media into its `Media/` directory, or add an inference service or API credential.
 
-## When to use
+## Prepare the helper
 
-- Distill, extract, or summarize the mood, style, or vibe of a mood. project
-- Apply a named moodboard to design, copy, spatial, or image-generation work
-- Inspect what a mood. project contains before making something in that taste
-
-If the user only asked to distill, stop after the brief. If they asked to make or change something in that taste, distill first, then do the work from the brief.
-
-## Requirements
-
-This is local and macOS-only. Cloud agents cannot see the user's mood. library.
-
-1. Locate `mood-agent` by running [scripts/find-mood-agent.sh](scripts/find-mood-agent.sh) from this skill directory. If the script is missing, try `/Applications/mood.app/Contents/Helpers/mood-agent`, then `$HOME/Applications/mood.app/Contents/Helpers/mood-agent`. `MOOD_AGENT` overrides the path. Older installs may still ship `pinax-agent`; the finder accepts that name as a fallback.
-2. Confirm the helper runs. A signed install reads the App Group library. An unsigned Debug helper falls back to `~/Library/Application Support/Pinax` unless `PINAX_STORAGE_DIRECTORY` is set.
-3. Read [references/agent-api.md](references/agent-api.md) if you need response shapes or error codes.
-
-## Resolve the project
-
-If the user named a project, use that name or UUID. If they did not:
-
-1. Run `"$MOOD_AGENT" projects --pretty`.
-2. If there is exactly one project, use it.
-3. If several projects exist, match against the user's wording (trim, case, and diacritics are ignored by the CLI). Prefer calling `inspirations` with the returned UUID.
-4. If nothing matches or several names collide, list the project names and counts. Do not invent a board.
-
-General is the unsorted catch-all and is not a project. Distill a curated project, not General, unless the user explicitly insists after seeing the project list.
-
-## Fetch the board
+Read [references/agent-api.md](references/agent-api.md), then run the finder once from this
+skill directory before choosing a source branch. Keep its result for every later command:
 
 ```sh
-"$MOOD_AGENT" inspirations --project "<name-or-uuid>" --pretty
+MOOD_AGENT="$(./scripts/find-mood-agent.sh)"
+export MOOD_AGENT
 ```
 
-Reject the payload if `ok` is not true or `apiVersion` is not `1`. On `project_not_found` or `ambiguous_project`, call `projects` and resolve again.
+The finder accepts only a helper whose `--help` advertises both `inspiration --id` and
+`validate-essence --file`. Do not bypass its incompatibility error: a helper that only
+supports project listing is too old for this skill and mood. must be upgraded.
 
-If the project has no inspirations, say so and stop. Do not fabricate a mood.
+For a mood. project or saved item, stop if preparation fails and report the finder's error.
+For an arbitrary image, analysis may continue without the helper, but canonical validation
+cannot be claimed; disclose that limitation in the result.
 
-## Look at the references
+## Resolve the source
 
-Read the saved items. Imagery, quotations, source, author, and notes carry the meaning; titles alone are not the board.
+Choose one source shape from the user's request:
 
-1. Scan every item's `title`, `text`, `authorName`, `authorHandle`, `source`, and `url`.
-2. Look at images. Prefer `localImagePath` (absolute path; use a local file-read tool). If that path is missing, try `imageURL`. If neither exists, treat the item as a text-only reference—those are first-class, not failures.
-3. If more than 24 items have images, look at the 24 newest (the API is already newest-first) and note the truncation. Still use titles and notes from the rest.
-4. Keep provenance attached to what you claim. Do not strip authors or sources.
+- **Project:** call `projects --pretty`, resolve the user's wording, then call
+  `inspirations --project <uuid> --pretty`. Use the UUID after resolution.
+- **Saved item:** call `inspiration --id <uuid> --pretty` only when the exact item UUID was
+  supplied or is already known from a project response. A General item needs a separately
+  supplied or previously known UUID; do not invent title-based discovery.
+- **Single image:** inspect the user attachment or explicit local path directly. It does not
+  need to be saved in mood.
 
-## Distill
+For a saved record, prefer a readable `localImagePath`. Use `imageURL` only when local media
+is absent and remote retrieval is available within the user's request. Never infer visual
+properties from title, note, author, or URL when the image itself could not be inspected.
 
-Read [references/direction-template.md](references/direction-template.md) and write the brief in that shape.
+If the project is empty, say so and stop. Text-only items may inform voice and provenance,
+but they are not visual evidence. Report every skipped or unavailable visual.
 
-Rules:
+## Consolidate references
 
-- Observe before prescribing. Every color, material, type move, and constraint must be grounded in what you saw.
-- Preserve tension. If the board mixes quiet rooms with sharp type, say that; do not average it into "minimal."
-- Stay in the board's domain. A fashion board is not a dashboard. A landscape board is not a component library.
-- Do not copy saved text verbatim into generated product copy except as a cited quotation.
-- Do not mutate mood., upload the library, or rewrite `library.json`.
+Deduplicate identical local media by content hash and identical remote URLs. Also cluster
+visual near-duplicates such as resized, recompressed, or tightly cropped copies. Analyze one
+representative per duplicate cluster while preserving every original mood. item ID in source
+provenance. Exact and near-duplicates never increase evidence counts, confidence, coherence,
+or apparent support.
 
-## Apply
+Inspect every unique available visual. When a large set must be handled in batches, retain
+per-asset evidence before synthesis and disclose every uninspected reference. A remote fallback
+must be a public HTTPS image response with bounded payload and no credentials or cookies.
 
-When the user wants work done in this taste, keep the brief in mind and execute. Match atmosphere, palette, material, composition, and voice. Do not bolt the mood. product UI (white card mats, stepped caption cutouts, inverted-ink chrome) onto unrelated work unless the board itself is about mood.
+## Analyze in three passes
 
-Write a file only when the user asked to save the brief.
+Read [references/design-essence-v1.md](references/design-essence-v1.md) before producing a
+result.
+
+1. **Evidence:** record only observable palette behavior, typography, geometry, spacing,
+   surfaces, imagery treatment, hierarchy, alignment, grouping, rhythm, balance, and reading
+   path. Do not infer mood, quality, audience, or intent yet.
+2. **Abstraction:** map observations to semantic axes, signature tensions, likely effects, and
+   candidate invariants. Every inferred claim cites asset IDs and visible cues. For projects,
+   separate common core, accepted variation, contradictions, and clusters instead of averaging
+   incompatible directions.
+3. **Directive:** test candidate invariants against changed copy, subject matter, workflow,
+   and branding. Sort portable rules into `mustPreserve`, `prefer`, `mayVary`, and
+   `mustAvoid`.
+
+Exclude exact copy, logos, brand identity, named products, people, artist identity, and
+specific subject matter unless one is necessary to explain a compositional relationship. Do
+not emit generator-specific prompt jargon. Record accessibility or legibility problems as
+limitations, never as directives.
+
+Palette hex values estimated by eye are `observed`, not `measured`, and require an explicit
+approximation limitation. Use `measured` only after a pixel or color-analysis tool produced
+the values, with that measurement recorded in evidence.
+
+For one image, say "expressed in this image," lower confidence for inferred semantics, and
+omit project coherence. For a project, describe the expressed direction of this selection,
+not stable personal taste.
+
+## Validate and deliver
+
+Create a canonical `DesignEssence` 1.0 object on every run. Use a content hash for one local
+image. For a project, derive `inputHash` from ordered source tuples containing asset ID, role,
+and local content hash or canonical remote-image URL.
+
+Write the candidate only to a temporary file outside the mood. library, then validate it:
+
+```sh
+"$MOOD_AGENT" validate-essence --file <temporary-json-path> --pretty
+```
+
+Correct every issue before delivery. Validation never persists the essence or changes the
+library. If an arbitrary image is analyzed and the installed helper is unavailable, report
+that canonical validation could not run rather than claiming it passed.
+
+Lead with the concise reading described in
+[references/direction-template.md](references/direction-template.md). Keep the canonical
+object internal for an ordinary prose request. Include full JSON when the user asks for
+structured output, export, machine use, or downstream generation context.
+
+Always disclose source accounting with these exact labels:
+
+- `inspected`: unique visuals actually analyzed after duplicate consolidation;
+- `duplicatesRemoved`: exact or perceptual near-duplicate references discounted;
+- `remoteOnlyInspected`: the subset inspected remotely because no local media was available;
+- `skipped`: references that could not be inspected.
+
+If the user asked to make or change something in this taste, distill first and then do that
+work from the validated direction. Never bolt mood.'s own product chrome onto unrelated work
+unless the references themselves support it.

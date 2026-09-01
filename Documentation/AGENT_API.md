@@ -17,8 +17,14 @@ to `~/Library/Application Support/Pinax`; `PINAX_STORAGE_DIRECTORY` can override
 in Debug builds.
 
 All machine responses use API version `1`, write JSON to stdout, and terminate with a
-newline. Successful calls exit `0`. Invalid input, missing projects, and storage failures
-return a structured error and exit `2`. `--pretty` changes formatting only.
+newline. Successful calls exit `0`. Invalid input, missing records, invalid essence files,
+and storage failures return a structured error and exit `2`. `--pretty` changes formatting
+only.
+
+The version number covers the executable's JSON wire contract. The public Swift symbols in
+`PinaxCore` exist so the separate `mood-agent` target can reuse the implementation; they are
+not a source-stable SDK. External integrations should invoke the helper and consume its
+versioned JSON instead of switching over those Swift enums.
 
 ## Discover projects
 
@@ -93,6 +99,58 @@ Remote preview images use `imageURL`. Locally persisted media uses `localImagePa
 is an absolute path suitable for an agent tool that can read local files. Either value may
 be absent.
 
+## Fetch one saved item
+
+Use an exact item UUID returned by a project inspirations response, supplied separately, or
+already known from a previous result. General items are not discoverable by title or
+description through this API, but a General item can be fetched when its UUID is supplied;
+in that case both `project` and the item's `projectID` are omitted.
+
+```sh
+/Applications/mood.app/Contents/Helpers/mood-agent \
+  inspiration --id F168774A-16DB-4403-95BF-0D721EF2B72D --pretty
+```
+
+The response contains one `inspiration` record with the same media and provenance fields
+as a project response.
+
+## Extract design essence
+
+The repository's `mood-distill` skill uses the project and single-item commands above to
+inspect actual visual media and produce a versioned, evidence-grounded `DesignEssence`
+object. Arbitrary image attachments or local image paths can be analyzed directly without
+first saving them to mood.
+
+The helper supplies source data but does not run a model, persist generated analysis, or
+contact remote previews on its own. See [DESIGN_ESSENCE.md](DESIGN_ESSENCE.md) for the
+contract and privacy boundary.
+
+## Validate a design essence
+
+Validate one JSON file containing a `DesignEssence` object before returning or exporting it:
+
+```sh
+/Applications/mood.app/Contents/Helpers/mood-agent \
+  validate-essence --file /tmp/design-essence.json --pretty
+```
+
+Validation is read-only, accepts file input only, is limited to 10 MiB, and never writes to
+the mood. library. A successful response exits `0`:
+
+```json
+{
+  "apiVersion": 1,
+  "ok": true,
+  "referenceCount": 1,
+  "schemaVersion": "1.0",
+  "sourceKind": "image",
+  "valid": true
+}
+```
+
+Malformed JSON, unreadable input, and contract-validation failures return the normal error
+envelope with stable code `invalid_essence` and exit `2`.
+
 ## Errors
 
 ```json
@@ -111,6 +169,8 @@ Stable error codes in version 1 are:
 - `invalid_arguments`
 - `project_not_found`
 - `ambiguous_project`
+- `inspiration_not_found`
+- `invalid_essence`
 - `storage_error`
 - `internal_error`
 
@@ -118,11 +178,12 @@ An agent skill should call `projects` when it needs to resolve user wording, the
 returned UUID with `inspirations --project <uuid>`. Treat unknown response fields as
 forward-compatible additions and reject an `apiVersion` it does not support.
 
-## Distill a project's mood
+## Distill a design essence
 
-`mood-agent` is the read path, not a synthesizer. Distilling palette, atmosphere, and
-creative direction is an agent skill: fetch the project, look at local images and text,
-then write a portable brief.
+`mood-agent` is the read and validation path, not a synthesizer. Distilling observable
+style, compositional grammar, semantic effects, invariants, and generation constraints is
+an agent skill: fetch the source, inspect the visuals, validate the canonical object, then
+write the useful portable reading.
 
 The skill lives at [`skills/mood-distill`](../skills/mood-distill). It follows the
 [Agent Skills](https://agentskills.io) format so Cursor, Claude Code, Codex, and other

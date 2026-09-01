@@ -167,6 +167,7 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         receivedCaptureURL = true
         Task { @MainActor in
             var capturedAny = false
+            var capturedIDs: [Inspiration.ID] = []
             for url in urls {
                 let requestID = CaptureDeepLink.requestID(from: url)
                 do {
@@ -174,6 +175,7 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
                     let payload = try CaptureDeepLink.payload(from: url)
                     let result = try await store.capture(payload)
                     capturedAny = true
+                    capturedIDs.append(result.inspiration.id)
                     if let requestID {
                         do {
                             try acknowledgementStore.write(
@@ -205,6 +207,12 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
                         name: .pinaxCaptureFailed,
                         object: error.localizedDescription
                     )
+                }
+            }
+
+            if let store = Self.libraryStore {
+                for id in capturedIDs {
+                    _ = await store.fillMissingPreview(for: id)
                 }
             }
 

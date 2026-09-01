@@ -66,6 +66,7 @@ struct IOSLibraryView: View {
                     initialProjectID: selectedProjectID
                 ) { payload in
                     let result = try await store.capture(payload)
+                    _ = await store.fillMissingPreview(for: result.inspiration.id)
                     showMessage(result.inserted ? "Saved to mood." : "Updated in mood.")
                     requestSync()
                 }
@@ -509,6 +510,7 @@ struct IOSLibraryView: View {
             do {
                 let payload = try IOSCaptureDeepLink.payload(from: url)
                 let result = try await store.capture(payload)
+                _ = await store.fillMissingPreview(for: result.inspiration.id)
                 showMessage(result.inserted ? "Saved to mood." : "Updated in mood.")
                 requestSync()
             } catch {

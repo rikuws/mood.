@@ -62,7 +62,8 @@ public final class LibraryStore {
         }
     }
 
-    /// Repairs legacy X shares that contain only a URL. Network failures are
+    /// Repairs saves that never received a preview image, including Mac
+    /// browser captures that already have post text. Network failures are
     /// best-effort and leave the original saved link untouched.
     @discardableResult
     public func enrichMissingXPreviews(
@@ -72,7 +73,7 @@ public final class LibraryStore {
         do {
             let current = try await repository.load()
             let candidates = current.inspirations
-                .filter(Self.needsXPreviewEnrichment)
+                .filter(Self.needsPreviewEnrichment)
                 .sorted { $0.createdAt > $1.createdAt }
                 .prefix(max(0, maximumCount))
 
@@ -115,6 +116,34 @@ public final class LibraryStore {
         } catch {
             record(error)
             return 0
+        }
+    }
+
+    /// Fills a missing remote/local preview after a capture without treating
+    /// it as another user save. Returns `true` when library metadata changed.
+    @discardableResult
+    public func fillMissingPreview(
+        for id: Inspiration.ID,
+        using fetcher: any WebPreviewFetching = WebPreviewFetcher()
+    ) async -> Bool {
+        do {
+            let current = try await repository.load()
+            guard let inspiration = current.inspirations.first(where: { $0.id == id }),
+                  Self.needsPreviewEnrichment(inspiration),
+                  let preview = await fetcher.fetchPreview(for: inspiration.url),
+                  preview.hasContent else {
+                return false
+            }
+
+            let after = try await repository.enrichInspiration(id: id, with: preview)
+            if after != inspiration {
+                try await refreshSnapshot()
+                return true
+            }
+            return false
+        } catch {
+            record(error)
+            return false
         }
     }
 
@@ -235,14 +264,14 @@ public final class LibraryStore {
         lastError = error.localizedDescription
     }
 
-    private static func needsXPreviewEnrichment(_ inspiration: Inspiration) -> Bool {
+    private static func needsPreviewEnrichment(_ inspiration: Inspiration) -> Bool {
+        let missingImage = inspiration.imageURL == nil && inspiration.localImageFilename == nil
         let host = inspiration.url.host()?.lowercased() ?? ""
         let isX = inspiration.source == .x
             || host == "x.com"
             || host.hasSuffix(".x.com")
             || host == "twitter.com"
             || host.hasSuffix(".twitter.com")
-        guard isX else { return false }
 
         let title = inspiration.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let hasPlaceholderTitle = title.isEmpty
@@ -252,11 +281,10 @@ public final class LibraryStore {
             || title == "saved link"
             || title == "x"
             || title == "twitter"
-        return hasPlaceholderTitle
-            || (inspiration.text.isEmpty
-                && inspiration.authorName == nil
-                && inspiration.authorHandle == nil
-                && inspiration.imageURL == nil
-                && inspiration.localImageFilename == nil)
+
+        if isX {
+            return hasPlaceholderTitle || missingImage
+        }
+        return missingImage
     }
 }

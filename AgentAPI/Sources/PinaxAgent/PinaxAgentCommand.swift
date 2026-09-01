@@ -14,6 +14,15 @@ private struct PinaxAgentExecutable {
             }
 
             let command = try PinaxAgentCommand.parse(arguments: arguments)
+
+            if case .validateEssence(let file, _) = command {
+                try writeJSON(
+                    PinaxAgentAPI.validateEssence(filePath: file),
+                    prettyPrinted: command.prettyPrinted
+                )
+                return
+            }
+
             let repository = try LibraryRepository.appGroup()
             let api = PinaxAgentAPI(repository: repository)
 
@@ -25,6 +34,13 @@ private struct PinaxAgentExecutable {
                     await api.inspirations(project: project),
                     prettyPrinted: command.prettyPrinted
                 )
+            case .inspiration(let id, _):
+                try writeJSON(
+                    await api.inspiration(id: id),
+                    prettyPrinted: command.prettyPrinted
+                )
+            case .validateEssence:
+                return
             }
         } catch {
             let prettyPrinted = arguments.contains("--pretty")

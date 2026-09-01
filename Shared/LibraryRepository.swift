@@ -534,6 +534,20 @@ public actor LibraryRepository {
     private func coordinateReading<Value: Sendable>(
         _ operation: @escaping @Sendable (URL) throws -> Value
     ) throws -> Value {
+        do {
+            _ = try FileManager.default.attributesOfItem(atPath: libraryFileURL.path)
+        } catch let error as NSError
+            where error.domain == NSCocoaErrorDomain
+                && (error.code == NSFileNoSuchFileError
+                    || error.code == NSFileReadNoSuchFileError) {
+            // There is no cross-process state to coordinate on first launch.
+            // Reads remain side-effect free and the atomic writer will coordinate
+            // the first persisted snapshot when one is eventually created.
+            return try operation(libraryFileURL)
+        } catch {
+            throw LibraryRepositoryError.coordinatedAccessFailed(error.localizedDescription)
+        }
+
         let box = CoordinationResultBox<Value>()
         let coordinator = NSFileCoordinator(filePresenter: nil)
         var coordinationError: NSError?

@@ -9,7 +9,7 @@ Capture surfaces are included for:
 - X's own Bookmark action (Remove bookmark is ignored);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
-See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a read-only [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON.
+See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a read-only [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
 
 ## Requirements
 
@@ -98,15 +98,16 @@ same coordinated App Group snapshot as the UI without requiring mood. to be open
 ```sh
 /Applications/mood.app/Contents/Helpers/mood-agent projects --pretty
 /Applications/mood.app/Contents/Helpers/mood-agent inspirations --project "Website refresh" --pretty
+/Applications/mood.app/Contents/Helpers/mood-agent inspiration --id <item-uuid> --pretty
 ```
 
 See [Documentation/AGENT_API.md](Documentation/AGENT_API.md) for the version 1 response
 schema, local-image paths, exit behavior, and stable error codes.
 
-To turn a project into portable creative direction, install the [`mood-distill`](skills/mood-distill)
-agent skill. It locates `mood-agent`, reads the project's imagery and notes, and
-synthesizes a brief (palette, atmosphere, materials, composition, voice, constraints)
-without mutating the library.
+To turn a project, one saved item, or an arbitrary image into portable creative direction,
+install the [`mood-distill`](skills/mood-distill) agent skill. It separates visible evidence,
+abstraction, and directives; discounts duplicate references; preserves uncertainty; and
+validates a canonical `DesignEssence` 1.0 object without mutating the library.
 
 ```sh
 npx skills add https://github.com/rikuws/mood. --skill mood-distill -g

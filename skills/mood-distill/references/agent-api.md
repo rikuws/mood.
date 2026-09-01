@@ -9,10 +9,17 @@ Default helper path:
 /Applications/mood.app/Contents/Helpers/mood-agent
 ```
 
+The finder also checks user-local `mood.app` installs and the explicit legacy paths
+`/Applications/Pinax.app/Contents/Helpers/mood-agent` and
+`/Applications/Pinax.app/Contents/Helpers/pinax-agent`. A candidate is compatible only when
+its `--help` advertises both `inspiration --id` and `validate-essence --file`; an older helper
+is rejected with an upgrade error rather than used for a partial workflow.
+
 All successful responses include `apiVersion: 1` and `ok: true`. Invalid input,
-missing projects, and storage failures print a structured error to stdout and
-exit `2`. `--pretty` changes formatting only. Reject an `apiVersion` this skill
-does not support. Treat unknown fields as forward-compatible additions.
+missing records, invalid essence documents, and storage failures print a structured
+error to stdout and exit `2`. `--pretty` changes formatting only. Reject an
+`apiVersion` this skill does not support. Treat unknown fields as forward-compatible
+additions.
 
 ## Discover projects
 
@@ -55,6 +62,31 @@ Each inspiration may include:
 
 Either image field may be absent. Text-only items are first-class references.
 
+## Fetch one saved item
+
+Use an exact item UUID returned by a project response or supplied separately. This
+also supports General items, whose `project` and `projectID` fields are omitted.
+
+```sh
+"$MOOD_AGENT" inspiration --id F168774A-16DB-4403-A244-F87A49EE54D7 --pretty
+```
+
+The response contains one `inspiration` record with the same media and provenance
+fields as a project response. The API does not search General by title or description.
+
+## Validate DesignEssence 1.0
+
+Validation reads one JSON file, checks the canonical source/evidence/schema rules,
+and never opens or mutates the mood. library:
+
+```sh
+"$MOOD_AGENT" validate-essence --file /tmp/design-essence.json --pretty
+```
+
+A valid document returns `valid: true`, its `schemaVersion`, `sourceKind`, and
+`referenceCount`. The JSON file is limited to 10 MiB. Keep temporary files outside
+the App Group library.
+
 ## Errors
 
 ```json
@@ -69,7 +101,7 @@ Either image field may be absent. Text-only items are first-class references.
 ```
 
 Stable codes: `invalid_arguments`, `project_not_found`, `ambiguous_project`,
-`storage_error`, `internal_error`.
+`inspiration_not_found`, `invalid_essence`, `storage_error`, `internal_error`.
 
 On `project_not_found` or `ambiguous_project`, call `projects` and resolve from
 the returned names and UUIDs. Prefer the UUID for the `inspirations` call.
