@@ -242,13 +242,17 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         )
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 1180, height: 760),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
         window.title = ProductIdentity.displayName
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
+        window.titlebarSeparatorStyle = .none
+        window.isMovableByWindowBackground = true
+        window.isOpaque = false
+        window.backgroundColor = .clear
         window.minSize = NSSize(width: 720, height: 520)
         window.contentViewController = hostingController
         let frameAutosaveName = Self.mainWindowFrameAutosaveName
@@ -295,10 +299,15 @@ private struct PinaxCommands: Commands {
             }
             .keyboardShortcut("n", modifiers: [.command, .shift])
 
-            Button("Switch Project…") {
+            Button("Show Projects Sidebar") {
                 NotificationCenter.default.post(name: .pinaxSwitchProject, object: nil)
             }
             .keyboardShortcut("k", modifiers: .command)
+
+            Button("Toggle Projects Sidebar") {
+                NotificationCenter.default.post(name: .pinaxToggleProjectSidebar, object: nil)
+            }
+            .keyboardShortcut("s", modifiers: [.command, .control])
 
             Divider()
 

@@ -17,18 +17,20 @@ struct MacLibraryView: View {
     @State private var toast: ToastMessage?
     @State private var isDropTargeted = false
     @State private var isSearching = false
-    @State private var isProjectSwitcherPresented = false
     @State private var canvasWidth: CGFloat = 0
     @State private var canvasGesturePresentation = MacCanvasGesturePresentation.inactive
     @State private var canvasInteractionPhase = MacCanvasInteractionPhase.idle
     @State private var searchActivation = UUID()
     @AppStorage("libraryCanvasZoom") private var canvasZoom = 0.5
+    @AppStorage("macProjectSidebarCollapsed") private var isProjectSidebarCollapsed = false
 
     private static let defaultCanvasZoom = 0.5
     private let canvasHorizontalPadding: CGFloat = 20
     private let canvasSpacing: CGFloat = 16
     private let minimumCanvasCardWidth: CGFloat = 148
     private let maximumCanvasColumns = 8
+    private let expandedProjectSidebarWidth: CGFloat = 224
+    private let collapsedProjectSidebarWidth: CGFloat = 80
 
     var body: some View {
         libraryCanvas
@@ -36,7 +38,12 @@ struct MacLibraryView: View {
     }
 
     private var libraryCanvas: some View {
-        styledCanvas
+        commandObservingCanvas
+    }
+
+    private var presentationCanvas: AnyView {
+        AnyView(
+            styledCanvas
             .sheet(item: $sheet, content: sheetContent)
             .alert("Delete this item?", isPresented: inspirationDeleteAlert) {
                 Button("Delete", role: .destructive) { confirmInspirationDeletion() }
@@ -50,6 +57,12 @@ struct MacLibraryView: View {
             } message: {
                 Text("Its items will move back to General.")
             }
+        )
+    }
+
+    private var lifecycleCanvas: AnyView {
+        AnyView(
+            presentationCanvas
             .task { await syncAndReload() }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await syncAndReload() } }
@@ -57,12 +70,18 @@ struct MacLibraryView: View {
             .onChange(of: store.inspirations) { _, inspirations in
                 if let selectedInspirationID,
                    !inspirations.contains(where: { $0.id == selectedInspirationID }) {
-                    self.selectedInspirationID = nil
+                    setSelectedInspiration(nil)
                 }
             }
+        )
+    }
+
+    private var captureObservingCanvas: AnyView {
+        AnyView(
+            lifecycleCanvas
             .onReceive(NotificationCenter.default.publisher(for: .pinaxCaptureSucceeded)) { notification in
                 guard let result = notification.object as? CaptureResult else { return }
-                selectedInspirationID = result.inspiration.id
+                setSelectedInspiration(result.inspiration.id)
                 reveal(result.inspiration)
                 showToast(result.inserted ? "Saved from browser" : "Already in mood. — refreshed")
             }
@@ -79,6 +98,12 @@ struct MacLibraryView: View {
             .onReceive(NotificationCenter.default.publisher(for: .pinaxBrowserSetup)) { _ in
                 sheet = .browserSetup
             }
+        )
+    }
+
+    private var commandObservingCanvas: AnyView {
+        AnyView(
+            captureObservingCanvas
             .onReceive(NotificationCenter.default.publisher(for: .pinaxCanvasZoomIn)) { _ in
                 zoomCanvas(byColumnDelta: -1)
             }
@@ -92,29 +117,76 @@ struct MacLibraryView: View {
                 beginSearch()
             }
             .onReceive(NotificationCenter.default.publisher(for: .pinaxSwitchProject)) { _ in
-                isProjectSwitcherPresented = true
+                showProjectSidebar()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .pinaxToggleProjectSidebar)) { _ in
+                toggleProjectSidebar()
+            }
+            .onKeyPress("/") {
+                guard !isSearching else { return .ignored }
+                beginSearch()
+                return .handled
             }
             .onExitCommand(perform: handleExitCommand)
             .accessibilityAction(named: "Search") { beginSearch() }
-            .accessibilityAction(named: "Switch Project") { isProjectSwitcherPresented = true }
+            .accessibilityAction(named: "Show Projects Sidebar") { showProjectSidebar() }
+        )
     }
 
     private var styledCanvas: some View {
-        canvasStack
-            .animation(detailInspectorAnimation, value: selectedInspirationID)
-            .background(PinaxCatalogPalette.canvas(for: colorScheme))
+        framedMoodboard
+            .ignoresSafeArea()
             .background(MacCanvasWindowConfigurator())
             .accentColor(PinaxCatalogPalette.accent(for: colorScheme))
             .tint(PinaxCatalogPalette.accent(for: colorScheme))
             .overlay(alignment: .bottom) { toastOverlay }
     }
 
+    private var framedMoodboard: some View {
+        HStack(spacing: 0) {
+            MacProjectSidebar(
+                items: sidebarItems,
+                currentScope: store.scope,
+                isCollapsed: isProjectSidebarCollapsed,
+                onSelect: selectSpace,
+                onToggleCollapse: toggleProjectSidebar,
+                onCreate: { sheet = .newProject },
+                onEdit: { sheet = .editProject($0) },
+                onDelete: { pendingProjectDeletion = $0 },
+                onCapture: { sheet = .capture },
+                onBrowserSetup: { sheet = .browserSetup }
+            )
+            .frame(
+                width: isProjectSidebarCollapsed
+                    ? collapsedProjectSidebarWidth
+                    : expandedProjectSidebarWidth
+            )
+
+            ZStack {
+                MacMoodboardArtworkLayer(
+                    assetName: activeLandscape.rawValue,
+                    projectColorHex: currentProjectColorHex
+                )
+
+                canvasStack
+            }
+            .clipShape(moodboardStageShape)
+            .padding(.vertical, 4)
+            .padding(.trailing, 4)
+        }
+        .background(Color.black)
+    }
+
+    private var moodboardStageShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+    }
+
     private var canvasStack: some View {
         ZStack(alignment: .trailing) {
-            VStack(spacing: 0) {
-                canvasChrome
-                libraryContent
-            }
+            libraryContent
+                .overlay(alignment: .topTrailing) {
+                    canvasChrome
+                }
 
             if let selectedInspiration {
                 Color.clear
@@ -168,67 +240,16 @@ struct MacLibraryView: View {
     }
 
     private var canvasChrome: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 18) {
-            MacSpaceIdentityButton(
-                title: scopeTitle,
-                colorHex: currentProjectColorHex,
-                isExpanded: isProjectSwitcherPresented
-            ) {
-                isProjectSwitcherPresented.toggle()
-            }
-            .contextMenu {
-                Button("New Project…") { sheet = .newProject }
-                if let project = currentProjectID.flatMap(project(with:)) {
-                    Button("Edit “\(project.name)”…") { sheet = .editProject(project) }
-                    Button("Delete “\(project.name)”", role: .destructive) {
-                        pendingProjectDeletion = project
-                    }
-                    Divider()
-                }
-                Button("Save a Link…") { sheet = .capture }
-                Button("Browser Setup…") { sheet = .browserSetup }
-            }
-            .popover(isPresented: $isProjectSwitcherPresented, arrowEdge: .bottom) {
-                MacProjectSwitcher(
-                    projects: projects,
-                    counts: store.counts,
-                    currentScope: store.scope,
-                    onSelect: { scope in
-                        selectSpace(scope)
-                    },
-                    onCreate: {
-                        isProjectSwitcherPresented = false
-                        sheet = .newProject
-                    },
-                    onEdit: { project in
-                        isProjectSwitcherPresented = false
-                        sheet = .editProject(project)
-                    },
-                    onDelete: { project in
-                        isProjectSwitcherPresented = false
-                        pendingProjectDeletion = project
-                    }
-                )
-            }
-
-            if isSearching || !store.searchText.isEmpty {
-                MacCanvasSearchField(
-                    text: $store.searchText,
-                    activation: searchActivation,
-                    onDismiss: {
-                        store.searchText = ""
-                        isSearching = false
-                    }
-                )
-                .transition(.opacity)
-            }
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 12)
-        .padding(.bottom, 4)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isSearching)
+        MacCanvasSearchControl(
+            text: $store.searchText,
+            isExpanded: isSearching || !store.searchText.isEmpty,
+            activation: searchActivation,
+            onOpen: beginSearch,
+            onDismiss: dismissSearch
+        )
+        .padding(.trailing, 16)
+        .padding(.top, 15)
+        .accessibilitySortPriority(1)
     }
 
     @ViewBuilder
@@ -269,7 +290,7 @@ struct MacLibraryView: View {
                                     isSelected: selectedInspirationID == inspiration.id,
                                     onSelect: {
                                         guard canvasInteractionPhase == .idle else { return }
-                                        selectedInspirationID = inspiration.id
+                                        setSelectedInspiration(inspiration.id)
                                     }
                                 )
                                 .contextMenu { cardContextMenu(for: inspiration) }
@@ -285,7 +306,11 @@ struct MacLibraryView: View {
                             anchor: canvasGesturePresentation.anchor
                         )
                         .padding(.horizontal, canvasHorizontalPadding)
-                        .padding(.top, 8)
+                        // Preserve an initial panoramic field so the built-in
+                        // landscape reads as scenery, even on a full board.
+                        // It scrolls away naturally once the user starts
+                        // working through the collection.
+                        .padding(.top, landscapeRevealHeight(for: geometry.size.height))
                         .padding(.bottom, 28)
                     }
                     .contentShape(Rectangle())
@@ -327,7 +352,6 @@ struct MacLibraryView: View {
                 }
             }
         }
-        .background(PinaxCatalogPalette.canvas(for: colorScheme))
         .task(id: canvasInteractionPhase) {
             await finishCanvasInteractionAfterSettling()
         }
@@ -352,6 +376,13 @@ struct MacLibraryView: View {
                 Button("Clear search") { store.searchText = "" }
             }
         }
+        .padding(28)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+        }
+        .frame(maxWidth: 520)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dropDestination(for: URL.self) { urls, _ in
             let webURLs = urls.filter(isWebURL)
@@ -359,6 +390,10 @@ struct MacLibraryView: View {
             captureDropped(webURLs)
             return true
         }
+    }
+
+    private func landscapeRevealHeight(for availableHeight: CGFloat) -> CGFloat {
+        min(132, max(72, availableHeight * 0.17))
     }
 
     private var emptyDescription: String {
@@ -400,7 +435,7 @@ struct MacLibraryView: View {
             CaptureSheet(projects: projects, initialProjectID: currentProjectID) { payload in
                 let result = try await store.capture(payload)
                 _ = await store.fillMissingPreview(for: result.inspiration.id)
-                selectedInspirationID = result.inspiration.id
+                setSelectedInspiration(result.inspiration.id)
                 showToast(result.inserted ? "Saved to mood." : "Already saved — details refreshed")
                 requestSync()
             }
@@ -420,7 +455,7 @@ struct MacLibraryView: View {
         case .editInspiration(let inspiration):
             InspirationEditorSheet(inspiration: inspiration, projects: projects) { draft in
                 let updated = try await store.updateInspiration(draft)
-                selectedInspirationID = updated.id
+                setSelectedInspiration(updated.id)
                 showToast("Item updated")
                 requestSync()
             }
@@ -448,6 +483,59 @@ struct MacLibraryView: View {
         store.projects.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
     }
 
+    private var activeLandscape: MoodboardLandscape {
+        MoodboardLandscapeSelection.landscape(for: store.scope)
+    }
+
+    private var sidebarItems: [MacProjectSidebarItem] {
+        var items = [
+            sidebarItem(
+                scope: .all,
+                title: "All inspiration",
+                count: store.counts.total,
+                colorHex: nil,
+                project: nil
+            ),
+            sidebarItem(
+                scope: .general,
+                title: "General",
+                count: store.counts.general,
+                colorHex: nil,
+                project: nil
+            ),
+        ]
+        items.append(
+            contentsOf: projects.map { project in
+                sidebarItem(
+                    scope: .project(project.id),
+                    title: project.name,
+                    count: store.counts[project.id],
+                    colorHex: project.colorHex,
+                    project: project
+                )
+            }
+        )
+        return items
+    }
+
+    private func sidebarItem(
+        scope: LibraryScope,
+        title: String,
+        count: Int,
+        colorHex: String?,
+        project: Project?
+    ) -> MacProjectSidebarItem {
+        let landscape = MoodboardLandscapeSelection.landscape(for: scope)
+        return MacProjectSidebarItem(
+            scope: scope,
+            title: title,
+            count: count,
+            colorHex: colorHex,
+            landscapeAssetName: landscape.rawValue,
+            project: project
+        )
+    }
+
     private var selectedInspiration: Inspiration? {
         guard let selectedInspirationID else { return nil }
         return store.inspirations.first { $0.id == selectedInspirationID }
@@ -464,21 +552,22 @@ struct MacLibraryView: View {
     }
 
     private var detailInspectorAnimation: Animation? {
-        reduceMotion ? nil : .easeOut(duration: 0.14)
+        reduceMotion ? nil : MacChromeMotion.panel
     }
 
     private func closeDetailInspector() {
         guard selectedInspirationID != nil else { return }
-        withAnimation(detailInspectorAnimation) {
-            selectedInspirationID = nil
-        }
+        setSelectedInspiration(nil)
     }
 
-    private var scopeTitle: String {
-        switch store.scope {
-        case .all: "All inspiration"
-        case .general: "General"
-        case .project(let id): project(with: id)?.name ?? "Project"
+    private func setSelectedInspiration(_ id: Inspiration.ID?) {
+        let changesPanelPresentation = (selectedInspirationID == nil) != (id == nil)
+        if changesPanelPresentation {
+            withAnimation(detailInspectorAnimation) {
+                selectedInspirationID = id
+            }
+        } else {
+            selectedInspirationID = id
         }
     }
 
@@ -532,7 +621,7 @@ struct MacLibraryView: View {
                     _ = await store.fillMissingPreview(for: result.inspiration.id)
                     newest = result.inspiration
                 }
-                selectedInspirationID = newest?.id
+                setSelectedInspiration(newest?.id)
                 showToast(urls.count == 1 ? "Link saved" : "\(urls.count) links saved")
                 requestSync()
             } catch {
@@ -560,7 +649,7 @@ struct MacLibraryView: View {
         Task { @MainActor in
             do {
                 try await store.deleteInspiration(id: inspiration.id)
-                if selectedInspirationID == inspiration.id { selectedInspirationID = nil }
+                if selectedInspirationID == inspiration.id { setSelectedInspiration(nil) }
                 showToast("Item deleted", symbol: "trash")
                 requestSync()
             } catch {
@@ -583,29 +672,46 @@ struct MacLibraryView: View {
         }
     }
 
+    private func toggleProjectSidebar() {
+        withAnimation(reduceMotion ? nil : MacChromeMotion.chrome) {
+            isProjectSidebarCollapsed.toggle()
+        }
+    }
+
+    private func showProjectSidebar() {
+        guard isProjectSidebarCollapsed else { return }
+        withAnimation(reduceMotion ? nil : MacChromeMotion.chrome) {
+            isProjectSidebarCollapsed = false
+        }
+    }
+
     private func beginSearch() {
-        isSearching = true
-        searchActivation = UUID()
+        withAnimation(reduceMotion ? nil : MacChromeMotion.quick) {
+            isSearching = true
+            searchActivation = UUID()
+        }
+    }
+
+    private func dismissSearch() {
+        withAnimation(reduceMotion ? nil : MacChromeMotion.quick) {
+            store.searchText = ""
+            isSearching = false
+        }
     }
 
     private func selectSpace(_ scope: LibraryScope) {
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) {
-            store.scope = scope
-            if let selectedInspiration, !scope.contains(selectedInspiration) {
-                selectedInspirationID = nil
-            }
+        store.scope = scope
+        if let selectedInspiration, !scope.contains(selectedInspiration) {
+            setSelectedInspiration(nil)
         }
-        isProjectSwitcherPresented = false
     }
 
     private func handleExitCommand() {
-        if isProjectSwitcherPresented {
-            isProjectSwitcherPresented = false
-        } else if selectedInspirationID != nil {
+        if selectedInspirationID != nil {
             closeDetailInspector()
         } else if isSearching {
             if store.searchText.isEmpty {
-                isSearching = false
+                dismissSearch()
             } else {
                 store.searchText = ""
             }
@@ -620,11 +726,11 @@ struct MacLibraryView: View {
 
     private func showToast(_ message: String, symbol: String = "checkmark.circle.fill") {
         let next = ToastMessage(message: message, symbol: symbol)
-        withAnimation(.easeOut(duration: 0.18)) { toast = next }
+        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { toast = next }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(2.4))
             guard toast?.id == next.id else { return }
-            withAnimation(.easeIn(duration: 0.16)) { toast = nil }
+            withAnimation(reduceMotion ? nil : .easeIn(duration: 0.16)) { toast = nil }
         }
     }
 
@@ -1138,4 +1244,5 @@ extension Notification.Name {
     static let pinaxCanvasZoomReset = Notification.Name("Pinax.canvasZoomReset")
     static let pinaxFind = Notification.Name("Pinax.find")
     static let pinaxSwitchProject = Notification.Name("Pinax.switchProject")
+    static let pinaxToggleProjectSidebar = Notification.Name("Pinax.toggleProjectSidebar")
 }

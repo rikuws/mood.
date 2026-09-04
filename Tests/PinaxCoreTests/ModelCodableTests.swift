@@ -3,6 +3,42 @@ import XCTest
 @testable import PinaxCore
 
 final class ModelCodableTests: XCTestCase {
+    func testOlderProjectDefaultsBackgroundToAutomatic() throws {
+        let id = UUID()
+        let json = """
+        {
+          "id":"\(id.uuidString)",
+          "name":"Archive",
+          "createdAt":0,
+          "updatedAt":0
+        }
+        """.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+
+        let project = try decoder.decode(Project.self, from: json)
+
+        XCTAssertEqual(project.id, id)
+        XCTAssertNil(project.backgroundInspirationID)
+    }
+
+    func testProjectBackgroundSelectionRoundTrips() throws {
+        let timestamp = Date(timeIntervalSince1970: 1_700_000_000)
+        let project = Project(
+            name: "Archive",
+            backgroundInspirationID: Inspiration.ID(),
+            createdAt: timestamp
+        )
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .millisecondsSince1970
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+
+        let decoded = try decoder.decode(Project.self, from: encoder.encode(project))
+
+        XCTAssertEqual(decoded, project)
+    }
+
     func testCapturePayloadDecodesBrowserWireFormat() throws {
         let json = #"""
         {

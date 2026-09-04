@@ -15,6 +15,7 @@ public enum LibraryRepositoryError: Error, Equatable, Sendable {
     case unsupportedSchemaVersion(Int)
     case invalidProjectName
     case duplicateProjectName
+    case invalidProjectBackground
     case projectNotFound(Project.ID)
     case inspirationNotFound(Inspiration.ID)
     case duplicateCanonicalURL(URL)
@@ -36,6 +37,8 @@ extension LibraryRepositoryError: LocalizedError {
             "A project name cannot be empty."
         case .duplicateProjectName:
             "A project with that name already exists."
+        case .invalidProjectBackground:
+            "Choose an image that belongs to this project as its background."
         case .projectNotFound:
             "The selected project no longer exists."
         case .inspirationNotFound:
@@ -360,6 +363,32 @@ public actor LibraryRepository {
         }
     }
 
+    /// Pins one project image as its moodboard background. Passing `nil`
+    /// restores automatic, offline-first background selection.
+    @discardableResult
+    public func setProjectBackground(
+        id: Project.ID,
+        inspirationID: Inspiration.ID?
+    ) throws -> Project {
+        try mutate { snapshot, now in
+            guard let projectIndex = snapshot.projects.firstIndex(where: { $0.id == id }) else {
+                throw LibraryRepositoryError.projectNotFound(id)
+            }
+
+            if let inspirationID {
+                guard let inspiration = snapshot.inspirations.first(where: {
+                    $0.id == inspirationID && $0.projectID == id
+                }), inspiration.localImageFilename != nil || inspiration.imageURL != nil else {
+                    throw LibraryRepositoryError.invalidProjectBackground
+                }
+            }
+
+            snapshot.projects[projectIndex].backgroundInspirationID = inspirationID
+            snapshot.projects[projectIndex].updatedAt = now
+            return snapshot.projects[projectIndex]
+        }
+    }
+
     /// Deletes the project and moves its inspirations back to General.
     @discardableResult
     public func deleteProject(id: Project.ID) throws -> Project {
@@ -643,6 +672,20 @@ public actor LibraryRepository {
                 1,
                 snapshot.inspirations[index].captureCount
             )
+        }
+
+        for index in snapshot.projects.indices {
+            guard let backgroundID = snapshot.projects[index].backgroundInspirationID else {
+                continue
+            }
+            let remainsValid = snapshot.inspirations.contains { inspiration in
+                inspiration.id == backgroundID
+                    && inspiration.projectID == snapshot.projects[index].id
+            }
+            if !remainsValid {
+                snapshot.projects[index].backgroundInspirationID = nil
+                snapshot.projects[index].updatedAt = date
+            }
         }
 
         snapshot.projects.sort {

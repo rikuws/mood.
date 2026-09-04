@@ -84,6 +84,23 @@ public enum PinaxSyncMerger {
             }
         }
 
+        // A project background is a relationship, not a free-standing image
+        // reference. Clear a stale remote pin during reconciliation so the
+        // repaired project is what gets written back to CloudKit in this pass.
+        for index in mergedProjects.indices {
+            guard let backgroundID = mergedProjects[index].backgroundInspirationID else {
+                continue
+            }
+            let remainsValid = mergedInspirations.contains { inspiration in
+                inspiration.id == backgroundID
+                    && inspiration.projectID == mergedProjects[index].id
+            }
+            if !remainsValid {
+                mergedProjects[index].backgroundInspirationID = nil
+                mergedProjects[index].updatedAt = max(mergedProjects[index].updatedAt, now)
+            }
+        }
+
         mergedProjects.sort(by: projectOrder)
         mergedInspirations.sort(by: inspirationOrder)
         let sortedTombstones = tombstones.values.sorted(by: tombstoneOrder)

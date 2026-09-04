@@ -200,6 +200,24 @@ public final class LibraryStore {
     }
 
     @discardableResult
+    public func setProjectBackground(
+        id: Project.ID,
+        inspirationID: Inspiration.ID?
+    ) async throws -> Project {
+        do {
+            let project = try await repository.setProjectBackground(
+                id: id,
+                inspirationID: inspirationID
+            )
+            try await refreshSnapshot()
+            return project
+        } catch {
+            record(error)
+            throw error
+        }
+    }
+
+    @discardableResult
     public func deleteProject(id: Project.ID) async throws -> Project {
         do {
             let project = try await repository.deleteProject(id: id)

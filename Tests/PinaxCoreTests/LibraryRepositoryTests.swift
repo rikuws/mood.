@@ -174,6 +174,67 @@ final class LibraryRepositoryTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(counts.general, 2)
     }
 
+    func testProjectBackgroundPinsImageAndClearsWhenItemLeavesProject() async throws {
+        let repository = try makeRepository()
+        let project = try await repository.createProject(name: "Atmosphere")
+        let background = try await repository.capture(
+            CapturePayload(
+                source: .web,
+                url: URL(string: "https://example.com/background")!,
+                imageURL: URL(string: "https://example.com/background.jpg"),
+                projectID: project.id
+            )
+        ).inspiration
+
+        let pinned = try await repository.setProjectBackground(
+            id: project.id,
+            inspirationID: background.id
+        )
+        XCTAssertEqual(pinned.backgroundInspirationID, background.id)
+
+        _ = try await repository.moveInspiration(id: background.id, to: nil)
+        let afterMove = try await repository.load()
+        XCTAssertNil(afterMove.project(id: project.id)?.backgroundInspirationID)
+    }
+
+    func testProjectBackgroundRejectsTextOnlyAndOtherProjectImages() async throws {
+        let repository = try makeRepository()
+        let firstProject = try await repository.createProject(name: "First")
+        let secondProject = try await repository.createProject(name: "Second")
+        let textOnly = try await repository.capture(
+            CapturePayload(
+                source: .web,
+                url: URL(string: "https://example.com/text")!,
+                projectID: firstProject.id
+            )
+        ).inspiration
+        let otherImage = try await repository.capture(
+            CapturePayload(
+                source: .web,
+                url: URL(string: "https://example.com/other")!,
+                imageURL: URL(string: "https://example.com/other.jpg"),
+                projectID: secondProject.id
+            )
+        ).inspiration
+
+        await XCTAssertThrowsErrorAsync(
+            try await repository.setProjectBackground(
+                id: firstProject.id,
+                inspirationID: textOnly.id
+            )
+        ) { error in
+            XCTAssertEqual(error as? LibraryRepositoryError, .invalidProjectBackground)
+        }
+        await XCTAssertThrowsErrorAsync(
+            try await repository.setProjectBackground(
+                id: firstProject.id,
+                inspirationID: otherImage.id
+            )
+        ) { error in
+            XCTAssertEqual(error as? LibraryRepositoryError, .invalidProjectBackground)
+        }
+    }
+
     func testSearchCoversMetadataDiacriticsAndScopes() async throws {
         let repository = try makeRepository()
         let project = try await repository.createProject(name: "Mobile")

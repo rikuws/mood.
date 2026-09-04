@@ -24,6 +24,105 @@ final class SyncMergerTests: XCTestCase, @unchecked Sendable {
         XCTAssertTrue(result.mutations.projects.isEmpty)
     }
 
+    func testNewerProjectBackgroundSelectionWinsAndQueuesUpload() throws {
+        let projectID = UUID()
+        let firstImage = try makeInspiration(
+            projectID: projectID,
+            localImageFilename: "first.jpg",
+            updatedAt: firstDate
+        )
+        let secondImage = try makeInspiration(
+            projectID: projectID,
+            localImageFilename: "second.jpg",
+            updatedAt: secondDate
+        )
+        let local = Project(
+            id: projectID,
+            name: "Atmosphere",
+            backgroundInspirationID: secondImage.id,
+            createdAt: firstDate,
+            updatedAt: secondDate
+        )
+        let remote = Project(
+            id: projectID,
+            name: "Atmosphere",
+            backgroundInspirationID: firstImage.id,
+            createdAt: firstDate,
+            updatedAt: firstDate
+        )
+
+        let result = PinaxSyncMerger.merge(
+            local: LibrarySnapshot(
+                projects: [local],
+                inspirations: [firstImage, secondImage],
+                updatedAt: secondDate
+            ),
+            remote: PinaxRemoteSnapshot(
+                projects: [remote],
+                inspirations: [firstImage, secondImage],
+                assetBackedInspirationIDs: [firstImage.id, secondImage.id]
+            ),
+            state: .empty,
+            at: syncDate
+        )
+
+        XCTAssertEqual(result.snapshot.projects[0].backgroundInspirationID, secondImage.id)
+        XCTAssertEqual(result.mutations.projects, [local])
+    }
+
+    func testStaleRemoteProjectBackgroundIsClearedBeforeMutation() throws {
+        let projectID = UUID()
+        let staleImageID = UUID()
+        let remote = Project(
+            id: projectID,
+            name: "Atmosphere",
+            backgroundInspirationID: staleImageID,
+            createdAt: firstDate,
+            updatedAt: secondDate
+        )
+
+        let result = PinaxSyncMerger.merge(
+            local: .empty(at: secondDate),
+            remote: PinaxRemoteSnapshot(projects: [remote]),
+            state: .empty,
+            at: syncDate
+        )
+
+        XCTAssertNil(result.snapshot.projects[0].backgroundInspirationID)
+        XCTAssertEqual(result.snapshot.projects[0].updatedAt, syncDate)
+        XCTAssertEqual(result.mutations.projects, result.snapshot.projects)
+    }
+
+    func testAssetBackedRemoteBackgroundSurvivesFailedLocalMaterialization() throws {
+        let projectID = UUID()
+        let inspiration = try makeInspiration(
+            projectID: projectID,
+            updatedAt: firstDate
+        )
+        let project = Project(
+            id: projectID,
+            name: "Atmosphere",
+            backgroundInspirationID: inspiration.id,
+            createdAt: firstDate,
+            updatedAt: secondDate
+        )
+
+        let result = PinaxSyncMerger.merge(
+            local: .empty(at: secondDate),
+            remote: PinaxRemoteSnapshot(
+                projects: [project],
+                inspirations: [inspiration],
+                assetBackedInspirationIDs: [inspiration.id]
+            ),
+            state: .empty,
+            at: syncDate
+        )
+
+        XCTAssertEqual(result.snapshot.projects[0].backgroundInspirationID, inspiration.id)
+        XCTAssertEqual(result.snapshot.projects[0].updatedAt, secondDate)
+        XCTAssertTrue(result.mutations.projects.isEmpty)
+    }
+
     func testEqualTimestampTieBreakIsIndependentOfLocalRemoteOrientation() {
         let id = UUID()
         let first = Project(

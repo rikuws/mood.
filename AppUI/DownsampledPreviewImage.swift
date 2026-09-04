@@ -13,6 +13,7 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
     @Environment(\.displayScale) private var displayScale
     @State private var image: CGImage?
     @State private var didFail = false
+    @State private var loadState = PreviewImageLoadState()
 
     var body: some View {
         GeometryReader { geometry in
@@ -53,6 +54,12 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
     }
 
     private func load(_ request: PreviewImageRequest) async {
+        let source = request.sourceIdentity
+        if loadState.activate(source) {
+            image = nil
+            didFail = false
+        }
+
         guard request.maxPixelSize > 0 else { return }
         guard request.localURL != nil || request.remoteURL != nil else {
             if image == nil { didFail = true }
@@ -60,7 +67,7 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
         }
 
         let loaded = await PreviewImageLoading.image(for: request)
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, loadState.isCurrent(source) else { return }
 
         if let loaded {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -77,6 +84,10 @@ private struct PreviewImageRequest: Equatable, Hashable, Sendable {
     var localURL: URL?
     var remoteURL: URL?
     var maxPixelSize: Int
+
+    var sourceIdentity: PreviewImageSourceIdentity {
+        PreviewImageSourceIdentity(localURL: localURL, remoteURL: remoteURL)
+    }
 }
 
 private struct SendablePreviewImage: @unchecked Sendable {
