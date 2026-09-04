@@ -9,3 +9,4 @@ BrowserExtension/node_modules/
 *.dSYM.zip
 *.xcarchive
 .markup
+.amp/portals/*

@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+started_at=$SECONDS
+
+step() {
+    printf '\n[%ss] %s\n' "$((SECONDS - started_at))" "$1"
+}
+
+swiftly_environment="${SWIFTLY_HOME_DIR:-$HOME/.local/share/swiftly}/env.sh"
+if [[ -f "$swiftly_environment" ]]; then
+    # shellcheck disable=SC1090
+    source "$swiftly_environment"
+fi
+
+step "Checking the Swift toolchain"
+if ! command -v swift >/dev/null 2>&1 \
+    || [[ "$(swift --version 2>/dev/null || true)" != *"Swift version 6.0.3"* ]]; then
+    if ! command -v swiftly >/dev/null 2>&1; then
+        swiftly_archive="$(mktemp "${TMPDIR:-/tmp}/swiftly-XXXXXX.tar.gz")"
+        swiftly_directory="$(mktemp -d "${TMPDIR:-/tmp}/swiftly-XXXXXX")"
+        trap 'rm -rf "$swiftly_archive" "$swiftly_directory"' EXIT
+
+        curl --fail --location --silent --show-error \
+            "https://download.swift.org/swiftly/linux/swiftly-$(uname -m).tar.gz" \
+            --output "$swiftly_archive"
+        tar -xzf "$swiftly_archive" -C "$swiftly_directory"
+        "$swiftly_directory/swiftly" init \
+            --assume-yes \
+            --no-modify-profile \
+            --quiet-shell-followup \
+            --skip-install
+    fi
+
+    # Swiftly's installer cannot update this already-running shell.
+    # shellcheck disable=SC1090
+    source "$swiftly_environment"
+
+    post_install="$(mktemp "${TMPDIR:-/tmp}/swift-post-install-XXXXXX.sh")"
+    swiftly install --use 6.0.3 \
+        --assume-yes \
+        --post-install-file="$post_install"
+    if [[ -s "$post_install" ]]; then
+        sudo bash "$post_install"
+    fi
+    rm -f "$post_install"
+fi
+
+profile_marker="# mood. Swift toolchain"
+if ! grep -Fqx "$profile_marker" "$HOME/.bash_profile" 2>/dev/null; then
+    cat >> "$HOME/.bash_profile" <<EOF
+
+$profile_marker
+if [[ -f "$swiftly_environment" ]]; then
+    source "$swiftly_environment"
+fi
+EOF
+fi
+
+step "Building the Chromium extension bundle"
+npm --prefix BrowserExtension run build
+
+step "Orb setup completed in $((SECONDS - started_at))s"
