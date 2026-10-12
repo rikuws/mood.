@@ -378,14 +378,19 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         let fixture = try await saveProjectFixture(in: repository)
         let quote = DesignEssence.Evidence(
             assetID: fixture.first.id,
-            field: .text,
+            kind: .text,
             quote: "  QUIET   spacing ",
             cue: "The user's note names spacing as the reason to keep it."
+        )
+        let unquoted = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .text,
+            cue: "The user's note explains the single column."
         )
 
         let response = try await PinaxAgentAPI(repository: repository).saveEssence(
             filePath: try writeEssence(
-                fixture.essence(extractedAt: fixture.extractedAt, extraEvidence: [quote]),
+                fixture.essence(extractedAt: fixture.extractedAt, extraEvidence: [quote, unquoted]),
                 in: repository
             ),
             currentDirectory: repository.storageDirectory
@@ -400,18 +405,24 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         let fixture = try await saveProjectFixture(in: repository)
         let invented = DesignEssence.Evidence(
             assetID: fixture.first.id,
-            field: .text,
+            kind: .text,
             quote: "bold neon gradients",
             cue: "Invented wording."
         )
         let note = DesignEssence.Evidence(
             assetID: fixture.first.id,
-            field: .note,
+            kind: .note,
             quote: "quiet spacing",
             cue: "Cites a note field the library does not store yet."
         )
 
-        for evidence in [invented, note] {
+        let empty = DesignEssence.Evidence(
+            assetID: fixture.second.id,
+            kind: .text,
+            cue: "Cites text the item does not have."
+        )
+
+        for evidence in [invented, note, empty] {
             await XCTAssertThrowsErrorAsync(
                 try await PinaxAgentAPI(repository: repository).saveEssence(
                     filePath: try self.writeEssence(

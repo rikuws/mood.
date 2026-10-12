@@ -53,7 +53,7 @@ is absent and remote retrieval is available within the user's request. Never inf
 properties from title, note, author, or URL when the image itself could not be inspected.
 
 The user's words are taste data. When an item's `text` or `title` says why the user kept it,
-cite those exact words as textual evidence (`field` plus `quote`, see the schema reference)
+cite those exact words as textual evidence (`kind` plus `quote`, see the schema reference)
 alongside the image evidence, rather than paraphrasing them into a model-written cue.
 
 If the project is empty, say so and stop. Text-only items may inform voice and provenance,

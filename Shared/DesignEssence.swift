@@ -251,10 +251,10 @@ public extension DesignEssence {
             }
         }
 
-        /// The part of a saved item that the evidence cites. An absent field
+        /// The part of a saved item that the evidence cites. An absent kind
         /// means the item's image, which keeps 1.0 documents written before
         /// textual evidence existed valid and unchanged.
-        public enum Field: String, Codable, Hashable, Sendable {
+        public enum Kind: String, Codable, Hashable, Sendable {
             case image
             /// The item's title.
             case title
@@ -271,32 +271,32 @@ public extension DesignEssence {
         }
 
         public let assetID: Inspiration.ID
-        public let field: Field?
+        public let kind: Kind?
         public let region: NormalizedRegion?
-        /// The exact words cited from a textual field, so a rule can point at
-        /// what the user actually wrote rather than a paraphrase.
+        /// Optional exact words from a textual kind. When present, saving
+        /// checks that the cited item really contains them.
         public let quote: String?
         public let cue: String
         public let measurement: String?
 
         public init(
             assetID: Inspiration.ID,
-            field: Field? = nil,
+            kind: Kind? = nil,
             region: NormalizedRegion? = nil,
             quote: String? = nil,
             cue: String,
             measurement: String? = nil
         ) {
             self.assetID = assetID
-            self.field = field
+            self.kind = kind
             self.region = region
             self.quote = quote
             self.cue = cue
             self.measurement = measurement
         }
 
-        public var citedField: Field {
-            field ?? .image
+        public var citedKind: Kind {
+            kind ?? .image
         }
     }
 
@@ -1161,23 +1161,17 @@ private struct DesignEssenceValidationAccumulator {
     }
 
     private mutating func validateEvidenceField(_ item: DesignEssence.Evidence, path: String) {
-        if item.citedField.isTextual {
+        if item.citedKind.isTextual {
             if item.region != nil {
                 append(
                     .invalidEvidenceField,
                     path: "\(path).region",
-                    message: "A region applies only to image evidence, not to the item's \(item.citedField.rawValue)."
+                    message: "A region applies only to image evidence, not to the item's \(item.citedKind.rawValue)."
                 )
             }
-            guard let quote = item.quote else {
-                append(
-                    .invalidEvidenceField,
-                    path: "\(path).quote",
-                    message: "Evidence citing the item's \(item.citedField.rawValue) must quote the exact words it relies on."
-                )
-                return
+            if let quote = item.quote {
+                validateNonBlank(quote, path: "\(path).quote", label: "Evidence quote")
             }
-            validateNonBlank(quote, path: "\(path).quote", label: "Evidence quote")
         } else if item.quote != nil {
             append(
                 .invalidEvidenceField,

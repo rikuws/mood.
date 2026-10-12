@@ -246,16 +246,16 @@ final class DesignEssenceTests: XCTestCase {
             String(data: JSONEncoder().encode(evidence), encoding: .utf8)
         )
 
-        XCTAssertNil(evidence.field)
-        XCTAssertEqual(evidence.citedField, .image)
-        XCTAssertFalse(encoded.contains("field"))
+        XCTAssertNil(evidence.kind)
+        XCTAssertEqual(evidence.citedKind, .image)
+        XCTAssertFalse(encoded.contains("kind"))
         XCTAssertFalse(encoded.contains("quote"))
     }
 
     func testTextualEvidenceWithQuoteValidates() {
         let evidence = DesignEssence.Evidence(
             assetID: assetID,
-            field: .note,
+            kind: .note,
             quote: "the quiet spacing is why I kept this",
             cue: "The user names spacing as the reason for keeping the item."
         )
@@ -267,34 +267,45 @@ final class DesignEssenceTests: XCTestCase {
         )
     }
 
-    func testTextualEvidenceRequiresQuoteAndRejectsRegion() {
+    func testNoteEvidenceInPackShapeValidatesAndRoundTrips() throws {
+        let json = Data(#"{"assetID":"11111111-1111-1111-1111-111111111111","kind":"note","cue":"The user's note says the grey does the work."}"#.utf8)
+
+        let evidence = try JSONDecoder().decode(DesignEssence.Evidence.self, from: json)
+        let reencoded = try XCTUnwrap(
+            String(data: JSONEncoder().encode(evidence), encoding: .utf8)
+        )
+
+        XCTAssertEqual(evidence.kind, .note)
+        XCTAssertNil(evidence.quote)
+        XCTAssertTrue(reencoded.contains(#""kind":"note""#))
+        XCTAssertTrue(validationCodes(for: makeEssence(citing: evidence)).isEmpty)
+    }
+
+    func testTextualEvidenceRejectsRegion() {
         let evidence = DesignEssence.Evidence(
             assetID: assetID,
-            field: .text,
+            kind: .text,
             region: DesignEssence.Evidence.NormalizedRegion(x: 0, y: 0, width: 1, height: 1),
             cue: "The caption describes the layout."
         )
         let issues = DesignEssenceValidator.issues(in: makeEssence(citing: evidence))
 
         XCTAssertEqual(
-            Set(issues.filter { $0.code == .invalidEvidenceField }.map(\.path)),
-            [
-                "summary.essence.evidence[0].region",
-                "summary.essence.evidence[0].quote",
-            ]
+            issues.filter { $0.code == .invalidEvidenceField }.map(\.path),
+            ["summary.essence.evidence[0].region"]
         )
     }
 
     func testImageEvidenceRejectsQuoteAndTextualEvidenceRejectsBlankQuote() {
         let imageEvidence = DesignEssence.Evidence(
             assetID: assetID,
-            field: .image,
+            kind: .image,
             quote: "words",
             cue: "Wide margins"
         )
         let blankQuote = DesignEssence.Evidence(
             assetID: assetID,
-            field: .note,
+            kind: .note,
             quote: "  ",
             cue: "The user explains the choice."
         )

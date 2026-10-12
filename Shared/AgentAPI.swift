@@ -569,9 +569,10 @@ public struct PinaxAgentAPI: Sendable {
         )
     }
 
-    /// Every reference must be a saved item in the essence's project, and
-    /// every quote must be words that item actually holds, so no saved rule
-    /// can cite a source the user did not choose.
+    /// Every reference must be a saved item in the essence's project, every
+    /// textual citation must point at words that item actually holds, and
+    /// every quote must appear in them, so no saved rule can cite a source the
+    /// user did not choose.
     static func validateTraceability(
         of essence: DesignEssence,
         to project: Project,
@@ -593,28 +594,34 @@ public struct PinaxAgentAPI: Sendable {
 
         for cited in essence.citedEvidence {
             let evidence = cited.evidence
-            guard evidence.citedField.isTextual,
-                  let quote = evidence.quote,
+            let kind = evidence.citedKind
+            guard kind.isTextual,
                   let item = itemsByID[evidence.assetID] else { continue }
 
-            guard let fieldValue = citableText(evidence.citedField, of: item) else {
+            guard let fieldValue = citableText(kind, of: item) else {
                 throw PinaxAgentAPIError.invalidEssence(
-                    "\(cited.path).field: This library does not store a separate \(evidence.citedField.rawValue) for items yet. Cite the item's `text` instead."
+                    "\(cited.path).kind: This library does not store a separate \(kind.rawValue) for items yet. Cite the item's `text` instead."
                 )
             }
-            guard normalizedQuoteText(fieldValue).contains(normalizedQuoteText(quote)) else {
+            guard !fieldValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw PinaxAgentAPIError.invalidEssence(
-                    "\(cited.path).quote: The quote does not appear in the \(evidence.citedField.rawValue) of item \(evidence.assetID.uuidString)."
+                    "\(cited.path).kind: Item \(evidence.assetID.uuidString) has no \(kind.rawValue) to cite."
+                )
+            }
+            if let quote = evidence.quote,
+               !normalizedQuoteText(fieldValue).contains(normalizedQuoteText(quote)) {
+                throw PinaxAgentAPIError.invalidEssence(
+                    "\(cited.path).quote: The quote does not appear in the \(kind.rawValue) of item \(evidence.assetID.uuidString)."
                 )
             }
         }
     }
 
     private static func citableText(
-        _ field: DesignEssence.Evidence.Field,
+        _ kind: DesignEssence.Evidence.Kind,
         of item: Inspiration
     ) -> String? {
-        switch field {
+        switch kind {
         case .image:
             nil
         case .title:

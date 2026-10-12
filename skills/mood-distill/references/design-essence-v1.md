@@ -8,7 +8,7 @@ Use this contract for both a single image and a mood. project. It separates obse
 - Confidence values are finite numbers from `0` to `1`.
 - Semantic-axis scores are finite numbers from `-1` (the left pole) to `1` (the right pole).
 - Every evidence `assetID` must occur in `source.references`.
-- Evidence cites the item's image unless it sets `field`. Use `field: "text"`, `"title"`, or `"note"` to cite the user's own words, and copy the exact words into `quote`. Textual evidence needs a non-blank `quote` and no `region`; image evidence takes no `quote`. Today a note the user typed in the item editor lives in `text`, so cite `text` until `inspiration` records carry a separate `note`.
+- Evidence cites the item's image unless it sets `kind`. Use `kind: "text"`, `"title"`, or `"note"` to cite the user's own words, and copy the words the claim relies on into `quote` whenever you can. Textual evidence takes no `region`; image evidence takes no `quote`. Today a note the user typed in the item editor lives in `text`, so cite `text` until `inspiration` records carry a separate `note`.
 - A textual citation is a reason the user gave, not a visual observation. It can support an inferred claim; it never replaces looking at the image for palette, typography, geometry, or composition.
 - Evidence regions use normalized coordinates. `x`, `y`, `width`, and `height` are each within `0...1`; width and height are positive; the rectangle must stay within the image.
 - Every claim whose basis is `inferred` must include visible evidence.
@@ -80,7 +80,7 @@ Textual evidence looks like this:
 ```json
 {
   "assetID": "11111111-1111-1111-1111-111111111111",
-  "field": "text",
+  "kind": "text",
   "quote": "kept for the quiet spacing",
   "cue": "The user names spacing as the reason this reference was kept."
 }

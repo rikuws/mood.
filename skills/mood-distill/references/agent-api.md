@@ -94,8 +94,9 @@ the App Group library.
 ## Save a project essence
 
 Only when the user asks. Validates like `validate-essence`, then checks that every
-`source.references` asset is a saved item in `source.projectID` and every textual
-`quote` appears in the cited item's field:
+`source.references` asset is a saved item in `source.projectID`, every textual
+citation (`kind` of `title`, `text`, or `note`) points at a non-empty field, and
+every `quote` appears in it:
 
 ```sh
 "$MOOD_AGENT" save-essence --file /tmp/design-essence.json --pretty
