@@ -1,8 +1,9 @@
 # mood-agent (version 1)
 
 JSON CLI bundled in mood. for Mac. It does not require the app process to be
-running, opens no network listener, and never mutates `library.json` or `Media/`.
-The only write is `save-essence`, which appends a project essence under `Essences/`.
+running, opens no network listener, and never mutates `library.json` items or `Media/`.
+Its only writes are `save-essence`, which appends a project essence under `Essences/`,
+and the study proposal commands used by `mood-study`.
 
 Default helper path:
 

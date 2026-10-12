@@ -534,7 +534,8 @@ public actor LibraryRepository {
         )
     }
 
-    private func mutate<Value: Sendable>(
+    /// Internal so feature extensions in this module share one transaction path.
+    func mutate<Value: Sendable>(
         _ body: @escaping @Sendable (inout LibrarySnapshot, Date) throws -> Value
     ) throws -> Value {
         try coordinateWriting { coordinatedURL in
@@ -735,7 +736,7 @@ public actor LibraryRepository {
         if inspiration.source == .web && payload.source == .x { inspiration.source = .x }
     }
 
-    private nonisolated static func hasProject(
+    nonisolated static func hasProject(
         named name: String,
         excluding excludedID: Project.ID? = nil,
         in snapshot: LibrarySnapshot
@@ -746,11 +747,11 @@ public actor LibraryRepository {
         }
     }
 
-    private nonisolated static func cleaned(_ value: String) -> String {
+    nonisolated static func cleaned(_ value: String) -> String {
         value.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    private nonisolated static func cleanedOptional(_ value: String?) -> String? {
+    nonisolated static func cleanedOptional(_ value: String?) -> String? {
         guard let value else { return nil }
         let cleaned = cleaned(value)
         return cleaned.isEmpty ? nil : cleaned

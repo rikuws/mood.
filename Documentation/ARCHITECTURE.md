@@ -25,7 +25,7 @@ Chromium toolbar / X mood. action / confirmed X Bookmark
              library.json + Media/
                          ^  ^
                          |  |
-                         |  +--- mood-agent (JSON API; library read-only)
+                         |  +--- mood-agent (JSON API; saved items read-only)
                          |
               shared App Group container
                          |
@@ -44,7 +44,9 @@ The iOS Share Extension writes directly to the same App Group library because a 
 The macOS app also bundles `Contents/Helpers/mood-agent` for local agent integrations. It
 is a versioned JSON command API that discovers projects, fetches a selected
 project's inspirations, resolves one exact saved item by UUID, and saves or reads a
-project's distilled essence. The helper reads through
+project's distilled essence. Its only other writes add pending suggestions and patterns to a
+guided visual study ([STUDIES.md](STUDIES.md)); the user's verdicts are made in the app. The
+helper reads through
 `LibraryRepository`, including coordinated file access and safe local-media path resolution;
 it does not require the app process to be running and does not expose a network listener.
 See [AGENT_API.md](AGENT_API.md) for its contract.

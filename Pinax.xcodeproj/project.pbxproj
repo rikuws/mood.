@@ -27,8 +27,10 @@
 		4E68DD164B4C0D335A1611B7 /* ProjectEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1AA5E7CFC59C03308728E50 /* ProjectEditorSheet.swift */; };
 		51F572CFE0AC517C495F09CB /* CaptureDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */; };
 		54E3D7C8346BD2E7C0BB984C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 17C1D1168232960E08F0EF78 /* Assets.xcassets */; };
+		575F6A47E613A9C1C9112F07 /* StudyViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD3AA784BBC5A44956B6525 /* StudyViews.swift */; };
 		59E12E4DD8A4020F3416D2A1 /* PinaxCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = BCFFDBF1E7F22D297582D9ED /* PinaxCloudSync */; };
 		62ED3BEE26211698E38F89B2 /* MacLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */; };
+		63D387E033C4FCF9B56F4B03 /* StudyViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FD3AA784BBC5A44956B6525 /* StudyViews.swift */; };
 		6A0880524547DBAF265F67D3 /* PinaxNativeHost in Resources */ = {isa = PBXBuildFile; fileRef = 26A6BB955B165ECDBD094F80 /* PinaxNativeHost */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		6CF8B90CA69711ADA949A840 /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = 643D912A58F4D05610A48609 /* PinaxCore */; };
 		714C8665CF2D2DA117CE4953 /* ChromiumBrowser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E557B2CB98FC11FB1FDE5FF /* ChromiumBrowser.swift */; };
@@ -123,9 +125,10 @@
 		1E408A9C49BD6A50F5BCF15A /* mood. */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mood.; path = .; sourceTree = SOURCE_ROOT; };
 		20E065F91541EA756088B649 /* InspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationCard.swift; sourceTree = "<group>"; };
 		263D8443E92573DF427FC129 /* PinaxiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PinaxiOS.entitlements; sourceTree = "<group>"; };
-		26A6BB955B165ECDBD094F80 /* PinaxNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; path = PinaxNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
+		26A6BB955B165ECDBD094F80 /* PinaxNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = PinaxNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
 		28439851C5DD34712CF32AEB /* BrowserIntegrationInstaller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserIntegrationInstaller.swift; sourceTree = "<group>"; };
 		2BE334042550ABD6F1DCA236 /* CaptureAcknowledgement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAcknowledgement.swift; sourceTree = "<group>"; };
+		2FD3AA784BBC5A44956B6525 /* StudyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyViews.swift; sourceTree = "<group>"; };
 		2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHost.swift; sourceTree = "<group>"; };
 		42094DB6B27C4C1FF5F6C30C /* InspirationImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationImageView.swift; sourceTree = "<group>"; };
 		43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSLibraryView.swift; sourceTree = "<group>"; };
@@ -133,7 +136,7 @@
 		5414C354714BAA860E2A8775 /* BrowserIntegrationConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserIntegrationConfiguration.swift; sourceTree = "<group>"; };
 		592A3D408D85B45AB3FA2D98 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		59329A54B4B5A6A868950E94 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		5DF1139AD333D8B51AD6C37F /* mood.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = mood.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PinaxiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
 		6648723837BCA939AED69373 /* CaptureSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSheet.swift; sourceTree = "<group>"; };
 		66D31782EDBB792389D4E078 /* InspirationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationDetailView.swift; sourceTree = "<group>"; };
@@ -151,7 +154,7 @@
 		AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserSetupView.swift; sourceTree = "<group>"; };
 		AEEDA3EB99E6CC5AD40A1785 /* PinaxColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxColor.swift; sourceTree = "<group>"; };
 		BDA09240C82D4486947662C8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		C09FDC155FD3B7B1808DFF55 /* PinaxAgent */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = text; name = PinaxAgent; path = "mood-agent"; sourceTree = BUILT_PRODUCTS_DIR; };
+		C09FDC155FD3B7B1808DFF55 /* PinaxAgent */ = {isa = PBXFileReference; includeInIndex = 0; path = PinaxAgent; sourceTree = BUILT_PRODUCTS_DIR; };
 		C421984B2C307DCC855CABA7 /* InspirationEditorSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationEditorSheet.swift; sourceTree = "<group>"; };
 		C5F25D0B681D7DBDF140A01D /* IOSInspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSInspirationCard.swift; sourceTree = "<group>"; };
 		C7A3B85355F1E375738700D9 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
@@ -161,7 +164,7 @@
 		E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPinaxNativeMessaging.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxiOSApp.swift; sourceTree = "<group>"; };
 		F24D43E728BC7634B5C7B482 /* ProjectViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViews.swift; sourceTree = "<group>"; };
-		FB19603294E74AE12164816C /* PinaxMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = PinaxMac.app; path = mood.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FB19603294E74AE12164816C /* PinaxMac.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PinaxMac.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -374,7 +377,7 @@
 			children = (
 				E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */,
 				C09FDC155FD3B7B1808DFF55 /* PinaxAgent */,
-				5DF1139AD333D8B51AD6C37F /* mood.app */,
+				5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */,
 				FB19603294E74AE12164816C /* PinaxMac.app */,
 				26A6BB955B165ECDBD094F80 /* PinaxNativeHost */,
 				9034FF366C8E265E756471AC /* PinaxShareExtension.appex */,
@@ -404,8 +407,8 @@
 			children = (
 				7913E82468644892D4F1181A /* Assets.xcassets */,
 				BDA09240C82D4486947662C8 /* Info.plist */,
-				263D8443E92573DF427FC129 /* PinaxiOS.entitlements */,
 				2DE16D20D12390630B19973E /* InfoPlist.strings */,
+				263D8443E92573DF427FC129 /* PinaxiOS.entitlements */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -414,6 +417,7 @@
 			isa = PBXGroup;
 			children = (
 				DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */,
+				2FD3AA784BBC5A44956B6525 /* StudyViews.swift */,
 			);
 			path = AppUI;
 			sourceTree = "<group>";
@@ -519,7 +523,7 @@
 				BCFFDBF1E7F22D297582D9ED /* PinaxCloudSync */,
 			);
 			productName = PinaxiOS;
-			productReference = 5DF1139AD333D8B51AD6C37F /* mood.app */;
+			productReference = 5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 		79B8175317766BE52357EBC0 /* PinaxAgent */ = {
@@ -604,6 +608,7 @@
 						ProvisioningStyle = Automatic;
 					};
 					5F8C5ADE6300043D98005E05 = {
+						DevelopmentTeam = R48ND8Q8V9;
 						ProvisioningStyle = Automatic;
 					};
 					79B8175317766BE52357EBC0 = {
@@ -621,6 +626,7 @@
 				};
 			};
 			buildConfigurationList = 14AF2AB886FD57DC31A93F93 /* Build configuration list for PBXProject "Pinax" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -633,7 +639,6 @@
 				17981DD54B317B800DBEE57F /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
-			productRefGroup = CD837CA6AC567DC065268C59 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -738,6 +743,7 @@
 				2ED9C8D4CAF2AA22B4C96B1C /* MacSpaceChrome.swift in Sources */,
 				14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */,
 				4E68DD164B4C0D335A1611B7 /* ProjectEditorSheet.swift in Sources */,
+				63D387E033C4FCF9B56F4B03 /* StudyViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -783,6 +789,7 @@
 				4184544F645A5DE57F92F9E9 /* PinaxColor.swift in Sources */,
 				D326BFE9105DAC73BFA33491 /* PinaxiOSApp.swift in Sources */,
 				F7BFDE853DF354E1F5EADB30 /* ProjectViews.swift in Sources */,
+				575F6A47E613A9C1C9112F07 /* StudyViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -864,7 +871,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = iOS/Resources/PinaxiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = R48ND8Q8V9;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iOS/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -990,7 +996,6 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = iOS/Resources/PinaxiOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				DEVELOPMENT_TEAM = R48ND8Q8V9;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = iOS/Resources/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

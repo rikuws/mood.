@@ -151,7 +151,11 @@ struct MacLibraryView: View {
                 onSelect: selectSpace,
                 onToggleCollapse: toggleProjectSidebar,
                 onCreate: { sheet = .newProject },
+                onCreateStudy: { sheet = .newStudy },
                 onEdit: { sheet = .editProject($0) },
+                onStudy: { project in
+                    sheet = project.isStudy ? .study(project.id) : .startStudy(project)
+                },
                 onDelete: { pendingProjectDeletion = $0 },
                 onCapture: { sheet = .capture },
                 onBrowserSetup: { sheet = .browserSetup }
@@ -240,13 +244,24 @@ struct MacLibraryView: View {
     }
 
     private var canvasChrome: some View {
-        MacCanvasSearchControl(
-            text: $store.searchText,
-            isExpanded: isSearching || !store.searchText.isEmpty,
-            activation: searchActivation,
-            onOpen: beginSearch,
-            onDismiss: dismissSearch
-        )
+        HStack(spacing: 8) {
+            if let studyProjectID = currentStudyProjectID {
+                Button {
+                    sheet = .study(studyProjectID)
+                } label: {
+                    Label("Study", systemImage: "eye")
+                }
+                .help("Open the visual study")
+            }
+
+            MacCanvasSearchControl(
+                text: $store.searchText,
+                isExpanded: isSearching || !store.searchText.isEmpty,
+                activation: searchActivation,
+                onOpen: beginSearch,
+                onDismiss: dismissSearch
+            )
+        }
         .padding(.trailing, 16)
         .padding(.top, 15)
         .accessibilitySortPriority(1)
@@ -461,6 +476,31 @@ struct MacLibraryView: View {
             }
         case .browserSetup:
             BrowserSetupView()
+        case .newStudy:
+            StudyStartForm { subject, brief in
+                let project = try await store.createStudy(subject: subject, brief: brief)
+                store.scope = .project(project.id)
+                showToast("Study started", symbol: "eye")
+                requestSync()
+            }
+        case .startStudy(let project):
+            StudyStartForm(existingProject: project) { subject, brief in
+                try await store.startStudy(projectID: project.id, subject: subject, brief: brief)
+                store.scope = .project(project.id)
+                showToast(project.isStudy ? "Study updated" : "Study started", symbol: "eye")
+                requestSync()
+            }
+        case .study(let projectID):
+            StudyPanel(
+                store: store,
+                projectID: projectID,
+                onMutation: requestSync,
+                onEdit: {
+                    if let studyProject = project(with: projectID) {
+                        sheet = .startStudy(studyProject)
+                    }
+                }
+            )
         }
     }
 
@@ -573,6 +613,11 @@ struct MacLibraryView: View {
 
     private var currentProjectColorHex: String? {
         currentProjectID.flatMap { project(with: $0)?.colorHex }
+    }
+
+    private var currentStudyProjectID: Project.ID? {
+        guard let id = currentProjectID, project(with: id)?.isStudy == true else { return nil }
+        return id
     }
 
     private var currentProjectID: Project.ID? {
@@ -1215,6 +1260,9 @@ private enum SheetDestination: Identifiable {
     case editProject(Project)
     case editInspiration(Inspiration)
     case browserSetup
+    case newStudy
+    case startStudy(Project)
+    case study(Project.ID)
 
     var id: String {
         switch self {
@@ -1223,6 +1271,9 @@ private enum SheetDestination: Identifiable {
         case .editProject(let project): "edit-project-\(project.id)"
         case .editInspiration(let inspiration): "edit-inspiration-\(inspiration.id)"
         case .browserSetup: "browser-setup"
+        case .newStudy: "new-study"
+        case .startStudy(let project): "start-study-\(project.id)"
+        case .study(let projectID): "study-\(projectID)"
         }
     }
 }

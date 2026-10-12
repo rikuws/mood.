@@ -2,8 +2,9 @@ import CryptoKit
 import Foundation
 
 /// The machine-facing API exposed by the macOS app's bundled `mood-agent`
-/// helper. It never mutates `library.json` or `Media/`; the only write is
-/// `save-essence`, which appends a revision under `Essences/`.
+/// helper. Saved items, projects and verdicts are never changed: `save-essence`
+/// appends a revision under `Essences/`, and the study commands only add
+/// proposals that wait for the user's verdict in the app.
 public enum PinaxAgentAPIVersion {
     public static let current = 1
 }
@@ -16,6 +17,8 @@ public enum PinaxAgentAPIError: Error, Equatable, Sendable {
     case ambiguousProject(String)
     case inspirationNotFound(String)
     case invalidEssence(String)
+    case notAStudy(String)
+    case invalidStudyInput(String)
     case storageUnavailable(String)
     case essenceStorageFailed(String)
 }
@@ -33,6 +36,10 @@ extension PinaxAgentAPIError: LocalizedError {
             "No mood. item matches \"\(reference)\". Use an item UUID returned by `inspirations`."
         case .invalidEssence(let message):
             "The DesignEssence document is invalid: \(message)"
+        case .notAStudy(let reference):
+            "The mood. project \"\(reference)\" is not a visual study. Ask the user to start a study on it in mood. first."
+        case .invalidStudyInput(let message):
+            "The study input is invalid: \(message)"
         case .storageUnavailable(let message):
             "The mood. library could not be read: \(message)"
         case .essenceStorageFailed(let message):
@@ -52,6 +59,10 @@ extension PinaxAgentAPIError: LocalizedError {
             "inspiration_not_found"
         case .invalidEssence:
             "invalid_essence"
+        case .notAStudy:
+            "not_a_study"
+        case .invalidStudyInput:
+            "invalid_study_input"
         case .storageUnavailable, .essenceStorageFailed:
             "storage_error"
         }
@@ -356,7 +367,8 @@ public struct PinaxAgentErrorResponse: Codable, Equatable, Sendable {
 }
 
 /// Facade over the same coordinated repository used by Pinax's UI. Library
-/// data is read-only; essences are appended to a separate local store.
+/// data is read-only; essences are appended to a separate local store, and
+/// the study extension can only add pending proposals.
 public struct PinaxAgentAPI: Sendable {
     private static let maximumEssenceFileSize = 10 * 1_024 * 1_024
 
@@ -707,33 +719,12 @@ public struct PinaxAgentAPI: Sendable {
         filePath: String,
         currentDirectory: URL
     ) throws -> DesignEssence {
-        guard !filePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              !filePath.contains("\0") else {
-            throw PinaxAgentAPIError.invalidArguments("A readable JSON file path is required.")
-        }
-
-        let expandedPath = (filePath as NSString).expandingTildeInPath
-        let fileURL = (expandedPath.hasPrefix("/")
-            ? URL(fileURLWithPath: expandedPath, isDirectory: false)
-            : currentDirectory.appendingPathComponent(expandedPath, isDirectory: false))
-            .standardizedFileURL
-
         do {
-            let resourceValues = try fileURL.resourceValues(
-                forKeys: [.fileSizeKey, .isReadableKey, .isRegularFileKey]
+            let data = try readBoundedJSONFile(
+                filePath: filePath,
+                currentDirectory: currentDirectory,
+                invalid: PinaxAgentAPIError.invalidEssence
             )
-            guard resourceValues.isRegularFile == true, resourceValues.isReadable == true else {
-                throw PinaxAgentAPIError.invalidEssence("The path must identify a readable regular file.")
-            }
-            guard let fileSize = resourceValues.fileSize,
-                  fileSize <= maximumEssenceFileSize else {
-                throw PinaxAgentAPIError.invalidEssence("The JSON file exceeds the 10 MiB validation limit.")
-            }
-
-            let data = try Data(contentsOf: fileURL, options: .mappedIfSafe)
-            guard data.count <= maximumEssenceFileSize else {
-                throw PinaxAgentAPIError.invalidEssence("The JSON file exceeds the 10 MiB validation limit.")
-            }
             let essence = try JSONDecoder().decode(DesignEssence.self, from: data)
             try DesignEssenceValidator.validate(essence)
             return essence
@@ -750,7 +741,49 @@ public struct PinaxAgentAPI: Sendable {
         }
     }
 
-    private static func resolveProject(reference: String, in projects: [Project]) throws -> Project {
+    /// Reads an agent-supplied JSON file of at most 10 MiB. Relative paths
+    /// resolve against `currentDirectory`.
+    static func readBoundedJSONFile(
+        filePath: String,
+        currentDirectory: URL,
+        invalid: (String) -> PinaxAgentAPIError
+    ) throws -> Data {
+        guard !filePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              !filePath.contains("\0") else {
+            throw PinaxAgentAPIError.invalidArguments("A readable JSON file path is required.")
+        }
+
+        let expandedPath = (filePath as NSString).expandingTildeInPath
+        let fileURL = (expandedPath.hasPrefix("/")
+            ? URL(fileURLWithPath: expandedPath, isDirectory: false)
+            : currentDirectory.appendingPathComponent(expandedPath, isDirectory: false))
+            .standardizedFileURL
+
+        do {
+            let resourceValues = try fileURL.resourceValues(
+                forKeys: [.fileSizeKey, .isReadableKey, .isRegularFileKey]
+            )
+            guard resourceValues.isRegularFile == true, resourceValues.isReadable == true else {
+                throw invalid("The path must identify a readable regular file.")
+            }
+            guard let fileSize = resourceValues.fileSize,
+                  fileSize <= maximumEssenceFileSize else {
+                throw invalid("The JSON file exceeds the 10 MiB validation limit.")
+            }
+
+            let data = try Data(contentsOf: fileURL, options: .mappedIfSafe)
+            guard data.count <= maximumEssenceFileSize else {
+                throw invalid("The JSON file exceeds the 10 MiB validation limit.")
+            }
+            return data
+        } catch let error as PinaxAgentAPIError {
+            throw error
+        } catch {
+            throw invalid("The file could not be read (\(error.localizedDescription)).")
+        }
+    }
+
+    static func resolveProject(reference: String, in projects: [Project]) throws -> Project {
         if let id = UUID(uuidString: reference),
            let project = projects.first(where: { $0.id == id }) {
             return project
@@ -769,7 +802,7 @@ public struct PinaxAgentAPI: Sendable {
         return project
     }
 
-    private func loadSnapshot() async throws -> LibrarySnapshot {
+    func loadSnapshot() async throws -> LibrarySnapshot {
         do {
             return try await repository.load()
         } catch {
@@ -802,6 +835,9 @@ public enum PinaxAgentCommand: Equatable, Sendable {
     case validateEssence(file: String, prettyPrinted: Bool)
     case saveEssence(file: String, prettyPrinted: Bool)
     case essence(project: String, prettyPrinted: Bool)
+    case study(project: String, prettyPrinted: Bool)
+    case suggest(project: String, file: String, prettyPrinted: Bool)
+    case reflect(project: String, file: String, prettyPrinted: Bool)
 
     public var prettyPrinted: Bool {
         switch self {
@@ -810,7 +846,10 @@ public enum PinaxAgentCommand: Equatable, Sendable {
              .inspiration(_, let prettyPrinted),
              .validateEssence(_, let prettyPrinted),
              .saveEssence(_, let prettyPrinted),
-             .essence(_, let prettyPrinted):
+             .essence(_, let prettyPrinted),
+             .study(_, let prettyPrinted),
+             .suggest(_, _, let prettyPrinted),
+             .reflect(_, _, let prettyPrinted):
             prettyPrinted
         }
     }
@@ -882,10 +921,65 @@ public enum PinaxAgentCommand: Equatable, Sendable {
             }
             return .essence(project: reference, prettyPrinted: prettyPrinted)
 
+        case "study":
+            guard remaining.count == 2, remaining[0] == "--project" else {
+                throw PinaxAgentAPIError.invalidArguments(
+                    "Use `study --project <name-or-uuid>` with an optional `--pretty` flag."
+                )
+            }
+            return .study(
+                project: try projectReference(remaining[1]),
+                prettyPrinted: prettyPrinted
+            )
+
+        case "suggest", "reflect":
+            let options = try Self.options(
+                remaining,
+                required: ["--project", "--file"],
+                usage: "Use `\(command) --project <name-or-uuid> --file <path>` with an optional `--pretty` flag."
+            )
+            let project = try projectReference(options["--project"] ?? "")
+            let filePath = options["--file"] ?? ""
+            guard !filePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                  !filePath.contains("\0") else {
+                throw PinaxAgentAPIError.invalidArguments("A readable JSON file path is required.")
+            }
+            return command == "suggest"
+                ? .suggest(project: project, file: filePath, prettyPrinted: prettyPrinted)
+                : .reflect(project: project, file: filePath, prettyPrinted: prettyPrinted)
+
         default:
             throw PinaxAgentAPIError.invalidArguments(Self.usage)
         }
     }
 
-    public static let usage = "Usage: mood-agent projects [--pretty] | mood-agent inspirations --project <name-or-uuid> [--pretty] | mood-agent inspiration --id <uuid> [--pretty] | mood-agent validate-essence --file <path> [--pretty] | mood-agent save-essence --file <path> [--pretty] | mood-agent essence --project <name-or-uuid> [--pretty]"
+    public static let usage = "Usage: mood-agent projects [--pretty] | mood-agent inspirations --project <name-or-uuid> [--pretty] | mood-agent inspiration --id <uuid> [--pretty] | mood-agent validate-essence --file <path> [--pretty] | mood-agent save-essence --file <path> [--pretty] | mood-agent essence --project <name-or-uuid> [--pretty] | mood-agent study --project <name-or-uuid> [--pretty] | mood-agent suggest --project <name-or-uuid> --file <path> [--pretty] | mood-agent reflect --project <name-or-uuid> --file <path> [--pretty]"
+
+    private static func projectReference(_ value: String) throws -> String {
+        let reference = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !reference.isEmpty else {
+            throw PinaxAgentAPIError.invalidArguments("A project name or UUID is required.")
+        }
+        return reference
+    }
+
+    /// Parses `--flag value` pairs in any order, requiring exactly `required`.
+    private static func options(
+        _ arguments: [String],
+        required: Set<String>,
+        usage: String
+    ) throws -> [String: String] {
+        guard arguments.count == required.count * 2 else {
+            throw PinaxAgentAPIError.invalidArguments(usage)
+        }
+        var values: [String: String] = [:]
+        for index in stride(from: 0, to: arguments.count, by: 2) {
+            let flag = arguments[index]
+            guard required.contains(flag), values[flag] == nil else {
+                throw PinaxAgentAPIError.invalidArguments(usage)
+            }
+            values[flag] = arguments[index + 1]
+        }
+        return values
+    }
 }

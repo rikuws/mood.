@@ -49,6 +49,21 @@ private struct PinaxAgentExecutable {
                     await api.essence(project: project),
                     prettyPrinted: command.prettyPrinted
                 )
+            case .study(let project, _):
+                try writeJSON(
+                    await api.study(project: project),
+                    prettyPrinted: command.prettyPrinted
+                )
+            case .suggest(let project, let file, _):
+                try writeJSON(
+                    await api.suggest(project: project, filePath: file),
+                    prettyPrinted: command.prettyPrinted
+                )
+            case .reflect(let project, let file, _):
+                try writeJSON(
+                    await api.reflect(project: project, filePath: file),
+                    prettyPrinted: command.prettyPrinted
+                )
             case .validateEssence:
                 return
             }
