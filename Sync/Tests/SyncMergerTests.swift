@@ -24,6 +24,61 @@ final class SyncMergerTests: XCTestCase, @unchecked Sendable {
         XCTAssertTrue(result.mutations.projects.isEmpty)
     }
 
+    func testIndependentStudyDecisionsOnTwoDevicesBothSurvive() throws {
+        let id = UUID()
+        func suggestion(_ suggestionID: UUID, _ path: String) -> StudySuggestion {
+            StudySuggestion(
+                id: suggestionID,
+                url: URL(string: "https://example.com/\(path)")!,
+                canonicalURL: URL(string: "https://example.com/\(path)")!,
+                title: path,
+                creator: "Maker",
+                rationale: "Why",
+                suggestedAt: firstDate
+            )
+        }
+        let a = UUID()
+        let b = UUID()
+        var macA = suggestion(a, "a")
+        macA.status = .rejected
+        macA.reason = "Too crowded"
+        macA.decidedAt = firstDate.addingTimeInterval(10)
+        var phoneB = suggestion(b, "b")
+        phoneB.status = .rejected
+        phoneB.reason = "Too bright"
+        phoneB.decidedAt = secondDate
+        let local = Project(
+            id: id,
+            name: "2001",
+            study: ProjectStudy(subject: "2001", startedAt: firstDate, suggestions: [macA, suggestion(b, "b")]),
+            createdAt: firstDate,
+            updatedAt: firstDate.addingTimeInterval(10)
+        )
+        let remote = Project(
+            id: id,
+            name: "2001",
+            study: ProjectStudy(subject: "2001", startedAt: firstDate, suggestions: [suggestion(a, "a"), phoneB]),
+            createdAt: firstDate,
+            updatedAt: secondDate
+        )
+
+        let result = PinaxSyncMerger.merge(
+            local: LibrarySnapshot(projects: [local], updatedAt: secondDate),
+            remote: PinaxRemoteSnapshot(projects: [remote]),
+            state: .empty,
+            at: syncDate
+        )
+
+        let merged = try XCTUnwrap(result.snapshot.projects.first?.study?.suggestions)
+        XCTAssertEqual(merged.map(\.id), [a, b].sorted { $0.uuidString < $1.uuidString })
+        XCTAssertEqual(merged.map(\.status), [.rejected, .rejected])
+        XCTAssertEqual(
+            Set(merged.compactMap(\.reason)),
+            ["Too crowded", "Too bright"]
+        )
+        XCTAssertEqual(result.mutations.projects.map(\.id), [id])
+    }
+
     func testNewerProjectBackgroundSelectionWinsAndQueuesUpload() throws {
         let projectID = UUID()
         let firstImage = try makeInspiration(

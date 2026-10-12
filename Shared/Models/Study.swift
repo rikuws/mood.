@@ -289,6 +289,87 @@ public extension ProjectStudy {
     }
 }
 
+public extension ProjectStudy {
+    /// Combines two copies of the same study, such as a project edited on two
+    /// devices. Suggestions and reflections merge by ID, so independent
+    /// decisions on different items both survive. For the same item, a keep
+    /// beats any other state (keeping is final and has already saved an
+    /// item), a decision beats pending, and otherwise the later decision wins.
+    /// Subject and brief come from `preferred`, the copy whose project won.
+    static func merged(preferring preferred: ProjectStudy?, with other: ProjectStudy?) -> ProjectStudy? {
+        guard let preferred else { return other }
+        guard let other else { return preferred }
+
+        var result = preferred
+        result.suggestions = mergedByID(
+            preferred.suggestions,
+            other.suggestions,
+            prefer: StudySuggestion.mergePrecedes,
+            order: { ($0.suggestedAt, $0.id.uuidString) < ($1.suggestedAt, $1.id.uuidString) }
+        )
+        result.reflections = mergedByID(
+            preferred.reflections,
+            other.reflections,
+            prefer: StudyReflection.mergePrecedes,
+            order: { ($0.proposedAt, $0.id.uuidString) < ($1.proposedAt, $1.id.uuidString) }
+        )
+        return result
+    }
+
+    private static func mergedByID<Element: Identifiable>(
+        _ preferred: [Element],
+        _ other: [Element],
+        prefer: (Element, Element) -> Bool,
+        order: (Element, Element) -> Bool
+    ) -> [Element] {
+        var byID: [Element.ID: Element] = [:]
+        for element in preferred {
+            byID[element.id] = element
+        }
+        for element in other {
+            guard let existing = byID[element.id] else {
+                byID[element.id] = element
+                continue
+            }
+            // Ties keep the preferred copy.
+            if prefer(element, existing) {
+                byID[element.id] = element
+            }
+        }
+        return byID.values.sorted(by: order)
+    }
+}
+
+extension StudySuggestion {
+    /// Whether `lhs` should replace `rhs` when both copies of one suggestion meet.
+    static func mergePrecedes(_ lhs: StudySuggestion, _ rhs: StudySuggestion) -> Bool {
+        let lhsRank = lhs.status.mergeRank
+        let rhsRank = rhs.status.mergeRank
+        if lhsRank != rhsRank { return lhsRank > rhsRank }
+        return (lhs.decidedAt ?? lhs.suggestedAt) > (rhs.decidedAt ?? rhs.suggestedAt)
+    }
+}
+
+private extension StudySuggestion.Status {
+    var mergeRank: Int {
+        switch self {
+        case .pending: 0
+        case .rejected: 1
+        case .kept: 2
+        }
+    }
+}
+
+extension StudyReflection {
+    /// Whether `lhs` should replace `rhs` when both copies of one reflection meet.
+    static func mergePrecedes(_ lhs: StudyReflection, _ rhs: StudyReflection) -> Bool {
+        let lhsDecided = lhs.status != .pending
+        let rhsDecided = rhs.status != .pending
+        if lhsDecided != rhsDecided { return lhsDecided }
+        return (lhs.respondedAt ?? lhs.proposedAt) > (rhs.respondedAt ?? rhs.proposedAt)
+    }
+}
+
 /// Agent-supplied proposal for a study suggestion. It becomes a pending
 /// `StudySuggestion` only after `StudySourcePolicy` accepts it.
 public struct StudySuggestionDraft: Codable, Equatable, Sendable {

@@ -41,7 +41,10 @@ agent's reason, and the person keeps or rejects it.
 ## What is stored
 
 All of it lives in `Project.study`, an optional key in `library.json` (schema version 1). It
-syncs with the project record.
+syncs with the project record. When two devices change the same study, suggestions and
+reflections merge by ID rather than by the project's last write, so decisions made on
+different devices all survive. For the same suggestion, a keep wins, then any decision over
+pending, then the later decision.
 
 - `subject`, `brief`: the person's own framing.
 - `suggestions[]`: every proposed source with `url`, `title`, `creator`, `sourceName`,
@@ -75,7 +78,5 @@ job and, finally, the person's: nothing reaches the moodboard until they keep it
   for suggestions only.
 - `mood-distill` doesn't yet read a study's verdicts and confirmed patterns as evidence, and
   saved essences and the `GUI.md` pack are separate work.
-- Concurrent edits to the same study on two devices resolve by the project's last write, like
-  other project fields.
 - Built-in providers (Are.na, Refero, Mobbin) are not wired in; the skill can use them when the
   person's agent has access.

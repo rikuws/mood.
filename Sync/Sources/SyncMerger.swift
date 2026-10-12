@@ -38,7 +38,16 @@ public enum PinaxSyncMerger {
         let remoteProjects = newestProjectsByID(remote.projects)
         var mergedProjects: [Project] = []
         for id in Set(localProjects.keys).union(remoteProjects.keys) {
-            guard let candidate = latest(localProjects[id], remoteProjects[id]) else { continue }
+            guard var candidate = latest(localProjects[id], remoteProjects[id]) else { continue }
+            if let localProject = localProjects[id], let remoteProject = remoteProjects[id] {
+                // Study decisions are per item, so they merge by ID instead of
+                // riding project-level last-write-wins.
+                let loser = candidate == localProject ? remoteProject : localProject
+                candidate.study = ProjectStudy.merged(
+                    preferring: candidate.study,
+                    with: loser.study
+                )
+            }
             let key = PinaxSyncEntityKey(kind: .project, id: id)
             if let tombstone = tombstones[key], tombstone.deletedAt >= candidate.updatedAt {
                 continue

@@ -78,6 +78,78 @@ final class StudyTests: XCTestCase, @unchecked Sendable {
         XCTAssertFalse(StudySourcePolicy.isGeneratedImageryHost(nil))
     }
 
+    func testMergingStudiesKeepsEachItemsStrongestDecision() {
+        let base = Date(timeIntervalSince1970: 1_000)
+        func suggestion(
+            _ id: UUID,
+            _ status: StudySuggestion.Status,
+            decidedAt: TimeInterval? = nil,
+            reason: String? = nil
+        ) -> StudySuggestion {
+            StudySuggestion(
+                id: id,
+                url: URL(string: "https://example.com/\(id.uuidString)")!,
+                canonicalURL: URL(string: "https://example.com/\(id.uuidString)")!,
+                title: "Work",
+                creator: "Maker",
+                rationale: "Why",
+                suggestedAt: base,
+                status: status,
+                reason: reason,
+                decidedAt: decidedAt.map { base.addingTimeInterval($0) }
+            )
+        }
+        let keptVsLaterReject = UUID()
+        let decidedVsPending = UUID()
+        let laterReason = UUID()
+        let onlyOther = UUID()
+        let reflection = UUID()
+
+        let preferred = ProjectStudy(
+            subject: "Preferred",
+            startedAt: base,
+            suggestions: [
+                suggestion(keptVsLaterReject, .kept, decidedAt: 1),
+                suggestion(decidedVsPending, .pending),
+                suggestion(laterReason, .rejected, decidedAt: 1, reason: "old"),
+            ],
+            reflections: [StudyReflection(id: reflection, statement: "A", proposedAt: base)]
+        )
+        let other = ProjectStudy(
+            subject: "Other",
+            startedAt: base,
+            suggestions: [
+                suggestion(keptVsLaterReject, .rejected, decidedAt: 5),
+                suggestion(decidedVsPending, .rejected, decidedAt: 2, reason: "no"),
+                suggestion(laterReason, .rejected, decidedAt: 3, reason: "new"),
+                suggestion(onlyOther, .pending),
+            ],
+            reflections: [
+                StudyReflection(
+                    id: reflection,
+                    statement: "A",
+                    proposedAt: base,
+                    status: .corrected,
+                    correction: "B",
+                    respondedAt: base.addingTimeInterval(4)
+                ),
+            ]
+        )
+
+        let merged = ProjectStudy.merged(preferring: preferred, with: other)
+        let byID = Dictionary(uniqueKeysWithValues: (merged?.suggestions ?? []).map { ($0.id, $0) })
+
+        XCTAssertEqual(merged?.subject, "Preferred")
+        XCTAssertEqual(byID.count, 4)
+        XCTAssertEqual(byID[keptVsLaterReject]?.status, .kept)
+        XCTAssertEqual(byID[decidedVsPending]?.reason, "no")
+        XCTAssertEqual(byID[laterReason]?.reason, "new")
+        XCTAssertEqual(byID[onlyOther]?.status, .pending)
+        XCTAssertEqual(merged?.reflections.first?.acceptedStatement, "B")
+        XCTAssertEqual(ProjectStudy.merged(preferring: nil, with: other), other)
+        XCTAssertEqual(ProjectStudy.merged(preferring: preferred, with: nil), preferred)
+    }
+
     // MARK: - Repository
 
     func testCreateStudyMakesProjectWithSubjectAndBrief() async throws {
