@@ -62,8 +62,9 @@ python3 scripts/mood_pack.py trace \
 ```
 
 `trace` gives every claim an ID (`P` principles, `T` tokens, `R` do's and don'ts, `C`
-composition) and keeps it only when its evidence reaches a saved item, or an item's note for
-evidence marked `"kind": "note"`. It drops a claim with:
+composition) and keeps it only when its evidence reaches a saved item. Evidence with `kind` `note`, `text` or
+`title` must reach that field of the item, and its `quote`, if any, must appear there. It drops
+a claim with:
 
 - no evidence;
 - evidence that cites no saved item (for example a deleted item or an unsaved image);

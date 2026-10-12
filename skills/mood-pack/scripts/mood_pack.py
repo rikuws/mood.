@@ -129,8 +129,19 @@ def effective_role(asset_id: str, roles: dict[str, str], item: dict | None) -> s
 
 
 def note_of(item: dict | None) -> str:
-    note = (item or {}).get("note")
-    return note.strip() if isinstance(note, str) else ""
+    return field_of(item, "note")
+
+
+def field_of(item: dict | None, field: str) -> str:
+    value = (item or {}).get(field)
+    return value.strip() if isinstance(value, str) else ""
+
+
+def squash(text: str) -> str:
+    return " ".join(text.split()).casefold()
+
+
+TEXT_KINDS = ("note", "text", "title")
 
 
 def resolve_claim(
@@ -149,18 +160,29 @@ def resolve_claim(
     for entry in evidence:
         asset_id = normalize_id(entry.get("assetID"))
         item = items.get(asset_id)
-        kind = entry.get("kind", "image")
+        kind = entry.get("kind") or "image"
         if item is None:
             unresolved.append(asset_id)
             continue
-        if kind == "note" and not note_of(item):
-            unresolved.append(f"{asset_id} (note citation, but the item has no note)")
+        quoted = None
+        if kind in TEXT_KINDS:
+            field = field_of(item, kind)
+            if not field:
+                unresolved.append(f"{asset_id} ({kind} citation, but the item has no {kind})")
+                continue
+            quoted = (entry.get("quote") or "").strip() or field
+            if squash(quoted) not in squash(field):
+                unresolved.append(f"{asset_id} ({kind} quote not found in the item's {kind})")
+                continue
+        elif kind != "image":
+            unresolved.append(f"{asset_id} (unknown evidence kind {kind!r})")
             continue
         sources.append({
             "assetID": asset_id,
-            "kind": "note" if kind == "note" else "image",
+            "kind": kind,
             "role": effective_role(asset_id, roles, item),
             "cue": entry.get("cue", ""),
+            **({"quote": quoted} if quoted else {}),
             **({"measurement": entry["measurement"]} if entry.get("measurement") else {}),
         })
 
@@ -307,21 +329,26 @@ def quote(text: str, limit: int = 240) -> str:
 
 
 def why_line(entry: dict, sources: dict[str, dict]) -> str:
-    """The user's cited notes first, then the observed cues, each labelled."""
+    """The user's cited notes first, then saved text, then observed cues, each labelled."""
     notes: list[str] = []
+    saved: list[str] = []
     seen: list[str] = []
     for source in entry["sources"]:
         info = sources[source["assetID"]]
-        if source["kind"] == "note":
-            quoted = f'{info["sid"]} "{quote(info["note"])}"'
-            if quoted not in notes:
-                notes.append(quoted)
+        if source["kind"] in TEXT_KINDS:
+            target = notes if source["kind"] == "note" else saved
+            label = "" if source["kind"] == "note" else f"{source['kind']} of "
+            quoted = f'{label}{info["sid"]} "{quote(source["quote"])}"'
+            if quoted not in target:
+                target.append(quoted)
         elif source.get("cue"):
             role = " (rejected)" if source["role"] == "negative" else ""
             seen.append(f'{info["sid"]}{role}: {quote(source["cue"], 200).rstrip(".")}')
     parts = []
     if notes:
         parts.append("Your words on " + "; ".join(notes) + ".")
+    if saved:
+        parts.append("Saved with the reference: " + "; ".join(saved) + ".")
     if seen:
         parts.append("Observed in " + "; ".join(seen) + ".")
     return " ".join(parts) or "Cited references only."

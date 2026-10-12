@@ -69,6 +69,33 @@ class TraceTests(unittest.TestCase):
         dropped = {entry["id"]: entry["reason"] for entry in self.trace(essence)["dropped"]}
         self.assertIn("has no note", dropped["P3"])
 
+    def test_text_and_title_citations_quote_the_item(self) -> None:
+        essence = copy.deepcopy(self.essence)
+        essence["directive"]["prefer"][1]["evidence"] = [
+            {"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "kind": "text",
+             "quote": "new  TABLE component", "cue": "Saved post text."},
+            {"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "kind": "title", "cue": "Title."},
+        ]
+        r3 = next(e for e in self.trace(essence)["kept"] if e["id"] == "R3")
+        self.assertEqual([s["kind"] for s in r3["sources"]], ["text", "title"])
+        self.assertEqual(r3["sources"][1]["quote"], "Dense table with hairlines")
+
+    def test_quote_must_appear_in_the_cited_field(self) -> None:
+        essence = copy.deepcopy(self.essence)
+        essence["directive"]["prefer"][1]["evidence"] = [
+            {"assetID": ITEM_1, "kind": "note", "quote": "I hate grey", "cue": "Note."},
+        ]
+        dropped = {entry["id"]: entry["reason"] for entry in self.trace(essence)["dropped"]}
+        self.assertIn("quote not found", dropped["R3"])
+
+    def test_unknown_evidence_kind_is_unresolved(self) -> None:
+        essence = copy.deepcopy(self.essence)
+        essence["directive"]["prefer"][1]["evidence"] = [
+            {"assetID": ITEM_1, "kind": "vibe", "cue": "?"},
+        ]
+        dropped = {entry["id"]: entry["reason"] for entry in self.trace(essence)["dropped"]}
+        self.assertIn("unknown evidence kind", dropped["R3"])
+
     def test_contradictions_become_open_questions(self) -> None:
         self.assertEqual(
             self.trace()["openQuestions"],
@@ -141,6 +168,7 @@ class RenderAndCheckTests(unittest.TestCase):
     def test_gui_quotes_cited_notes_and_drops_untraced_rules(self) -> None:
         text = self.gui()
         self.assertIn('Your words on S1 "I love how calm this is.', text)
+        self.assertNotIn('The user\'s note says', text)
         self.assertNotIn("generous outer margins", text)
         self.assertNotIn("single accent colour", text)
         self.assertNotIn("gradients for hero areas", text)

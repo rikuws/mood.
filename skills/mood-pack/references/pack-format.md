@@ -47,11 +47,14 @@ Each guideline in GUI.md is a bullet `- [ID] text` with two sub-bullets:
 `summary.coherence`, `semanticAxes` and `cueEffects` are analysis, not guidance, and are not
 exported. `projectVariation.contradictions` become open questions.
 
-## Note evidence
+## Text evidence
 
-An evidence entry with `"kind": "note"` cites the user's note on that item (the item's
-`note` field) rather than its image. It only resolves when the item has a non-empty note.
-Evidence without `kind` cites the image.
+Evidence `kind` is `image` (the default when absent), `note`, `text` or `title`, matching
+`Evidence.kind` in `Shared/DesignEssence.swift`. A `note`, `text` or `title` citation resolves only when the item
+has that field, and when the evidence carries a `quote`, the quote must appear in that field
+(whitespace and case ignored). Notes are quoted in the Why line as the user's words; `text`
+and `title` are quoted as text saved with the reference, since captured post text is not
+necessarily the user's own. Any other kind is unresolved.
 
 ## What check enforces
 
