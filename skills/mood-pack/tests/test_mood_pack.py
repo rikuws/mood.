@@ -88,6 +88,16 @@ class TraceTests(unittest.TestCase):
         dropped = {entry["id"]: entry["reason"] for entry in self.trace(essence)["dropped"]}
         self.assertIn("quote not found", dropped["R3"])
 
+    def test_quotes_match_like_save_essence(self) -> None:
+        essence = copy.deepcopy(self.essence)
+        essence["directive"]["prefer"][1]["evidence"] = [
+            {"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "kind": "title",
+             "quote": "DENSE  table", "cue": "Title."},
+        ]
+        r3 = next(e for e in self.trace(essence)["kept"] if e["id"] == "R3")
+        self.assertEqual(r3["sources"][0]["kind"], "title")
+        self.assertEqual(mood_pack.squash("Caf\u00e9  Ｇrid"), mood_pack.squash("cafe grid"))
+
     def test_unknown_evidence_kind_is_unresolved(self) -> None:
         essence = copy.deepcopy(self.essence)
         essence["directive"]["prefer"][1]["evidence"] = [
@@ -312,6 +322,29 @@ class EmptyTraceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(mood_pack.PackError):
                 mood_pack.render_pack(trace, Path(tmp), "Empty", "design/gui")
+
+
+class EssenceLoadingTests(unittest.TestCase):
+    def write(self, tmp: str, payload: dict) -> str:
+        path = Path(tmp, "essence.json")
+        path.write_text(json.dumps(payload))
+        return str(path)
+
+    def test_accepts_a_saved_essence_response(self) -> None:
+        essence = load("essence.json")
+        response = {
+            "apiVersion": 1, "ok": True, "project": {"name": "Quiet tools"},
+            "revisionCount": 1, "stale": False, "essence": essence,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(mood_pack.load_essence(self.write(tmp, response)), essence)
+            self.assertEqual(mood_pack.load_essence(self.write(tmp, essence)), essence)
+
+    def test_refuses_a_project_without_a_saved_essence(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            for payload in ({"ok": True, "revisionCount": 0}, {"ok": False, "error": {}}):
+                with self.assertRaises(mood_pack.PackError):
+                    mood_pack.load_essence(self.write(tmp, payload))
 
 
 class CommandLineTests(unittest.TestCase):

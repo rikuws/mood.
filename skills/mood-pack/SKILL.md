@@ -24,6 +24,7 @@ This skill ships beside `mood-distill` and reuses its finder. From this skill di
 ```sh
 MOOD_AGENT="$(../mood-distill/scripts/find-mood-agent.sh)"
 export MOOD_AGENT
+TMP="$(mktemp -d)"
 ```
 
 Stop and report the finder's error if it fails. Then check whether the helper can return
@@ -34,7 +35,8 @@ saved essences: `"$MOOD_AGENT" --help` lists `essence --project` when it can.
 Resolve the project with `projects --pretty`, then use its UUID everywhere.
 
 1. **Saved essence (preferred).** When the helper supports it, run
-   `"$MOOD_AGENT" essence --project <uuid> --pretty` and take the latest essence. If the
+   `"$MOOD_AGENT" essence --project <uuid> --pretty > "$TMP/essence.json"`; `trace` reads
+   the latest essence straight from that response. If the
    response marks it stale (the project's items changed since it was distilled), tell the
    user what changed and ask whether to re-distill first or package the stale one. Do not
    decide for them.
@@ -45,7 +47,7 @@ Resolve the project with `projects --pretty`, then use its UUID everywhere.
 A single-image essence for an image that is not saved in mood. cannot be packaged: none of its
 rules can trace to a saved item. Say so and offer to distill from saved items instead.
 
-Fetch the items the essence cites, into a temporary directory outside the library:
+Fetch the items the essence cites into `$TMP`, outside the library:
 
 ```sh
 "$MOOD_AGENT" inspirations --project <uuid> --pretty > "$TMP/items.json"

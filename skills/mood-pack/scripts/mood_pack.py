@@ -21,6 +21,7 @@ import hashlib
 import json
 import re
 import sys
+import unicodedata
 from pathlib import Path
 
 TRACE_FORMAT = "mood-pack-trace/1"
@@ -85,6 +86,22 @@ def normalize_id(value: object) -> str:
     return str(value or "").strip().upper()
 
 
+def load_essence(path: str) -> dict:
+    """Accept a DesignEssence document or a mood-agent `essence` response."""
+    payload = load_json(path)
+    if not isinstance(payload, dict):
+        raise PackError("The essence file is not a JSON object.")
+    if payload.get("ok") is False:
+        raise PackError(f"{path} is a mood-agent error response.")
+    if "schemaVersion" in payload:
+        return payload
+    if "essence" in payload or "revisionCount" in payload:
+        if not isinstance(payload.get("essence"), dict):
+            raise PackError(f"{path} is a mood-agent essence response with no saved essence.")
+        return payload["essence"]
+    raise PackError(f"{path} holds no design essence.")
+
+
 def load_items(paths: list[str]) -> dict[str, dict]:
     """Accept mood-agent `inspirations`, `inspiration`, or a bare list."""
     items: dict[str, dict] = {}
@@ -138,7 +155,10 @@ def field_of(item: dict | None, field: str) -> str:
 
 
 def squash(text: str) -> str:
-    return " ".join(text.split()).casefold()
+    """Fold case, diacritics, width and whitespace runs, as `save-essence` does."""
+    folded = unicodedata.normalize("NFKD", text.casefold())
+    stripped = "".join(c for c in folded if not unicodedata.combining(c))
+    return " ".join(stripped.split())
 
 
 TEXT_KINDS = ("note", "text", "title")
@@ -1057,9 +1077,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     try:
         if args.command == "trace":
-            essence = load_json(args.essence)
-            if not isinstance(essence, dict):
-                raise PackError("The essence file is not a JSON object.")
+            essence = load_essence(args.essence)
             result = build_trace(essence, load_items(args.items))
             Path(args.out).write_text(json.dumps(result, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
             print(json.dumps({
