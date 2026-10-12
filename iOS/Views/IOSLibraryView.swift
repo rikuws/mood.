@@ -81,6 +81,33 @@ struct IOSLibraryView: View {
                     showMessage("Changes saved")
                     requestSync()
                 }
+            case .newStudy:
+                StudyStartForm { subject, brief in
+                    let project = try await store.createStudy(subject: subject, brief: brief)
+                    store.scope = .project(project.id)
+                    showMessage("Study started")
+                    requestSync()
+                }
+                .presentationDetents([.medium, .large])
+            case .startStudy(let project):
+                StudyStartForm(existingProject: project) { subject, brief in
+                    try await store.startStudy(projectID: project.id, subject: subject, brief: brief)
+                    store.scope = .project(project.id)
+                    showMessage(project.isStudy ? "Study updated" : "Study started")
+                    requestSync()
+                }
+                .presentationDetents([.medium, .large])
+            case .study(let projectID):
+                StudyPanel(
+                    store: store,
+                    projectID: projectID,
+                    onMutation: requestSync,
+                    onEdit: {
+                        if let studyProject = store.snapshot.project(id: projectID) {
+                            sheet = .startStudy(studyProject)
+                        }
+                    }
+                )
             }
         }
         .confirmationDialog(
@@ -250,6 +277,16 @@ struct IOSLibraryView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            if let project = selectedProject, project.isStudy {
+                Button {
+                    sheet = .study(project.id)
+                } label: {
+                    Label("Study", systemImage: "eye")
+                }
+            }
+        }
+
         ToolbarItem(placement: .principal) {
             Text(ProductIdentity.displayName)
                 .font(.system(.headline, design: .serif, weight: .semibold))
@@ -268,6 +305,18 @@ struct IOSLibraryView: View {
                     sheet = .projects
                 } label: {
                     Label("Manage projects", systemImage: "folder")
+                }
+                Button {
+                    sheet = .newStudy
+                } label: {
+                    Label("New visual study", systemImage: "eye")
+                }
+                if let project = selectedProject, !project.isStudy {
+                    Button {
+                        sheet = .startStudy(project)
+                    } label: {
+                        Label("Start a study on \(project.name)", systemImage: "eye")
+                    }
                 }
             } label: {
                 Image(systemName: "plus")
@@ -473,6 +522,10 @@ struct IOSLibraryView: View {
         } label: {
             Label("Delete", systemImage: "trash")
         }
+    }
+
+    private var selectedProject: Project? {
+        selectedProjectID.flatMap { store.snapshot.project(id: $0) }
     }
 
     private var selectedProjectID: Project.ID? {
@@ -857,6 +910,9 @@ private enum LibrarySheet: Identifiable {
     case manualCapture
     case projects
     case editInspiration(Inspiration)
+    case newStudy
+    case startStudy(Project)
+    case study(Project.ID)
 
     var id: String {
         switch self {
@@ -866,6 +922,12 @@ private enum LibrarySheet: Identifiable {
             "projects"
         case .editInspiration(let inspiration):
             "edit-\(inspiration.id.uuidString)"
+        case .newStudy:
+            "new-study"
+        case .startStudy(let project):
+            "start-study-\(project.id.uuidString)"
+        case .study(let projectID):
+            "study-\(projectID.uuidString)"
         }
     }
 }

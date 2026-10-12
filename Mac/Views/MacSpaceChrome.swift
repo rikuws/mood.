@@ -317,7 +317,9 @@ struct MacProjectSidebar: View {
     let onSelect: (LibraryScope) -> Void
     let onToggleCollapse: () -> Void
     let onCreate: () -> Void
+    let onCreateStudy: () -> Void
     let onEdit: (Project) -> Void
+    let onStudy: (Project) -> Void
     let onDelete: (Project) -> Void
     let onCapture: () -> Void
     let onBrowserSetup: () -> Void
@@ -466,6 +468,7 @@ struct MacProjectSidebar: View {
         .contextMenu {
             if let project = item.project {
                 Button("Edit Project…") { onEdit(project) }
+                Button(project.isStudy ? "Open Study" : "Start a Study…") { onStudy(project) }
                 Divider()
                 Button("Delete Project", role: .destructive) { onDelete(project) }
             }
@@ -549,6 +552,8 @@ struct MacProjectSidebar: View {
             )
 
             Menu {
+                Button("New Visual Study…", action: onCreateStudy)
+                Divider()
                 Button("Browser Setup…", action: onBrowserSetup)
             } label: {
                 sidebarActionLabel(title: "More", systemImage: "ellipsis")

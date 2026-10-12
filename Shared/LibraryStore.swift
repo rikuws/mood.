@@ -273,12 +273,12 @@ public final class LibraryStore {
         lastError = nil
     }
 
-    private func refreshSnapshot() async throws {
+    func refreshSnapshot() async throws {
         snapshot = try await repository.load()
         lastError = nil
     }
 
-    private func record(_ error: any Error) {
+    func record(_ error: any Error) {
         lastError = error.localizedDescription
     }
 

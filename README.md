@@ -9,7 +9,7 @@ Capture surfaces are included for:
 - X's own Bookmark action (Remove bookmark is ignored);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
-See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
+See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. [Guided visual studies](Documentation/STUDIES.md) let you seed a subject with work you love, judge real sources an agent finds with the [`mood-study`](skills/mood-study) skill, and confirm the patterns it reflects back. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
 
 ## Requirements
 
@@ -92,8 +92,8 @@ The native host validates a capture and targets the containing `mood.app` bundle
 ## Agent API on macOS
 
 The Mac app bundles `Contents/Helpers/mood-agent`, a local JSON API intended for
-agent skills and other automation. It never edits the library; its one write saves a
-project's distilled essence as a separate revision file. It reads through `LibraryRepository`, so requests see the
+agent skills and other automation. It never edits saved items; its writes save a
+project's distilled essence as a separate revision file and add pending study proposals. It reads through `LibraryRepository`, so requests see the
 same coordinated App Group snapshot as the UI without requiring mood. to be open.
 
 ```sh
@@ -126,6 +126,15 @@ that does not trace to them is dropped and reported.
 npx skills add https://github.com/rikuws/mood. --skill mood-pack -g
 ```
 
+To find inspirations for a [guided visual study](Documentation/STUDIES.md), install the
+[`mood-study`](skills/mood-study) skill. It reads the study, searches for real, credited work
+related to your seeds and notes, and adds it as pending suggestions for you to keep or reject
+in mood. It can't keep, reject, or confirm anything itself.
+
+```sh
+npx skills add https://github.com/rikuws/mood. --skill mood-study -g
+```
+
 ## Share from iOS and X
 
 1. Build, sign, and install the **PinaxiOS** scheme; the **Save to mood.** Share Extension is embedded automatically.
@@ -155,6 +164,9 @@ bash skills/mood-distill/tests/find-mood-agent.test.sh
 
 # mood-pack trace, render and check
 python3 -m unittest discover -s skills/mood-pack/tests
+
+# mood-study helper lookup
+bash skills/mood-study/tests/find-mood-agent.test.sh
 ```
 
 ## Repository map
@@ -162,7 +174,7 @@ python3 -m unittest discover -s skills/mood-pack/tests
 ```text
 Shared/                 Local models, canonical URL dedupe, coordinated JSON repository
 AgentAPI/               Bundled JSON command API for agent skills
-skills/                 Portable Agent Skills (mood-distill, mood-pack)
+skills/                 Portable Agent Skills (mood-distill, mood-pack, mood-study)
 Sync/                   CloudKit backend, merge engine, tombstones, sync state and tests
 Mac/                    Native macOS library UI and Chromium installer
 iOS/                    Native iOS library UI

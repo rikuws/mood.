@@ -10,9 +10,11 @@ Older Mac builds may still ship `pinax-agent` at the same Helpers path. The JSON
 contract is unchanged.
 
 It reads the same coordinated App Group repository as the mood. UI. The app does not need
-to be running, no network listener is opened, and the API never mutates `library.json` or
-`Media/`. Its only write is `save-essence`, which appends a project essence revision under
-`Essences/` beside the library. A
+to be running and no network listener is opened. It never changes saved items
+or the user's verdicts. It writes in two places only: `save-essence` appends a project
+essence revision under `Essences/` beside the library, and `suggest` and `reflect` add
+pending proposals to a guided visual study (see
+[Guided visual studies](#guided-visual-studies)). A
 signed helper carries the `group.com.rikuwikman.pinax` entitlement so it can read the
 production library. An unsigned Debug helper follows the app's normal development fallback
 to `~/Library/Application Support/Pinax`; `PINAX_STORAGE_DIRECTORY` can override that path
@@ -264,12 +266,41 @@ Stable error codes in version 1 are:
 - `ambiguous_project`
 - `inspiration_not_found`
 - `invalid_essence`
+- `not_a_study`
+- `invalid_study_input`
 - `storage_error`
 - `internal_error`
 
 An agent skill should call `projects` when it needs to resolve user wording, then use the
 returned UUID with `inspirations --project <uuid>`. Treat unknown response fields as
 forward-compatible additions and reject an `apiVersion` it does not support.
+
+## Guided visual studies
+
+A study is a project the user started in mood. with a subject ("2001: A Space Odyssey") and
+seeded with work they love. See [STUDIES.md](STUDIES.md) for the flow and data model. Agents
+take part through three commands:
+
+```sh
+mood-agent study --project <name-or-uuid> [--pretty]
+mood-agent suggest --project <name-or-uuid> --file <path> [--pretty]
+mood-agent reflect --project <name-or-uuid> --file <path> [--pretty]
+```
+
+- `study` returns the subject and brief, every item on the study's moodboard (same shape as
+  `inspirations`), every suggestion with its status and the user's reason, every reflected
+  pattern with the user's response, and the current `stage`.
+- `suggest` reads `{"suggestions": [{url, title, creator, rationale, sourceName?, imageURL?,
+  basedOnInspirationIDs?}]}` and adds each acceptable entry as a pending suggestion. Entries
+  without a creator or rationale, on a known AI image generator, already saved, already
+  pending, or previously rejected are returned in `skipped` with a reason code instead.
+- `reflect` reads `{"reflections": [{statement, inspirationIDs?, rejectedSuggestionIDs?}]}`.
+  Each pattern must cite at least one study item or rejected suggestion.
+
+`not_a_study` means the project exists without a study; agents should ask the user to start
+one in the app. Keeping, rejecting, confirming and correcting have no command: only the user
+decides, in mood. The full field and skip-reason reference ships with the
+[`mood-study`](../skills/mood-study) skill.
 
 ## Distill a design essence
 
