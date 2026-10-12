@@ -1,9 +1,9 @@
 ---
 name: mood-distill
 description: Extract an evidence-grounded, content-minimized design essence from a mood. project, one saved mood. item, or a single image. Use for visual style, expressed taste, design intent, creative direction, portable design rules, or applying references to later design work.
-compatibility: Requires image inspection. Saved mood. sources require macOS with mood.app installed and local library access. Extraction is read-only.
+compatibility: Requires image inspection. Saved mood. sources require macOS with mood.app installed and local library access. Extraction is read-only; a project essence is saved only when the user asks.
 metadata:
-  version: "2.0"
+  version: "2.1"
   argument-hint: "<project-name-or-uuid | item-uuid | image-path>"
 ---
 
@@ -13,8 +13,10 @@ Turn visual references into portable creative direction. Treat the result as an 
 profile: what the selection visibly expresses. Do not claim to recover a creator's hidden
 intent or a person's complete, stable taste.
 
-Keep the workflow read-only. Never write analysis into the mood. library, download remote
-media into its `Media/` directory, or add an inference service or API credential.
+Keep extraction read-only. Never write analysis into `library.json`, download remote media
+into the library's `Media/` directory, or add an inference service or API credential. The one
+write is saving a validated project essence with `save-essence`, and only when the user asks
+for it (see "Save on request").
 
 ## Prepare the helper
 
@@ -49,6 +51,10 @@ Choose one source shape from the user's request:
 For a saved record, prefer a readable `localImagePath`. Use `imageURL` only when local media
 is absent and remote retrieval is available within the user's request. Never infer visual
 properties from title, note, author, or URL when the image itself could not be inspected.
+
+The user's words are taste data. When an item's `text` or `title` says why the user kept it,
+cite those exact words as textual evidence (`kind` plus `quote`, see the schema reference)
+alongside the image evidence, rather than paraphrasing them into a model-written cue.
 
 If the project is empty, say so and stop. Text-only items may inform voice and provenance,
 but they are not visual evidence. Report every skipped or unavailable visual.
@@ -109,6 +115,30 @@ Write the candidate only to a temporary file outside the mood. library, then val
 Correct every issue before delivery. Validation never persists the essence or changes the
 library. If an arbitrary image is analyzed and the installed helper is unavailable, report
 that canonical validation could not run rather than claiming it passed.
+
+## Save on request
+
+Save only when the user asks to keep, store, or save the essence, and only for a project
+source. A helper whose `--help` does not list `save-essence` is too old to save; say mood.
+must be upgraded rather than writing the file anywhere else. First check what is already
+stored:
+
+```sh
+"$MOOD_AGENT" essence --project <project-uuid> --pretty
+```
+
+The response carries the latest `revision`, `revisionCount`, and `stale` with the item IDs
+added, removed, or edited since that revision. Mention a stale revision to the user; do not
+re-distill or overwrite on your own. Then save the validated temporary file:
+
+```sh
+"$MOOD_AGENT" save-essence --file <temporary-json-path> --pretty
+```
+
+`save-essence` re-validates, rejects references that are not saved items in that project and
+quotes that do not appear in the cited item, then appends a new revision. Revisions are never
+edited or deleted; saving the identical document again reports `already_saved`. Fix any
+`invalid_essence` error and retry rather than dropping evidence to make it pass.
 
 Lead with the concise reading described in
 [references/direction-template.md](references/direction-template.md). Keep the canonical

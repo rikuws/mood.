@@ -238,10 +238,110 @@ final class DesignEssenceTests: XCTestCase {
         XCTAssertNoThrow(try DesignEssenceValidator.validate(disclosed))
     }
 
+    func testEvidenceWithoutFieldDecodesAsImageEvidence() throws {
+        let json = Data(#"{"assetID":"11111111-1111-1111-1111-111111111111","cue":"Wide margins"}"#.utf8)
+
+        let evidence = try JSONDecoder().decode(DesignEssence.Evidence.self, from: json)
+        let encoded = try XCTUnwrap(
+            String(data: JSONEncoder().encode(evidence), encoding: .utf8)
+        )
+
+        XCTAssertNil(evidence.kind)
+        XCTAssertEqual(evidence.citedKind, .image)
+        XCTAssertFalse(encoded.contains("kind"))
+        XCTAssertFalse(encoded.contains("quote"))
+    }
+
+    func testTextualEvidenceWithQuoteValidates() {
+        let evidence = DesignEssence.Evidence(
+            assetID: assetID,
+            kind: .note,
+            quote: "the quiet spacing is why I kept this",
+            cue: "The user names spacing as the reason for keeping the item."
+        )
+
+        XCTAssertTrue(validationCodes(for: makeEssence(citing: evidence)).isEmpty)
+        XCTAssertEqual(
+            makeEssence(citing: evidence).citedEvidence.map(\.path),
+            ["summary.essence.evidence[0]"]
+        )
+    }
+
+    func testNoteEvidenceInPackShapeValidatesAndRoundTrips() throws {
+        let json = Data(#"{"assetID":"11111111-1111-1111-1111-111111111111","kind":"note","cue":"The user's note says the grey does the work."}"#.utf8)
+
+        let evidence = try JSONDecoder().decode(DesignEssence.Evidence.self, from: json)
+        let reencoded = try XCTUnwrap(
+            String(data: JSONEncoder().encode(evidence), encoding: .utf8)
+        )
+
+        XCTAssertEqual(evidence.kind, .note)
+        XCTAssertNil(evidence.quote)
+        XCTAssertTrue(reencoded.contains(#""kind":"note""#))
+        XCTAssertTrue(validationCodes(for: makeEssence(citing: evidence)).isEmpty)
+    }
+
+    func testTextualEvidenceRejectsRegion() {
+        let evidence = DesignEssence.Evidence(
+            assetID: assetID,
+            kind: .text,
+            region: DesignEssence.Evidence.NormalizedRegion(x: 0, y: 0, width: 1, height: 1),
+            cue: "The caption describes the layout."
+        )
+        let issues = DesignEssenceValidator.issues(in: makeEssence(citing: evidence))
+
+        XCTAssertEqual(
+            issues.filter { $0.code == .invalidEvidenceField }.map(\.path),
+            ["summary.essence.evidence[0].region"]
+        )
+    }
+
+    func testImageEvidenceRejectsQuoteAndTextualEvidenceRejectsBlankQuote() {
+        let imageEvidence = DesignEssence.Evidence(
+            assetID: assetID,
+            kind: .image,
+            quote: "words",
+            cue: "Wide margins"
+        )
+        let blankQuote = DesignEssence.Evidence(
+            assetID: assetID,
+            kind: .note,
+            quote: "  ",
+            cue: "The user explains the choice."
+        )
+
+        XCTAssertTrue(validationCodes(for: makeEssence(citing: imageEvidence)).contains(.invalidEvidenceField))
+        XCTAssertTrue(validationCodes(for: makeEssence(citing: blankQuote)).contains(.blankValue))
+    }
+
     private func validationCodes(
         for essence: DesignEssence
     ) -> Set<DesignEssenceValidationIssue.Code> {
         Set(DesignEssenceValidator.issues(in: essence).map(\.code))
+    }
+
+    private func makeEssence(citing evidence: DesignEssence.Evidence) -> DesignEssence {
+        DesignEssence(
+            source: DesignEssence.Source(
+                kind: .image,
+                references: [.init(assetID: assetID)],
+                inputHash: "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            ),
+            provenance: DesignEssence.Provenance(
+                extractedAt: Date(timeIntervalSince1970: 1_700_000_000),
+                model: "fixture-model",
+                pipelineVersion: "1"
+            ),
+            scope: DesignEssence.Scope(domain: .userInterface),
+            summary: DesignEssence.Summary(
+                essence: DesignEssence.Claim(
+                    value: "Quiet editorial precision",
+                    basis: .inferred,
+                    confidence: 0.8,
+                    evidence: [evidence]
+                )
+            )
+        )
     }
 
     private func makeEssence(

@@ -1,7 +1,8 @@
 # mood-agent (version 1)
 
-Read-only JSON CLI bundled in mood. for Mac. It does not require the app process
-to be running, opens no network listener, and never mutates the library.
+JSON CLI bundled in mood. for Mac. It does not require the app process to be
+running, opens no network listener, and never mutates `library.json` or `Media/`.
+The only write is `save-essence`, which appends a project essence under `Essences/`.
 
 Default helper path:
 
@@ -89,6 +90,34 @@ and never opens or mutates the mood. library:
 A valid document returns `valid: true`, its `schemaVersion`, `sourceKind`, and
 `referenceCount`. The JSON file is limited to 10 MiB. Keep temporary files outside
 the App Group library.
+
+## Save a project essence
+
+Only when the user asks. Validates like `validate-essence`, then checks that every
+`source.references` asset is a saved item in `source.projectID`, every textual
+citation (`kind` of `title`, `text`, or `note`) points at a non-empty field, and
+every `quote` appears in it:
+
+```sh
+"$MOOD_AGENT" save-essence --file /tmp/design-essence.json --pretty
+```
+
+Returns `outcome` (`saved` or `already_saved`), `project`, and `revision`
+(`id`, `sequence`, `projectID`, `extractedAt`, `savedAt`, `path`). Revisions are
+append-only files at `Essences/<project-uuid>/<sequence>-<fingerprint>.json`, local
+to this Mac. The latest is the one saved last, so a correction always wins.
+
+## Read the latest saved essence
+
+```sh
+"$MOOD_AGENT" essence --project "Website refresh" --pretty
+```
+
+Returns `project`, `revisionCount`, and, when one exists, the latest `revision`,
+the full `essence`, `stale`, and `staleness` (`addedAssetIDs`, `removedAssetIDs`,
+`changedAssetIDs`). An item counts as changed when it was edited after the
+essence's `extractedAt` or its content differs from what was saved. With no saved essence, `revisionCount` is `0` and the
+other fields are absent.
 
 ## Errors
 

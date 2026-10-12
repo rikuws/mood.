@@ -271,6 +271,373 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    func testCommandParserAcceptsEssenceStorageCommands() throws {
+        XCTAssertEqual(
+            try PinaxAgentCommand.parse(
+                arguments: ["save-essence", "--file", "essence.json", "--pretty"]
+            ),
+            .saveEssence(file: "essence.json", prettyPrinted: true)
+        )
+        XCTAssertEqual(
+            try PinaxAgentCommand.parse(arguments: ["essence", "--project", " Website "]),
+            .essence(project: "Website", prettyPrinted: false)
+        )
+        XCTAssertThrowsError(try PinaxAgentCommand.parse(arguments: ["save-essence", "essence.json"]))
+        XCTAssertThrowsError(try PinaxAgentCommand.parse(arguments: ["essence", "--project", " "]))
+        XCTAssertTrue(PinaxAgentCommand.usage.contains("save-essence --file"))
+        XCTAssertTrue(PinaxAgentCommand.usage.contains("essence --project"))
+    }
+
+    func testEssenceReturnsNoRevisionBeforeFirstSave() async throws {
+        let repository = try makeRepository()
+        let project = Project(id: UUID(), name: "Website")
+        try await repository.save(LibrarySnapshot(projects: [project]))
+
+        let response = try await PinaxAgentAPI(repository: repository).essence(project: "website")
+
+        XCTAssertTrue(response.ok)
+        XCTAssertEqual(response.project.id, project.id)
+        XCTAssertEqual(response.revisionCount, 0)
+        XCTAssertNil(response.revision)
+        XCTAssertNil(response.stale)
+        XCTAssertNil(response.essence)
+    }
+
+    func testSaveEssenceAppendsRevisionAndEssenceReturnsLatest() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        let libraryBefore = try Data(contentsOf: repository.libraryFileURL)
+
+        let first = try await api.saveEssence(
+            filePath: try writeEssence(fixture.essence(extractedAt: fixture.extractedAt), in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let again = try await api.saveEssence(
+            filePath: try writeEssence(fixture.essence(extractedAt: fixture.extractedAt), in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let laterEssence = fixture.essence(extractedAt: fixture.extractedAt.addingTimeInterval(60))
+        let second = try await api.saveEssence(
+            filePath: try writeEssence(laterEssence, in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let latest = try await api.essence(project: fixture.project.id.uuidString)
+
+        XCTAssertEqual(first.outcome, .saved)
+        XCTAssertEqual(again.outcome, .alreadySaved)
+        XCTAssertEqual(again.revision, first.revision)
+        XCTAssertEqual(second.outcome, .saved)
+        XCTAssertTrue(first.revision.id.hasPrefix("000001-"))
+        XCTAssertEqual(second.revision.sequence, 2)
+        XCTAssertEqual(
+            URL(fileURLWithPath: first.revision.path).deletingLastPathComponent().path,
+            repository.storageDirectory
+                .appendingPathComponent("Essences/\(fixture.project.id.uuidString)", isDirectory: true)
+                .path
+        )
+        XCTAssertTrue(FileManager.default.fileExists(atPath: first.revision.path))
+        XCTAssertEqual(try Data(contentsOf: repository.libraryFileURL), libraryBefore)
+
+        XCTAssertEqual(latest.revisionCount, 2)
+        XCTAssertEqual(latest.revision, second.revision)
+        XCTAssertEqual(latest.essence, laterEssence)
+        XCTAssertEqual(latest.stale, false)
+    }
+
+    func testEssenceReportsAddedRemovedAndChangedItemsAsStale() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        _ = try await api.saveEssence(
+            filePath: try writeEssence(fixture.essence(extractedAt: fixture.extractedAt), in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+
+        let added = makeInspiration(
+            title: "New",
+            projectID: fixture.project.id,
+            createdAt: fixture.extractedAt.addingTimeInterval(10)
+        )
+        var edited = fixture.first
+        edited.text = "Changed my mind about the type."
+        edited.updatedAt = fixture.extractedAt.addingTimeInterval(20)
+        try await repository.save(
+            LibrarySnapshot(projects: [fixture.project], inspirations: [edited, added])
+        )
+
+        let response = try await api.essence(project: "Website")
+
+        XCTAssertEqual(response.stale, true)
+        XCTAssertEqual(response.staleness?.addedAssetIDs, [added.id])
+        XCTAssertEqual(response.staleness?.removedAssetIDs, [fixture.second.id])
+        XCTAssertEqual(response.staleness?.changedAssetIDs, [fixture.first.id])
+    }
+
+    func testCorrectionWithTheSameExtractionTimeBecomesLatest() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        let original = fixture.essence(extractedAt: fixture.extractedAt)
+        let correction = fixture.essence(
+            extractedAt: fixture.extractedAt,
+            extraEvidence: [
+                DesignEssence.Evidence(
+                    assetID: fixture.second.id,
+                    cue: "A corrected reading of the second reference"
+                ),
+            ]
+        )
+
+        for essence in [original, correction] {
+            _ = try await api.saveEssence(
+                filePath: try writeEssence(essence, in: repository),
+                currentDirectory: repository.storageDirectory
+            )
+        }
+        let resave = try await api.saveEssence(
+            filePath: try writeEssence(original, in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let latest = try await api.essence(project: "Website")
+
+        XCTAssertEqual(resave.outcome, .alreadySaved)
+        XCTAssertEqual(resave.revision.sequence, 1)
+        XCTAssertEqual(latest.revisionCount, 2)
+        XCTAssertEqual(latest.revision?.sequence, 2)
+        XCTAssertEqual(latest.essence, correction)
+    }
+
+    func testEssenceDetectsEditsThatSyncInWithAnOlderTimestamp() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        _ = try await api.saveEssence(
+            filePath: try writeEssence(fixture.essence(extractedAt: fixture.extractedAt), in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+
+        var delayed = fixture.first
+        delayed.title = "Edited offline on the phone"
+        delayed.updatedAt = fixture.extractedAt.addingTimeInterval(-10)
+        var recaptured = fixture.second
+        recaptured.captureCount += 1
+        recaptured.lastCapturedAt = fixture.extractedAt.addingTimeInterval(-5)
+        try await repository.save(
+            LibrarySnapshot(projects: [fixture.project], inspirations: [delayed, recaptured])
+        )
+
+        let response = try await api.essence(project: "Website")
+
+        XCTAssertEqual(response.stale, true)
+        XCTAssertEqual(response.staleness?.changedAssetIDs, [fixture.first.id])
+        XCTAssertEqual(response.staleness?.addedAssetIDs, [])
+        XCTAssertEqual(response.staleness?.removedAssetIDs, [])
+    }
+
+    func testSaveEssenceAcceptsQuotesFromTheUsersOwnText() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let quote = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .text,
+            quote: "  QUIET   spacing ",
+            cue: "The user's note names spacing as the reason to keep it."
+        )
+        let unquoted = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .text,
+            cue: "The user's note explains the single column."
+        )
+
+        let response = try await PinaxAgentAPI(repository: repository).saveEssence(
+            filePath: try writeEssence(
+                fixture.essence(extractedAt: fixture.extractedAt, extraEvidence: [quote, unquoted]),
+                in: repository
+            ),
+            currentDirectory: repository.storageDirectory
+        )
+
+        XCTAssertEqual(response.outcome, .saved)
+        XCTAssertEqual(response.referenceCount, 2)
+    }
+
+    func testSaveEssenceAcceptsAndReturnsANoteCitation() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        let noteEvidence = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .note,
+            quote: "quiet  BASELINE grid",
+            cue: "The user's note names the baseline grid."
+        )
+        let essence = fixture.essence(extractedAt: fixture.extractedAt, extraEvidence: [noteEvidence])
+
+        let saved = try await api.saveEssence(
+            filePath: try writeEssence(essence, in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let readBack = try await api.essence(project: "Website")
+
+        XCTAssertEqual(saved.outcome, .saved)
+        XCTAssertEqual(readBack.essence, essence)
+        XCTAssertEqual(readBack.stale, false)
+        let cited = try XCTUnwrap(readBack.essence?.citedEvidence.map(\.evidence).first { $0.citedKind == .note })
+        XCTAssertEqual(cited.assetID, fixture.first.id)
+        XCTAssertEqual(cited.quote, "quiet  BASELINE grid")
+    }
+
+    func testSaveEssenceRejectsQuotesTheItemDoesNotContain() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let invented = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .text,
+            quote: "bold neon gradients",
+            cue: "Invented wording."
+        )
+        let note = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .note,
+            quote: "quiet spacing",
+            cue: "Quotes the item's text as if it were the note."
+        )
+        let missingNote = DesignEssence.Evidence(
+            assetID: fixture.second.id,
+            kind: .note,
+            cue: "Cites a note the item does not have."
+        )
+
+        let empty = DesignEssence.Evidence(
+            assetID: fixture.second.id,
+            kind: .text,
+            cue: "Cites text the item does not have."
+        )
+
+        for evidence in [invented, note, missingNote, empty] {
+            await XCTAssertThrowsErrorAsync(
+                try await PinaxAgentAPI(repository: repository).saveEssence(
+                    filePath: try self.writeEssence(
+                        fixture.essence(extractedAt: fixture.extractedAt, extraEvidence: [evidence]),
+                        in: repository
+                    ),
+                    currentDirectory: repository.storageDirectory
+                )
+            ) { error in
+                XCTAssertEqual(PinaxAgentErrorResponse(error: error).error.code, "invalid_essence")
+            }
+        }
+        XCTAssertFalse(
+            FileManager.default.fileExists(
+                atPath: repository.storageDirectory.appendingPathComponent("Essences").path
+            )
+        )
+    }
+
+    func testSaveEssenceRejectsReferencesOutsideTheProjectAndImageEssences() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        let stranger = UUID()
+
+        await XCTAssertThrowsErrorAsync(
+            try await api.saveEssence(
+                filePath: try self.writeEssence(
+                    fixture.essence(extractedAt: fixture.extractedAt, extraReferenceIDs: [stranger]),
+                    in: repository
+                ),
+                currentDirectory: repository.storageDirectory
+            )
+        ) { error in
+            XCTAssertEqual(PinaxAgentErrorResponse(error: error).error.code, "invalid_essence")
+            XCTAssertTrue(error.localizedDescription.contains(stranger.uuidString))
+        }
+
+        await XCTAssertThrowsErrorAsync(
+            try await api.saveEssence(
+                filePath: try self.writeEssence(self.makeValidEssence(), in: repository),
+                currentDirectory: repository.storageDirectory
+            )
+        ) { error in
+            XCTAssertEqual(PinaxAgentErrorResponse(error: error).error.code, "invalid_essence")
+        }
+    }
+
+    private struct ProjectFixture {
+        let project: Project
+        let first: Inspiration
+        let second: Inspiration
+        let extractedAt: Date
+
+        func essence(
+            extractedAt: Date,
+            extraEvidence: [DesignEssence.Evidence] = [],
+            extraReferenceIDs: [Inspiration.ID] = []
+        ) -> DesignEssence {
+            let imageEvidence = DesignEssence.Evidence(
+                assetID: first.id,
+                cue: "Generous margins around a single column"
+            )
+            let referenceIDs = [first.id, second.id] + extraReferenceIDs
+            return DesignEssence(
+                source: DesignEssence.Source(
+                    kind: .project,
+                    projectID: project.id,
+                    references: referenceIDs.map { DesignEssence.Source.Reference(assetID: $0) },
+                    inputHash: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                ),
+                provenance: DesignEssence.Provenance(
+                    extractedAt: extractedAt,
+                    model: "fixture-model",
+                    pipelineVersion: "mood-distill/2.1"
+                ),
+                scope: DesignEssence.Scope(domain: .userInterface),
+                summary: DesignEssence.Summary(
+                    essence: DesignEssence.Claim(
+                        value: "Quiet, spacious, single-column",
+                        basis: .inferred,
+                        confidence: 0.8,
+                        evidence: [imageEvidence] + extraEvidence
+                    )
+                )
+            )
+        }
+    }
+
+    private func saveProjectFixture(in repository: LibraryRepository) async throws -> ProjectFixture {
+        let project = Project(id: UUID(), name: "Website")
+        var first = makeInspiration(
+            title: "First",
+            projectID: project.id,
+            createdAt: Date(timeIntervalSince1970: 1_600_000_000)
+        )
+        first.text = "Kept for the quiet spacing and the single column."
+        first.note = "The nav labels sit on a quiet baseline grid."
+        let second = makeInspiration(
+            title: "Second",
+            projectID: project.id,
+            createdAt: Date(timeIntervalSince1970: 1_600_000_100)
+        )
+        try await repository.save(
+            LibrarySnapshot(projects: [project], inspirations: [first, second])
+        )
+        let saved = try await repository.load()
+        return ProjectFixture(
+            project: project,
+            first: try XCTUnwrap(saved.inspirations.first { $0.id == first.id }),
+            second: try XCTUnwrap(saved.inspirations.first { $0.id == second.id }),
+            extractedAt: Date(timeIntervalSince1970: 1_700_000_000)
+        )
+    }
+
+    private func writeEssence(_ essence: DesignEssence, in repository: LibraryRepository) throws -> String {
+        let fileURL = repository.storageDirectory
+            .appendingPathComponent("candidate-\(UUID().uuidString).json")
+        try JSONEncoder().encode(essence).write(to: fileURL)
+        return fileURL.lastPathComponent
+    }
+
     private func makeRepository() throws -> LibraryRepository {
         let directory = FileManager.default.temporaryDirectory
             .appendingPathComponent("PinaxAgentAPITests-\(UUID().uuidString)", isDirectory: true)
