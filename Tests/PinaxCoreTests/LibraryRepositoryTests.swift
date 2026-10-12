@@ -284,6 +284,36 @@ final class LibraryRepositoryTests: XCTestCase, @unchecked Sendable {
         XCTAssertTrue(finalSnapshot.inspirations.isEmpty)
     }
 
+    func testUpdateStoresNoteAndVerdictSeparatelyFromCapturedText() async throws {
+        let repository = try makeRepository()
+        let captured = try await repository.capture(
+            CapturePayload(
+                source: .x,
+                url: URL(string: "https://x.com/designer/status/42")!,
+                text: "Shipping the new dashboard"
+            )
+        ).inspiration
+        var edited = captured
+        edited.note = "  Love the restrained grid.  "
+        edited.verdict = .keep
+
+        let updated = try await repository.updateInspiration(edited)
+        let found = try await repository.search(query: "restrained grid")
+
+        XCTAssertEqual(updated.text, "Shipping the new dashboard")
+        XCTAssertEqual(updated.note, "Love the restrained grid.")
+        XCTAssertEqual(updated.verdict, .keep)
+        XCTAssertEqual(found.map(\.id), [captured.id])
+
+        var cleared = updated
+        cleared.note = "   "
+        cleared.verdict = nil
+        let afterClear = try await repository.updateInspiration(cleared)
+
+        XCTAssertNil(afterClear.note)
+        XCTAssertNil(afterClear.verdict)
+    }
+
     func testDuplicateAndMissingProjectErrorsAreExplicit() async throws {
         let repository = try makeRepository()
         _ = try await repository.createProject(name: "Website")

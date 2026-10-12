@@ -8,7 +8,9 @@ struct InspirationEditorView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
+    @State private var itemDescription: String
     @State private var note: String
+    @State private var verdict: InspirationVerdict?
     @State private var rawURL: String
     @State private var projectID: Project.ID?
     @State private var isSaving = false
@@ -17,6 +19,7 @@ struct InspirationEditorView: View {
 
     private enum Field {
         case title
+        case description
         case note
         case url
     }
@@ -30,7 +33,9 @@ struct InspirationEditorView: View {
         self.projects = projects
         self.onSave = onSave
         _title = State(initialValue: inspiration.title)
-        _note = State(initialValue: inspiration.text)
+        _itemDescription = State(initialValue: inspiration.text)
+        _note = State(initialValue: inspiration.note ?? "")
+        _verdict = State(initialValue: inspiration.verdict)
         _rawURL = State(initialValue: inspiration.url.absoluteString)
         _projectID = State(initialValue: inspiration.projectID)
     }
@@ -42,9 +47,22 @@ struct InspirationEditorView: View {
                     TextField("Title", text: $title)
                         .focused($focusedField, equals: .title)
 
-                    TextField("Note", text: $note, axis: .vertical)
+                    TextField("Description", text: $itemDescription, axis: .vertical)
+                        .lineLimit(2...6)
+                        .focused($focusedField, equals: .description)
+                }
+
+                Section("Your take") {
+                    TextField("Why did you save this?", text: $note, axis: .vertical)
                         .lineLimit(3...8)
                         .focused($focusedField, equals: .note)
+
+                    Picker("Verdict", selection: $verdict) {
+                        Text("Undecided").tag(InspirationVerdict?.none)
+                        Text("Keep").tag(InspirationVerdict?.some(.keep))
+                        Text("Reject").tag(InspirationVerdict?.some(.reject))
+                    }
+                    .pickerStyle(.segmented)
                 }
 
                 Section("Original link") {
@@ -102,7 +120,9 @@ struct InspirationEditorView: View {
         updated.url = url
         updated.source = CaptureURL.source(for: url)
         updated.title = title
-        updated.text = note
+        updated.text = itemDescription
+        updated.note = note
+        updated.verdict = verdict
         updated.projectID = projectID
 
         isSaving = true

@@ -79,6 +79,9 @@ public struct PinaxAgentInspiration: Codable, Equatable, Sendable {
     public let canonicalURL: URL
     public let title: String
     public let text: String
+    /// The user's own words about the item, distinct from captured `text`.
+    public let note: String?
+    public let verdict: InspirationVerdict?
     public let authorName: String?
     public let authorHandle: String?
     public let imageURL: URL?
@@ -101,6 +104,8 @@ public struct PinaxAgentInspiration: Codable, Equatable, Sendable {
         canonicalURL = inspiration.canonicalURL
         title = inspiration.title
         text = inspiration.text
+        note = inspiration.note
+        verdict = inspiration.verdict
         authorName = inspiration.authorName
         authorHandle = inspiration.authorHandle
         imageURL = inspiration.imageURL
@@ -123,6 +128,9 @@ public struct PinaxAgentSavedInspiration: Codable, Equatable, Sendable {
     public let canonicalURL: URL
     public let title: String
     public let text: String
+    /// The user's own words about the item, distinct from captured `text`.
+    public let note: String?
+    public let verdict: InspirationVerdict?
     public let authorName: String?
     public let authorHandle: String?
     public let imageURL: URL?
@@ -140,6 +148,8 @@ public struct PinaxAgentSavedInspiration: Codable, Equatable, Sendable {
         canonicalURL = inspiration.canonicalURL
         title = inspiration.title
         text = inspiration.text
+        note = inspiration.note
+        verdict = inspiration.verdict
         authorName = inspiration.authorName
         authorHandle = inspiration.authorHandle
         imageURL = inspiration.imageURL

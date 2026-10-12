@@ -39,6 +39,61 @@ final class ModelCodableTests: XCTestCase {
         XCTAssertEqual(decoded, project)
     }
 
+    func testOlderInspirationDecodesWithoutNoteOrVerdict() throws {
+        let json = #"""
+        {
+          "id":"F168774A-16DB-4403-A244-F87A49EE54D7",
+          "source":"x",
+          "url":"https://x.com/example/status/123",
+          "canonicalURL":"https://x.com/i/status/123",
+          "text":"Captured post text",
+          "createdAt":0
+        }
+        """#.data(using: .utf8)!
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+
+        let inspiration = try decoder.decode(Inspiration.self, from: json)
+
+        XCTAssertEqual(inspiration.text, "Captured post text")
+        XCTAssertNil(inspiration.note)
+        XCTAssertNil(inspiration.verdict)
+    }
+
+    func testInspirationNoteAndVerdictRoundTripAndOmitWhenUnset() throws {
+        let timestamp = Date(timeIntervalSince1970: 1_700_000_000)
+        let unset = Inspiration(
+            source: .web,
+            url: URL(string: "https://example.com/a")!,
+            canonicalURL: URL(string: "https://example.com/a")!,
+            text: "Captured",
+            createdAt: timestamp
+        )
+        var judged = unset
+        judged.note = "The type scale is calm."
+        judged.verdict = .reject
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .millisecondsSince1970
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+
+        let unsetJSON = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoder.encode(unset)) as? [String: Any]
+        )
+        let judgedJSON = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: encoder.encode(judged)) as? [String: Any]
+        )
+
+        XCTAssertNil(unsetJSON["note"])
+        XCTAssertNil(unsetJSON["verdict"])
+        XCTAssertEqual(judgedJSON["note"] as? String, "The type scale is calm.")
+        XCTAssertEqual(judgedJSON["verdict"] as? String, "reject")
+        XCTAssertEqual(
+            try decoder.decode(Inspiration.self, from: encoder.encode(judged)),
+            judged
+        )
+    }
+
     func testCapturePayloadDecodesBrowserWireFormat() throws {
         let json = #"""
         {

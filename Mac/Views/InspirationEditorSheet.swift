@@ -12,7 +12,7 @@ struct InspirationEditorSheet: View {
     @State private var errorMessage: String?
     @FocusState private var focusedField: Field?
 
-    private enum Field { case title, note }
+    private enum Field { case title, description, note }
 
     init(inspiration: Inspiration, projects: [Project], onSave: @escaping (Inspiration) async throws -> Void) {
         self.inspiration = inspiration
@@ -32,9 +32,23 @@ struct InspirationEditorSheet: View {
             Form {
                 TextField("Title", text: $draft.title)
                     .focused($focusedField, equals: .title)
-                TextField("Note", text: $draft.text, axis: .vertical)
-                    .lineLimit(3...8)
-                    .focused($focusedField, equals: .note)
+                TextField("Description", text: $draft.text, axis: .vertical)
+                    .lineLimit(2...6)
+                    .focused($focusedField, equals: .description)
+                TextField(
+                    "Your note",
+                    text: noteBinding,
+                    prompt: Text("Why did you save this?"),
+                    axis: .vertical
+                )
+                .lineLimit(2...6)
+                .focused($focusedField, equals: .note)
+                Picker("Verdict", selection: $draft.verdict) {
+                    Text("Undecided").tag(InspirationVerdict?.none)
+                    Text("Keep").tag(InspirationVerdict?.some(.keep))
+                    Text("Reject").tag(InspirationVerdict?.some(.reject))
+                }
+                .pickerStyle(.segmented)
                 Picker("Collection", selection: $draft.projectID) {
                     Text("General").tag(Project.ID?.none)
                     ForEach(projects) { project in
@@ -68,8 +82,15 @@ struct InspirationEditorSheet: View {
             }
             .padding(16)
         }
-        .frame(width: 500, height: 420)
+        .frame(width: 500, height: 520)
         .onAppear { focusedField = .title }
+    }
+
+    private var noteBinding: Binding<String> {
+        Binding(
+            get: { draft.note ?? "" },
+            set: { draft.note = $0 }
+        )
     }
 
     @MainActor
