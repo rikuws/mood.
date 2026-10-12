@@ -63,6 +63,14 @@ necessarily the user's own. Any other kind is unresolved.
   kept ID, or starts with `- Not evidenced:` or `- Open question:`;
 - no file cites a dropped or unknown ID;
 - every kept `P`, `T` and `R` entry appears in GUI.md;
-- every kept entry has sources, and every source is listed in sources.md.
+- every kept entry has sources, and every source is listed in sources.md;
+- GUI.md and each skill have front matter in the quoted YAML subset the renderer writes,
+  and each skill's `name` matches its folder.
 
 Prose paragraphs are framing only; guidance goes in bullets so it can be checked.
+
+Saved titles, notes, authors, links and essence text are collapsed to one line and have
+`` ` [ ] < > | \ `` escaped before they reach Markdown, so captured metadata can never start
+its own bullet or heading or forge an entry ID. Background roles are matched as whole words
+(`background`, `surface`, `canvas`, …) and roles with foreground words (`foreground`, `text`,
+`ink`, `on-surface`) never evidence a mode.

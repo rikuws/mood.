@@ -321,6 +321,35 @@ def sid_map(trace: dict) -> dict[str, dict]:
     return {source["assetID"]: source for source in trace["sources"]}
 
 
+MARKDOWN_SPECIALS = re.compile(r"([\\`\[\]<>|])")
+STRUCTURAL_KEYS = {
+    "id", "sid", "assetID", "section", "token", "kind", "role", "basis", "verdict", "importance",
+}
+
+
+def one_line(text: str) -> str:
+    return " ".join(str(text).split())
+
+
+def md_inline(text: str) -> str:
+    """Saved metadata and essence text, made safe to interpolate into Markdown.
+
+    Collapsing to one line stops a title or note from starting its own bullet or
+    heading; escaping brackets stops it from forging an entry ID or a link.
+    """
+    return MARKDOWN_SPECIALS.sub(r"\\\1", one_line(text))
+
+
+def markdown_safe(value: object, key: str | None = None) -> object:
+    if isinstance(value, dict):
+        return {k: markdown_safe(v, k) for k, v in value.items()}
+    if isinstance(value, list):
+        return [markdown_safe(v, key) for v in value]
+    if isinstance(value, str) and key not in STRUCTURAL_KEYS:
+        return md_inline(value)
+    return value
+
+
 def quote(text: str, limit: int = 240) -> str:
     text = " ".join(text.split())
     if len(text) > limit:
@@ -440,7 +469,7 @@ def render_front_matter(trace: dict, name: str, primary: str | None) -> list[str
     essence = next((e for e in trace["kept"] if e["section"] == "essence"), None)
     lines = ["---", "version: alpha", f"name: {yaml_scalar(name)}"]
     if essence:
-        lines.append(f"description: {yaml_scalar(essence['text'])}")
+        lines.append(f"description: {yaml_scalar(one_line(essence['text']))}")
     colors = color_tokens(trace, primary)
     if colors:
         lines.append("colors:")
@@ -460,7 +489,12 @@ def render_front_matter(trace: dict, name: str, primary: str | None) -> list[str
     return lines
 
 
-def render_gui(trace: dict, name: str, primary: str | None = None) -> str:
+def render_gui(
+    trace: dict,
+    name: str,
+    primary: str | None = None,
+    front_matter: tuple[dict, str] | None = None,
+) -> str:
     """GUI.md is a valid DESIGN.md with mood.'s traces layered on top."""
     sources = sid_map(trace)
     kept = trace["kept"]
@@ -468,7 +502,8 @@ def render_gui(trace: dict, name: str, primary: str | None = None) -> str:
     tokens = {e["token"]: e for e in by_section("tokens")}
     provenance = trace["essence"].get("provenance") or {}
 
-    lines = render_front_matter(trace, name, primary) + [
+    raw_trace, plain_name = front_matter or (trace, name)
+    lines = render_front_matter(raw_trace, plain_name, primary) + [
         "",
         f"# {name}",
         "",
@@ -567,6 +602,16 @@ def relative_luminance(hex_value: str) -> float | None:
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
+BACKGROUND_WORDS = {"background", "bg", "ground", "canvas", "surface", "paper", "base", "backdrop"}
+FOREGROUND_WORDS = {"foreground", "fg", "text", "ink", "on", "label", "icon", "stroke", "border"}
+
+
+def is_background_role(role: str) -> bool:
+    """Whole-word match, so 'foreground' and 'on-surface' never count as grounds."""
+    words = set(re.findall(r"[a-z]+", role.lower()))
+    return bool(words & BACKGROUND_WORDS) and not words & FOREGROUND_WORDS
+
+
 def render_light_dark(trace: dict) -> str:
     sources = sid_map(trace)
     palette = next((e for e in trace["kept"] if e.get("token") == "palette"), None)
@@ -583,10 +628,7 @@ def render_light_dark(trace: dict) -> str:
         return "\n".join(lines)
 
     colors = (palette.get("value") or {}).get("colors") or []
-    grounds = [
-        c for c in colors
-        if re.search(r"background|ground|surface|canvas|base|paper", c.get("role", ""), re.I)
-    ]
+    grounds = [c for c in colors if is_background_role(c.get("role", ""))]
     shown = set()
     for color in grounds:
         luminance = relative_luminance(color.get("hex", ""))
@@ -711,7 +753,7 @@ def render_sources(trace: dict) -> str:
     return "\n".join(lines)
 
 
-def render_skill(skill: str, name: str, install_path: str) -> str:
+def render_skill(skill: str, name: str, install_path: str, plain_name: str | None = None) -> str:
     gui = f"{install_path}/GUI.md"
     bodies = {
         "gui-build": (
@@ -761,10 +803,12 @@ def render_skill(skill: str, name: str, install_path: str) -> str:
         ),
     }
     description, steps = bodies[skill]
+    if plain_name is not None:
+        description = description.replace(name, plain_name, 1)
     return "\n".join([
         "---",
         f"name: {skill}",
-        f"description: {description} Use GUI.md as the single source of truth.",
+        f"description: {yaml_scalar(description + ' Use GUI.md as the single source of truth.')}",
         "---",
         "",
         f"# {skill}",
@@ -816,16 +860,23 @@ def render_pack(
             "No essence claim traces to a saved item or note, so there is nothing to export. "
             "Distill from saved mood. items first."
         )
+    plain_name = one_line(name)
+    if not plain_name:
+        raise PackError("--name must not be empty.")
+    if not re.fullmatch(r"[A-Za-z0-9._/~-]+", install_path):
+        raise PackError("--install-path must be a plain relative path without spaces or Markdown.")
+    safe = markdown_safe(trace)
+    md_name = md_inline(plain_name)
     files = {
-        "GUI.md": render_gui(trace, name, primary),
-        "references/light-dark.md": render_light_dark(trace),
-        "references/components.md": render_components(trace),
-        "references/composition.md": render_composition(trace),
-        "references/sources.md": render_sources(trace),
-        "SETUP.md": render_setup(name, install_path),
+        "GUI.md": render_gui(safe, md_name, primary, front_matter=(trace, plain_name)),
+        "references/light-dark.md": render_light_dark(safe),
+        "references/components.md": render_components(safe),
+        "references/composition.md": render_composition(safe),
+        "references/sources.md": render_sources(safe),
+        "SETUP.md": render_setup(md_name, install_path),
     }
     for skill in SKILL_NAMES:
-        files[f"skills/{skill}/SKILL.md"] = render_skill(skill, name, install_path)
+        files[f"skills/{skill}/SKILL.md"] = render_skill(skill, md_name, install_path, plain_name)
     manifest = {
         "format": PACK_FORMAT,
         "name": name,
@@ -860,6 +911,47 @@ def render_pack(
 # Check
 
 
+FRONT_MATTER_LINE = re.compile(r"^(?P<indent> *)(?:- )?(?P<key>[A-Za-z0-9_-]+):(?: (?P<value>.*))?$")
+PLAIN_SCALAR = re.compile(r"[A-Za-z0-9][A-Za-z0-9 ._/-]*")
+
+
+def front_matter_problems(text: str) -> tuple[dict[str, str], list[str]]:
+    """Check the YAML subset mood-pack writes: keys with JSON-quoted or plain scalars.
+
+    The renderer only emits this subset, so anything else (an unquoted value with
+    ': ' or '#', a stray line) is a rendering bug a real YAML loader may reject.
+    """
+    lines = text.split("\n")
+    if not lines or lines[0] != "---" or "---" not in lines[1:]:
+        return {}, ["has no front matter block."]
+    top: dict[str, str] = {}
+    problems: list[str] = []
+    for number, line in enumerate(lines[1 : lines.index("---", 1)], start=2):
+        match = FRONT_MATTER_LINE.match(line)
+        if not match:
+            problems.append(f"front matter line {number} is not a key: value pair.")
+            continue
+        value = match.group("value")
+        if value is None:
+            continue
+        if value.startswith('"'):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                problems.append(f"front matter line {number} has a malformed quoted value.")
+                continue
+            if not isinstance(parsed, str):
+                problems.append(f"front matter line {number} is not a string.")
+                continue
+            value = parsed
+        elif not PLAIN_SCALAR.fullmatch(value):
+            problems.append(f"front matter line {number} needs quoting to be valid YAML.")
+            continue
+        if not match.group("indent"):
+            top[match.group("key")] = value
+    return top, problems
+
+
 def check_pack(out_dir: Path) -> list[str]:
     problems: list[str] = []
     manifest_path = out_dir / "pack.json"
@@ -888,6 +980,19 @@ def check_pack(out_dir: Path) -> list[str]:
         for sid in entry.get("sources", []):
             if sid not in known_sids:
                 problems.append(f"{entry['id']} cites unknown source {sid}.")
+
+    for relative in ["GUI.md"] + [f"skills/{skill}/SKILL.md" for skill in SKILL_NAMES]:
+        path = out_dir / relative
+        if not path.is_file():
+            continue
+        top, issues = front_matter_problems(path.read_text(encoding="utf-8"))
+        problems += [f"{relative} {issue}" for issue in issues]
+        if relative.startswith("skills/"):
+            skill = relative.split("/")[1]
+            if top.get("name") != skill:
+                problems.append(f"{relative} front matter name is not {skill}.")
+            if not top.get("description"):
+                problems.append(f"{relative} front matter has no description.")
 
     gui_tags: set[str] = set()
     for relative in GUIDANCE_FILES:
