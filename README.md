@@ -116,6 +116,16 @@ it to, it saves a project essence with `mood-agent save-essence`.
 npx skills add https://github.com/rikuws/mood. --skill mood-distill -g
 ```
 
+To hand that direction to a coding agent, install [`mood-pack`](skills/mood-pack) next to
+`mood-distill`. It exports an essence as a folder with a DESIGN.md-compatible `GUI.md`,
+light/dark, component, composition and source references, build/apply/review skills, and a
+`SETUP.md` prompt. Every guideline cites the saved items and notes it came from; anything
+that does not trace to them is dropped and reported.
+
+```sh
+npx skills add https://github.com/rikuws/mood. --skill mood-pack -g
+```
+
 ## Share from iOS and X
 
 1. Build, sign, and install the **PinaxiOS** scheme; the **Save to mood.** Share Extension is embedded automatically.
@@ -142,6 +152,9 @@ swift test
 
 # mood-distill helper lookup
 bash skills/mood-distill/tests/find-mood-agent.test.sh
+
+# mood-pack trace, render and check
+python3 -m unittest discover -s skills/mood-pack/tests
 ```
 
 ## Repository map
@@ -149,7 +162,7 @@ bash skills/mood-distill/tests/find-mood-agent.test.sh
 ```text
 Shared/                 Local models, canonical URL dedupe, coordinated JSON repository
 AgentAPI/               Bundled JSON command API for agent skills
-skills/                 Portable Agent Skills (mood-distill)
+skills/                 Portable Agent Skills (mood-distill, mood-pack)
 Sync/                   CloudKit backend, merge engine, tombstones, sync state and tests
 Mac/                    Native macOS library UI and Chromium installer
 iOS/                    Native iOS library UI
