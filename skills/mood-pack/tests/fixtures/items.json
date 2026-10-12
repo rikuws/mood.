@@ -1,0 +1,61 @@
+{
+  "apiVersion": 1,
+  "ok": true,
+  "count": 3,
+  "project": {
+    "id": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+    "name": "Quiet tools",
+    "colorHex": "#B45F78",
+    "inspirationCount": 3,
+    "createdAt": "2026-08-01T09:00:00Z",
+    "updatedAt": "2026-08-01T09:00:00Z"
+  },
+  "inspirations": [
+    {
+      "id": "AAAAAAAA-0000-4000-8000-000000000001",
+      "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+      "source": "web",
+      "url": "https://example.com/ledger",
+      "canonicalURL": "https://example.com/ledger",
+      "title": "Ledger settings screen",
+      "text": "",
+      "note": "I love how calm this is. Nothing shouts, the grey does the work.",
+      "verdict": "keep",
+      "authorName": "Ada Studio",
+      "createdAt": "2026-08-01T09:00:00Z",
+      "updatedAt": "2026-08-01T09:00:00Z",
+      "lastCapturedAt": "2026-08-01T09:00:00Z",
+      "captureCount": 1
+    },
+    {
+      "id": "AAAAAAAA-0000-4000-8000-000000000002",
+      "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+      "source": "x",
+      "url": "https://x.com/someone/status/1",
+      "canonicalURL": "https://x.com/someone/status/1",
+      "title": "Dense table with hairlines",
+      "text": "New table component, shipping today",
+      "authorName": "Someone",
+      "authorHandle": "someone",
+      "createdAt": "2026-08-01T09:00:00Z",
+      "updatedAt": "2026-08-01T09:00:00Z",
+      "lastCapturedAt": "2026-08-01T09:00:00Z",
+      "captureCount": 1
+    },
+    {
+      "id": "AAAAAAAA-0000-4000-8000-000000000003",
+      "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+      "source": "web",
+      "url": "https://example.com/glossy",
+      "canonicalURL": "https://example.com/glossy",
+      "title": "Glossy gradient dashboard",
+      "text": "",
+      "note": "Too loud. The gradients fight the data.",
+      "verdict": "reject",
+      "createdAt": "2026-08-01T09:00:00Z",
+      "updatedAt": "2026-08-01T09:00:00Z",
+      "lastCapturedAt": "2026-08-01T09:00:00Z",
+      "captureCount": 1
+    }
+  ]
+}

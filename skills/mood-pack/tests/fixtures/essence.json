@@ -1,0 +1,158 @@
+{
+  "schemaVersion": "1.0",
+  "source": {
+    "kind": "project",
+    "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+    "references": [
+      {"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "role": "positive"},
+      {"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "role": "positive"},
+      {"assetID": "AAAAAAAA-0000-4000-8000-000000000003", "role": "negative"}
+    ],
+    "inputHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "provenance": {
+    "extractedAt": "2026-10-12T08:00:00Z",
+    "model": "agent-multimodal",
+    "pipelineVersion": "mood-distill/2.0"
+  },
+  "scope": {
+    "domain": "ui",
+    "analyzedRegions": ["whole image"],
+    "deliberatelyExcluded": ["exact copy", "logos"],
+    "limitations": ["Palette hex values are approximate visual estimates."]
+  },
+  "summary": {
+    "essence": {
+      "value": "Quiet, grey-led utility screens where hierarchy comes from weight and spacing, not colour.",
+      "basis": "inferred",
+      "confidence": 0.78,
+      "evidence": [
+        {"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "cue": "Mid-grey labels and a single dark weight for titles."},
+        {"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "cue": "Hairline rules separate rows instead of fills."}
+      ]
+    },
+    "signatureTensions": [
+      {
+        "value": "Dense information but calm surfaces",
+        "basis": "inferred",
+        "confidence": 0.7,
+        "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "cue": "Many rows, no background fills."}]
+      }
+    ],
+    "coherence": {"value": 0.8, "basis": "inferred", "confidence": 0.6, "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "cue": "Shared grey palette."}]}
+  },
+  "invariants": [
+    {
+      "statement": {
+        "value": "Hierarchy is carried by type weight and spacing, never by colour fills.",
+        "basis": "inferred",
+        "confidence": 0.75,
+        "evidence": [
+          {"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "kind": "note", "cue": "The user's note says the grey does the work."},
+          {"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "cue": "Header row differs only in weight."}
+        ]
+      },
+      "importance": "primary"
+    }
+  ],
+  "observables": {
+    "palette": {
+      "value": {
+        "colors": [
+          {"hex": "#F6F5F2", "role": "background", "coverage": 0.7},
+          {"hex": "#1C1C1E", "role": "ink", "coverage": 0.1},
+          {"hex": "#8A8A8E", "role": "secondary text", "coverage": 0.15}
+        ],
+        "temperature": "neutral, slightly warm",
+        "saturation": "near zero",
+        "contrastStrategy": "dark ink on warm off-white, mid grey for secondary"
+      },
+      "basis": "observed",
+      "confidence": 0.7,
+      "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "cue": "Off-white ground, near-black titles."}]
+    },
+    "typography": {
+      "value": {
+        "hierarchy": "two levels, set by weight",
+        "scaleBehavior": "narrow scale",
+        "weightRange": "regular to semibold",
+        "rhythm": "even line spacing"
+      },
+      "basis": "observed",
+      "confidence": 0.7,
+      "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "cue": "Header row semibold, body regular."}]
+    },
+    "geometry": {
+      "value": {
+        "shapeLanguage": "rectilinear",
+        "corners": "small radius",
+        "borders": "hairline",
+        "elevation": "none"
+      },
+      "basis": "observed",
+      "confidence": 0.6,
+      "evidence": []
+    }
+  },
+  "composition": {
+    "alignment": {
+      "value": "Strict left alignment on a single text edge.",
+      "basis": "observed",
+      "confidence": 0.7,
+      "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "cue": "Labels and values share one left edge."}]
+    }
+  },
+  "semanticAxes": [],
+  "cueEffects": [],
+  "projectVariation": {
+    "commonCore": [],
+    "acceptedVariations": [],
+    "contradictions": [
+      {"value": "Row density differs between the settings screen and the table.", "basis": "observed", "confidence": 0.6, "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000001", "cue": "Loose rows."}]}
+    ],
+    "clusters": []
+  },
+  "directive": {
+    "mustPreserve": [
+      {
+        "value": "Keep surfaces flat and separate groups with hairlines or space.",
+        "basis": "inferred",
+        "confidence": 0.75,
+        "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000002", "cue": "Hairline row separators."}]
+      }
+    ],
+    "prefer": [
+      {
+        "value": "Prefer a single accent colour used only for the primary action.",
+        "basis": "inferred",
+        "confidence": 0.5,
+        "evidence": [{"assetID": "BBBBBBBB-0000-4000-8000-000000000009", "cue": "Lone blue button."}]
+      },
+      {
+        "value": "Prefer generous outer margins.",
+        "basis": "inferred",
+        "confidence": 0.4,
+        "evidence": []
+      }
+    ],
+    "mayVary": [
+      {
+        "value": "Use gradients for hero areas.",
+        "basis": "inferred",
+        "confidence": 0.3,
+        "evidence": [{"assetID": "AAAAAAAA-0000-4000-8000-000000000003", "cue": "Full-bleed gradient."}]
+      }
+    ],
+    "mustAvoid": [
+      {
+        "value": "Avoid saturated gradients behind data.",
+        "basis": "inferred",
+        "confidence": 0.8,
+        "evidence": [
+          {"assetID": "AAAAAAAA-0000-4000-8000-000000000003", "cue": "Gradient competes with chart lines."},
+          {"assetID": "AAAAAAAA-0000-4000-8000-000000000003", "kind": "note", "cue": "The user rejected it as too loud."}
+        ]
+      }
+    ]
+  }
+}

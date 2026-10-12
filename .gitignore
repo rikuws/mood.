@@ -10,3 +10,4 @@ BrowserExtension/node_modules/
 *.xcarchive
 .markup
 .amp/portals/*
+__pycache__/
