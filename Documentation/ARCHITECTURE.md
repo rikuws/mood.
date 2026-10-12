@@ -25,7 +25,7 @@ Chromium toolbar / X mood. action / confirmed X Bookmark
              library.json + Media/
                          ^  ^
                          |  |
-                         |  +--- mood-agent (read-only JSON API)
+                         |  +--- mood-agent (JSON API; library read-only)
                          |
               shared App Group container
                          |
@@ -42,8 +42,9 @@ The Mac native host never edits the library. It validates the extension payload 
 The iOS Share Extension writes directly to the same App Group library because a share extension cannot depend on launching its containing app. It saves locally before attempting a three-second best-effort CloudKit sync.
 
 The macOS app also bundles `Contents/Helpers/mood-agent` for local agent integrations. It
-is a read-only, versioned JSON command API that discovers projects, fetches a selected
-project's inspirations, or resolves one exact saved item by UUID. The helper reads through
+is a versioned JSON command API that discovers projects, fetches a selected
+project's inspirations, resolves one exact saved item by UUID, and saves or reads a
+project's distilled essence. The helper reads through
 `LibraryRepository`, including coordinated file access and safe local-media path resolution;
 it does not require the app process to be running and does not expose a network listener.
 See [AGENT_API.md](AGENT_API.md) for its contract.
@@ -52,8 +53,9 @@ Design-essence extraction is an agent layer over that read-only API rather than 
 service inside the native app. [`skills/mood-distill`](../skills/mood-distill) inspects local
 media when available, discounts duplicates, and produces the versioned `DesignEssence` 1.0
 contract through evidence, abstraction, and directive passes. `mood-agent` also validates a
-temporary essence JSON file without opening the library. Generated claims are not written to
-`library.json` or CloudKit. See [DESIGN_ESSENCE.md](DESIGN_ESSENCE.md) for the schema and
+temporary essence JSON file without opening the library. Generated claims are never written to
+`library.json` or CloudKit; `save-essence` appends a validated project essence to
+`Essences/<project-uuid>/` beside the library, local to the Mac. See [DESIGN_ESSENCE.md](DESIGN_ESSENCE.md) for the schema and
 privacy boundary.
 
 ## Local storage
@@ -64,7 +66,7 @@ Production targets use the App Group:
 group.com.rikuwikman.pinax
 ```
 
-The library consists of a versioned `library.json`, a `Media/` directory for captured local images, and a small CloudKit sync-state file. The JSON snapshot contains projects, inspirations, stable UUIDs and timestamps, capture metadata, and canonical URLs. Browser captures normally retain remote preview URLs. The iOS share extension resolves public X Open Graph metadata and copies its bounded preview image into `Media/`; app launch also repairs older URL-only X saves without counting them as new captures or overwriting user edits.
+The library consists of a versioned `library.json`, a `Media/` directory for captured local images, a small CloudKit sync-state file, and, on the Mac, an `Essences/` directory of append-only project essence revisions that is never synced. The JSON snapshot contains projects, inspirations, stable UUIDs and timestamps, capture metadata, and canonical URLs. Browser captures normally retain remote preview URLs. The iOS share extension resolves public X Open Graph metadata and copies its bounded preview image into `Media/`; app launch also repairs older URL-only X saves without counting them as new captures or overwriting user edits.
 
 `LibraryRepository` is an actor for in-process serialization. It wraps each cross-process read/modify/write transaction in `NSFileCoordinator` and atomically replaces the JSON file, so the app and Share Extension do not expose a partially written snapshot. Cloud merges perform their final read/merge/write inside the same coordinated transaction so a capture made during a network fetch is retained.
 

@@ -8,7 +8,7 @@ The native app remains local-first and does not embed a model provider, API key,
 2. A multimodal agent inspects the referenced local media, falling back to a remote preview only when local media is absent and remote retrieval is available.
 3. The `mood-distill` skill separates evidence, abstraction, and directive generation, then produces the canonical `DesignEssence` 1.0 shape defined in `Shared/DesignEssence.swift`.
 
-This boundary keeps extraction read-only. Results are not silently written into `library.json` or CloudKit, and remote-only images are not downloaded into the library's `Media/` directory.
+This boundary keeps extraction read-only. Results are never written into `library.json` or CloudKit, and remote-only images are not downloaded into the library's `Media/` directory. A project essence is saved, as a separate file, only when the user asks (see "Saved essences").
 
 ## Sources
 
@@ -54,6 +54,8 @@ The canonical result contains:
 
 Exact copy, logos, brand identity, named people or products, artist identity, and incidental subject matter are excluded by default. Accessibility or legibility problems can be recorded as limitations but are never promoted into portable directives.
 
+Evidence cites an item's image by default. It can instead cite the user's own words with `field` (`title`, `text`, or `note`) and the exact `quote`, so a rule can point at "the user said this" rather than a model's paraphrase. Textual evidence needs a quote and no region. Today the note a user types in the item editor is stored in `text`; `note` is reserved for the separate per-item note being added to the library and is rejected by `save-essence` until it exists. These fields are optional additions, so the schema stays 1.0 and earlier documents remain valid.
+
 Palette hex values estimated visually are marked `observed` and accompanied by a limitation
 that they are approximate. `measured` is reserved for values produced by pixel or color-analysis
 tools, with the measurement recorded in evidence.
@@ -73,6 +75,16 @@ Before delivery, generated JSON is checked without modifying the library:
 
 See [AGENT_API.md](AGENT_API.md) for the success envelope and `invalid_essence` error.
 
-## Current boundary
+## Saved essences
 
-This first version deliberately does not persist essence results or expose native UI controls for editing them. Persistence would require a separate product decision covering revision history, stale-state detection, user edits, CloudKit merge behavior, and cross-device model provenance. The versioned core type makes that future step possible without conflating generated analysis with the user's source collection today.
+`mood-agent save-essence --file <path>` stores a validated project essence as an append-only revision at `Essences/<project-uuid>/<extractedAt>-<fingerprint>.json`, beside `library.json` and never inside it. Before writing, it checks that every reference is a saved item in that project and that every quote appears in the cited item, so a saved essence can only trace back to work the user chose and words the user wrote.
+
+The earlier open questions are answered narrowly:
+
+- **Revision history:** each save is a new immutable file; the folder is the history. Nothing is overwritten or deleted.
+- **Staleness:** `mood-agent essence --project <ref>` returns the latest revision with the items added, removed, or edited since its `extractedAt`. Staleness is reported, never acted on; re-distilling is the user's call.
+- **User edits:** a correction is a new revision, not an edit in place.
+- **CloudKit:** essences are local to the Mac for now and are not synced, which avoids merging generated analysis across devices.
+- **Model provenance:** each revision keeps its own `provenance.model` and `pipelineVersion`.
+
+There is no native UI for saved essences yet. Deleting a project leaves its `Essences/` folder in place.

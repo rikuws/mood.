@@ -9,7 +9,7 @@ Capture surfaces are included for:
 - X's own Bookmark action (Remove bookmark is ignored);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
-See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a read-only [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
+See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
 
 ## Requirements
 
@@ -91,14 +91,16 @@ The native host validates a capture and targets the containing `mood.app` bundle
 
 ## Agent API on macOS
 
-The Mac app bundles `Contents/Helpers/mood-agent`, a local read-only JSON API intended for
-agent skills and other automation. It reads through `LibraryRepository`, so requests see the
+The Mac app bundles `Contents/Helpers/mood-agent`, a local JSON API intended for
+agent skills and other automation. It never edits the library; its one write saves a
+project's distilled essence as a separate revision file. It reads through `LibraryRepository`, so requests see the
 same coordinated App Group snapshot as the UI without requiring mood. to be open.
 
 ```sh
 /Applications/mood.app/Contents/Helpers/mood-agent projects --pretty
 /Applications/mood.app/Contents/Helpers/mood-agent inspirations --project "Website refresh" --pretty
 /Applications/mood.app/Contents/Helpers/mood-agent inspiration --id <item-uuid> --pretty
+/Applications/mood.app/Contents/Helpers/mood-agent essence --project "Website refresh" --pretty
 ```
 
 See [Documentation/AGENT_API.md](Documentation/AGENT_API.md) for the version 1 response
@@ -107,7 +109,8 @@ schema, local-image paths, exit behavior, and stable error codes.
 To turn a project, one saved item, or an arbitrary image into portable creative direction,
 install the [`mood-distill`](skills/mood-distill) agent skill. It separates visible evidence,
 abstraction, and directives; discounts duplicate references; preserves uncertainty; and
-validates a canonical `DesignEssence` 1.0 object without mutating the library.
+validates a canonical `DesignEssence` 1.0 object without mutating the library. When you ask
+it to, it saves a project essence with `mood-agent save-essence`.
 
 ```sh
 npx skills add https://github.com/rikuws/mood. --skill mood-distill -g
@@ -145,7 +148,7 @@ bash skills/mood-distill/tests/find-mood-agent.test.sh
 
 ```text
 Shared/                 Local models, canonical URL dedupe, coordinated JSON repository
-AgentAPI/               Bundled read-only JSON command API for agent skills
+AgentAPI/               Bundled JSON command API for agent skills
 skills/                 Portable Agent Skills (mood-distill)
 Sync/                   CloudKit backend, merge engine, tombstones, sync state and tests
 Mac/                    Native macOS library UI and Chromium installer

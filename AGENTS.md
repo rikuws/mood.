@@ -12,7 +12,7 @@ mood. is a local-first native macOS and iOS visual moodboard for collecting imag
 - `ShareExtension/`: UIKit/SwiftUI share composer that writes to the App Group before a bounded best-effort sync.
 - `BrowserExtension/`: source-only Manifest V3 Chromium extension, Node tests/build script, and ignored generated `dist/`.
 - `NativeHost/`: separate Swift package and Xcode library/tool targets for framed native messaging and the `pinax://capture` bridge.
-- `AgentAPI/`: `mood-agent` executable source; read-only JSON through `LibraryRepository`; bundled into the Mac app.
+- `AgentAPI/`: `mood-agent` executable source; JSON through `LibraryRepository`, read-only for the library, with `save-essence` appending project essences under `Essences/`; bundled into the Mac app.
 - `skills/`: portable Agent Skills. `mood-distill` extracts validated, evidence-grounded creative direction from a project, one saved item, or an arbitrary image; saved sources are fetched through `mood-agent`.
 - `Tests/`: root `PinaxCoreTests`. Also `Sync/Tests`, `NativeHost/Tests`, `Mac/BrowserIntegration/Tests`, and `BrowserExtension/tests`.
 

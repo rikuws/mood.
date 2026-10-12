@@ -1,6 +1,6 @@
 # mood. agent API
 
-The macOS app bundles a read-only command-line API at:
+The macOS app bundles a local command-line API at:
 
 ```text
 mood.app/Contents/Helpers/mood-agent
@@ -10,7 +10,9 @@ Older Mac builds may still ship `pinax-agent` at the same Helpers path. The JSON
 contract is unchanged.
 
 It reads the same coordinated App Group repository as the mood. UI. The app does not need
-to be running, no network listener is opened, and the API never mutates the library. A
+to be running, no network listener is opened, and the API never mutates `library.json` or
+`Media/`. Its only write is `save-essence`, which appends a project essence revision under
+`Essences/` beside the library. A
 signed helper carries the `group.com.rikuwikman.pinax` entitlement so it can read the
 production library. An unsigned Debug helper follows the app's normal development fallback
 to `~/Library/Application Support/Pinax`; `PINAX_STORAGE_DIRECTORY` can override that path
@@ -128,8 +130,8 @@ inspect actual visual media and produce a versioned, evidence-grounded `DesignEs
 object. Arbitrary image attachments or local image paths can be analyzed directly without
 first saving them to mood.
 
-The helper supplies source data but does not run a model, persist generated analysis, or
-contact remote previews on its own. See [DESIGN_ESSENCE.md](DESIGN_ESSENCE.md) for the
+The helper supplies source data but does not run a model or contact remote previews on its
+own. It persists generated analysis only when an agent calls `save-essence`. See [DESIGN_ESSENCE.md](DESIGN_ESSENCE.md) for the
 contract and privacy boundary.
 
 ## Validate a design essence
@@ -157,6 +159,82 @@ the mood. library. A successful response exits `0`:
 
 Malformed JSON, unreadable input, and contract-validation failures return the normal error
 envelope with stable code `invalid_essence` and exit `2`.
+
+## Save a project essence
+
+Save a validated project `DesignEssence` as a new revision:
+
+```sh
+/Applications/mood.app/Contents/Helpers/mood-agent \
+  save-essence --file /tmp/design-essence.json --pretty
+```
+
+The file goes through the same checks as `validate-essence`, then two library checks so a
+saved essence can only cite what the user chose:
+
+- `source.kind` is `project`, and every `source.references` asset is a saved item in
+  `source.projectID`;
+- every textual evidence entry (`field` of `title`, `text`, or `note`) has a `quote` that
+  appears in that item's field, ignoring case, diacritics, and whitespace runs. The library
+  does not store a separate `note` yet, so `note` citations are rejected until it does.
+
+Revisions are written to `Essences/<project-uuid>/<extractedAt>-<fingerprint>.json`, where
+the timestamp is UTC to the millisecond and the fingerprint is the first 12 hex digits of
+the stored JSON's SHA-256. Files are never rewritten or deleted, so the folder is the
+revision history. Saving an identical document again writes nothing:
+
+```json
+{
+  "apiVersion": 1,
+  "ok": true,
+  "outcome": "saved",
+  "project": {
+    "colorHex": "#B45F78",
+    "createdAt": "2026-08-01T09:00:00Z",
+    "id": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+    "inspirationCount": 2,
+    "name": "Website refresh",
+    "updatedAt": "2026-08-01T09:00:00Z"
+  },
+  "referenceCount": 2,
+  "revision": {
+    "extractedAt": "2026-10-12T07:40:00Z",
+    "id": "20261012T074000.000Z-3f2a9c01b7de",
+    "path": "/Users/example/Library/Group Containers/group.com.rikuwikman.pinax/Essences/80D7254E-78FA-4BC3-95BF-0D721EF2B72D/20261012T074000.000Z-3f2a9c01b7de.json",
+    "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D"
+  },
+  "schemaVersion": "1.0"
+}
+```
+
+`outcome` is `saved` or `already_saved`. Saved essences are local to the Mac and are not
+synced through CloudKit.
+
+## Read the latest essence
+
+```sh
+/Applications/mood.app/Contents/Helpers/mood-agent \
+  essence --project "Website refresh" --pretty
+```
+
+The response always includes `project` and `revisionCount`. When a revision exists it also
+includes the latest `revision`, the full `essence`, `stale`, and `staleness`:
+
+```json
+{
+  "stale": true,
+  "staleness": {
+    "addedAssetIDs": ["F168774A-16DB-4403-A244-F87A49EE54D7"],
+    "changedAssetIDs": [],
+    "removedAssetIDs": []
+  }
+}
+```
+
+`addedAssetIDs` are project items the essence did not consider, `removedAssetIDs` are
+referenced items that were deleted or moved out of the project, and `changedAssetIDs` are
+referenced items edited after the essence's `provenance.extractedAt`. "Latest" means the
+latest `extractedAt`.
 
 ## Errors
 
@@ -208,4 +286,4 @@ cp -R skills/mood-distill ~/.agents/skills/mood-distill
 ```
 
 The helper must be able to read the same Mac library as mood. Cloud agents cannot see a
-user's local moodboards. The skill never writes `library.json` or `Media/`.
+user's local moodboards. The skill never writes `library.json` or `Media/`, and saves an essence only when the user asks.

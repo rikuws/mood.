@@ -1,7 +1,8 @@
 import Foundation
 
-/// The read-only, machine-facing API exposed by the macOS app's bundled
-/// `mood-agent` helper.
+/// The machine-facing API exposed by the macOS app's bundled `mood-agent`
+/// helper. It never mutates `library.json` or `Media/`; the only write is
+/// `save-essence`, which appends a revision under `Essences/`.
 public enum PinaxAgentAPIVersion {
     public static let current = 1
 }
@@ -15,6 +16,7 @@ public enum PinaxAgentAPIError: Error, Equatable, Sendable {
     case inspirationNotFound(String)
     case invalidEssence(String)
     case storageUnavailable(String)
+    case essenceStorageFailed(String)
 }
 
 extension PinaxAgentAPIError: LocalizedError {
@@ -32,6 +34,8 @@ extension PinaxAgentAPIError: LocalizedError {
             "The DesignEssence document is invalid: \(message)"
         case .storageUnavailable(let message):
             "The mood. library could not be read: \(message)"
+        case .essenceStorageFailed(let message):
+            "The saved essences could not be accessed: \(message)"
         }
     }
 
@@ -47,7 +51,7 @@ extension PinaxAgentAPIError: LocalizedError {
             "inspiration_not_found"
         case .invalidEssence:
             "invalid_essence"
-        case .storageUnavailable:
+        case .storageUnavailable, .essenceStorageFailed:
             "storage_error"
         }
     }
@@ -223,6 +227,87 @@ public struct PinaxAgentEssenceValidationResponse: Codable, Equatable, Sendable 
     }
 }
 
+public struct PinaxAgentEssenceSaveResponse: Codable, Equatable, Sendable {
+    public let apiVersion: Int
+    public let ok: Bool
+    public let outcome: DesignEssenceSaveOutcome
+    public let project: PinaxAgentProject
+    public let revision: DesignEssenceRevision
+    public let schemaVersion: String
+    public let referenceCount: Int
+
+    public init(
+        outcome: DesignEssenceSaveOutcome,
+        project: PinaxAgentProject,
+        revision: DesignEssenceRevision,
+        essence: DesignEssence
+    ) {
+        apiVersion = PinaxAgentAPIVersion.current
+        ok = true
+        self.outcome = outcome
+        self.project = project
+        self.revision = revision
+        schemaVersion = essence.schemaVersion
+        referenceCount = essence.source.references.count
+    }
+}
+
+/// How the project's current items differ from the items a saved essence was
+/// distilled from. Identifiers are sorted for deterministic output.
+public struct PinaxAgentEssenceStaleness: Codable, Equatable, Sendable {
+    /// Items now in the project that the essence did not consider.
+    public let addedAssetIDs: [Inspiration.ID]
+    /// Referenced items that were deleted or moved out of the project.
+    public let removedAssetIDs: [Inspiration.ID]
+    /// Referenced items edited after the essence was extracted.
+    public let changedAssetIDs: [Inspiration.ID]
+
+    public init(
+        addedAssetIDs: [Inspiration.ID],
+        removedAssetIDs: [Inspiration.ID],
+        changedAssetIDs: [Inspiration.ID]
+    ) {
+        self.addedAssetIDs = addedAssetIDs.sorted(by: Self.idSort)
+        self.removedAssetIDs = removedAssetIDs.sorted(by: Self.idSort)
+        self.changedAssetIDs = changedAssetIDs.sorted(by: Self.idSort)
+    }
+
+    public var isStale: Bool {
+        !addedAssetIDs.isEmpty || !removedAssetIDs.isEmpty || !changedAssetIDs.isEmpty
+    }
+
+    private static func idSort(_ lhs: Inspiration.ID, _ rhs: Inspiration.ID) -> Bool {
+        lhs.uuidString < rhs.uuidString
+    }
+}
+
+public struct PinaxAgentEssenceResponse: Codable, Equatable, Sendable {
+    public let apiVersion: Int
+    public let ok: Bool
+    public let project: PinaxAgentProject
+    public let revisionCount: Int
+    /// The latest revision, or absent when the project has no saved essence.
+    public let revision: DesignEssenceRevision?
+    public let stale: Bool?
+    public let staleness: PinaxAgentEssenceStaleness?
+    public let essence: DesignEssence?
+
+    public init(
+        project: PinaxAgentProject,
+        revisionCount: Int,
+        latest: (revision: DesignEssenceRevision, essence: DesignEssence, staleness: PinaxAgentEssenceStaleness)?
+    ) {
+        apiVersion = PinaxAgentAPIVersion.current
+        ok = true
+        self.project = project
+        self.revisionCount = revisionCount
+        revision = latest?.revision
+        stale = latest?.staleness.isStale
+        staleness = latest?.staleness
+        essence = latest?.essence
+    }
+}
+
 public struct PinaxAgentErrorPayload: Codable, Equatable, Sendable {
     public let code: String
     public let message: String
@@ -250,6 +335,11 @@ public struct PinaxAgentErrorResponse: Codable, Equatable, Sendable {
                 code: apiError.code,
                 message: apiError.localizedDescription
             )
+        } else if let storeError = error as? DesignEssenceStoreError {
+            self.init(
+                code: "storage_error",
+                message: storeError.localizedDescription
+            )
         } else if let repositoryError = error as? LibraryRepositoryError {
             self.init(
                 code: "storage_error",
@@ -264,14 +354,17 @@ public struct PinaxAgentErrorResponse: Codable, Equatable, Sendable {
     }
 }
 
-/// Read-only facade over the same coordinated repository used by Pinax's UI.
+/// Facade over the same coordinated repository used by Pinax's UI. Library
+/// data is read-only; essences are appended to a separate local store.
 public struct PinaxAgentAPI: Sendable {
     private static let maximumEssenceFileSize = 10 * 1_024 * 1_024
 
     public let repository: LibraryRepository
+    public let essenceStore: DesignEssenceStore
 
     public init(repository: LibraryRepository) {
         self.repository = repository
+        essenceStore = DesignEssenceStore(storageDirectory: repository.storageDirectory)
     }
 
     public func projects() async throws -> PinaxAgentProjectsResponse {
@@ -365,6 +458,194 @@ public struct PinaxAgentAPI: Sendable {
         filePath: String,
         currentDirectory: URL
     ) throws -> PinaxAgentEssenceValidationResponse {
+        PinaxAgentEssenceValidationResponse(
+            essence: try readValidatedEssence(filePath: filePath, currentDirectory: currentDirectory)
+        )
+    }
+
+    /// Validates a project essence, checks that every reference and quoted
+    /// word traces back to the user's saved items, then appends it as a new
+    /// revision. The library itself is never modified.
+    public func saveEssence(filePath: String) async throws -> PinaxAgentEssenceSaveResponse {
+        try await saveEssence(
+            filePath: filePath,
+            currentDirectory: URL(
+                fileURLWithPath: FileManager.default.currentDirectoryPath,
+                isDirectory: true
+            )
+        )
+    }
+
+    public func saveEssence(
+        filePath: String,
+        currentDirectory: URL
+    ) async throws -> PinaxAgentEssenceSaveResponse {
+        let essence = try Self.readValidatedEssence(
+            filePath: filePath,
+            currentDirectory: currentDirectory
+        )
+        guard essence.source.kind == .project,
+              let projectID = essence.source.projectID else {
+            throw PinaxAgentAPIError.invalidEssence(
+                "Only a project essence can be saved. Single-image essences stay with the request that produced them."
+            )
+        }
+
+        let snapshot = try await loadSnapshot()
+        guard let project = snapshot.projects.first(where: { $0.id == projectID }) else {
+            throw PinaxAgentAPIError.projectNotFound(projectID.uuidString)
+        }
+        try Self.validateTraceability(of: essence, to: project, in: snapshot)
+
+        let result: (revision: DesignEssenceRevision, outcome: DesignEssenceSaveOutcome)
+        do {
+            result = try await essenceStore.save(essence)
+        } catch {
+            throw PinaxAgentAPIError.essenceStorageFailed(error.localizedDescription)
+        }
+
+        return PinaxAgentEssenceSaveResponse(
+            outcome: result.outcome,
+            project: PinaxAgentProject(
+                project: project,
+                inspirationCount: Self.inspirations(in: project, snapshot: snapshot).count
+            ),
+            revision: result.revision,
+            essence: essence
+        )
+    }
+
+    /// Returns the project's latest saved essence and whether the project has
+    /// changed since it was extracted.
+    public func essence(project reference: String) async throws -> PinaxAgentEssenceResponse {
+        let trimmedReference = reference.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedReference.isEmpty else {
+            throw PinaxAgentAPIError.invalidArguments("A project name or UUID is required.")
+        }
+
+        let snapshot = try await loadSnapshot()
+        let project = try Self.resolveProject(reference: trimmedReference, in: snapshot.projects)
+        let items = Self.inspirations(in: project, snapshot: snapshot)
+        let projectRecord = PinaxAgentProject(project: project, inspirationCount: items.count)
+
+        let revisionCount: Int
+        let stored: (revision: DesignEssenceRevision, essence: DesignEssence)?
+        do {
+            revisionCount = try await essenceStore.revisionIDs(projectID: project.id).count
+            stored = try await essenceStore.latest(projectID: project.id)
+        } catch {
+            throw PinaxAgentAPIError.essenceStorageFailed(error.localizedDescription)
+        }
+
+        guard let latest = stored else {
+            return PinaxAgentEssenceResponse(
+                project: projectRecord,
+                revisionCount: revisionCount,
+                latest: nil
+            )
+        }
+
+        let staleness = Self.staleness(of: latest.essence, against: items)
+        return PinaxAgentEssenceResponse(
+            project: projectRecord,
+            revisionCount: revisionCount,
+            latest: (revision: latest.revision, essence: latest.essence, staleness: staleness)
+        )
+    }
+
+    static func staleness(
+        of essence: DesignEssence,
+        against items: [Inspiration]
+    ) -> PinaxAgentEssenceStaleness {
+        let referencedIDs = Set(essence.source.assetIDs)
+        let currentIDs = Set(items.map(\.id))
+        let extractedAt = essence.provenance.extractedAt
+        return PinaxAgentEssenceStaleness(
+            addedAssetIDs: Array(currentIDs.subtracting(referencedIDs)),
+            removedAssetIDs: Array(referencedIDs.subtracting(currentIDs)),
+            changedAssetIDs: items
+                .filter { referencedIDs.contains($0.id) && $0.updatedAt > extractedAt }
+                .map(\.id)
+        )
+    }
+
+    /// Every reference must be a saved item in the essence's project, and
+    /// every quote must be words that item actually holds, so no saved rule
+    /// can cite a source the user did not choose.
+    static func validateTraceability(
+        of essence: DesignEssence,
+        to project: Project,
+        in snapshot: LibrarySnapshot
+    ) throws {
+        let itemsByID = Dictionary(
+            snapshot.inspirations.map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+
+        for (index, reference) in essence.source.references.enumerated() {
+            guard let item = itemsByID[reference.assetID],
+                  item.projectID == project.id else {
+                throw PinaxAgentAPIError.invalidEssence(
+                    "source.references[\(index)].assetID: \(reference.assetID.uuidString) is not a saved item in the project \"\(project.name)\"."
+                )
+            }
+        }
+
+        for cited in essence.citedEvidence {
+            let evidence = cited.evidence
+            guard evidence.citedField.isTextual,
+                  let quote = evidence.quote,
+                  let item = itemsByID[evidence.assetID] else { continue }
+
+            guard let fieldValue = citableText(evidence.citedField, of: item) else {
+                throw PinaxAgentAPIError.invalidEssence(
+                    "\(cited.path).field: This library does not store a separate \(evidence.citedField.rawValue) for items yet. Cite the item's `text` instead."
+                )
+            }
+            guard normalizedQuoteText(fieldValue).contains(normalizedQuoteText(quote)) else {
+                throw PinaxAgentAPIError.invalidEssence(
+                    "\(cited.path).quote: The quote does not appear in the \(evidence.citedField.rawValue) of item \(evidence.assetID.uuidString)."
+                )
+            }
+        }
+    }
+
+    private static func citableText(
+        _ field: DesignEssence.Evidence.Field,
+        of item: Inspiration
+    ) -> String? {
+        switch field {
+        case .image:
+            nil
+        case .title:
+            item.title
+        case .text:
+            item.text
+        case .note:
+            // A separate per-item note is being added to `Inspiration`; until
+            // it lands, the user's typed note lives in `text`.
+            nil
+        }
+    }
+
+    private static func normalizedQuoteText(_ value: String) -> String {
+        value
+            .folding(
+                options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive],
+                locale: Locale(identifier: "en_US_POSIX")
+            )
+            .split(whereSeparator: { $0.isWhitespace })
+            .joined(separator: " ")
+    }
+
+    private static func inspirations(in project: Project, snapshot: LibrarySnapshot) -> [Inspiration] {
+        LibraryRepository.filteredInspirations(in: snapshot, scope: .project(project.id))
+    }
+
+    private static func readValidatedEssence(
+        filePath: String,
+        currentDirectory: URL
+    ) throws -> DesignEssence {
         guard !filePath.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
               !filePath.contains("\0") else {
             throw PinaxAgentAPIError.invalidArguments("A readable JSON file path is required.")
@@ -394,7 +675,7 @@ public struct PinaxAgentAPI: Sendable {
             }
             let essence = try JSONDecoder().decode(DesignEssence.self, from: data)
             try DesignEssenceValidator.validate(essence)
-            return PinaxAgentEssenceValidationResponse(essence: essence)
+            return essence
         } catch let error as PinaxAgentAPIError {
             throw error
         } catch let error as DesignEssenceValidationError {
@@ -458,13 +739,17 @@ public enum PinaxAgentCommand: Equatable, Sendable {
     case inspirations(project: String, prettyPrinted: Bool)
     case inspiration(id: String, prettyPrinted: Bool)
     case validateEssence(file: String, prettyPrinted: Bool)
+    case saveEssence(file: String, prettyPrinted: Bool)
+    case essence(project: String, prettyPrinted: Bool)
 
     public var prettyPrinted: Bool {
         switch self {
         case .projects(let prettyPrinted),
              .inspirations(_, let prettyPrinted),
              .inspiration(_, let prettyPrinted),
-             .validateEssence(_, let prettyPrinted):
+             .validateEssence(_, let prettyPrinted),
+             .saveEssence(_, let prettyPrinted),
+             .essence(_, let prettyPrinted):
             prettyPrinted
         }
     }
@@ -509,10 +794,10 @@ public enum PinaxAgentCommand: Equatable, Sendable {
             }
             return .inspiration(id: reference, prettyPrinted: prettyPrinted)
 
-        case "validate-essence":
+        case "validate-essence", "save-essence":
             guard remaining.count == 2, remaining[0] == "--file" else {
                 throw PinaxAgentAPIError.invalidArguments(
-                    "Use `validate-essence --file <path>` with an optional `--pretty` flag."
+                    "Use `\(command) --file <path>` with an optional `--pretty` flag."
                 )
             }
             let filePath = remaining[1]
@@ -520,12 +805,26 @@ public enum PinaxAgentCommand: Equatable, Sendable {
                   !filePath.contains("\0") else {
                 throw PinaxAgentAPIError.invalidArguments("A readable JSON file path is required.")
             }
-            return .validateEssence(file: filePath, prettyPrinted: prettyPrinted)
+            return command == "save-essence"
+                ? .saveEssence(file: filePath, prettyPrinted: prettyPrinted)
+                : .validateEssence(file: filePath, prettyPrinted: prettyPrinted)
+
+        case "essence":
+            guard remaining.count == 2, remaining[0] == "--project" else {
+                throw PinaxAgentAPIError.invalidArguments(
+                    "Use `essence --project <name-or-uuid>` with an optional `--pretty` flag."
+                )
+            }
+            let reference = remaining[1].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !reference.isEmpty else {
+                throw PinaxAgentAPIError.invalidArguments("A project name or UUID is required.")
+            }
+            return .essence(project: reference, prettyPrinted: prettyPrinted)
 
         default:
             throw PinaxAgentAPIError.invalidArguments(Self.usage)
         }
     }
 
-    public static let usage = "Usage: mood-agent projects [--pretty] | mood-agent inspirations --project <name-or-uuid> [--pretty] | mood-agent inspiration --id <uuid> [--pretty] | mood-agent validate-essence --file <path> [--pretty]"
+    public static let usage = "Usage: mood-agent projects [--pretty] | mood-agent inspirations --project <name-or-uuid> [--pretty] | mood-agent inspiration --id <uuid> [--pretty] | mood-agent validate-essence --file <path> [--pretty] | mood-agent save-essence --file <path> [--pretty] | mood-agent essence --project <name-or-uuid> [--pretty]"
 }

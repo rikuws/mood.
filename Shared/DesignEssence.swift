@@ -251,21 +251,63 @@ public extension DesignEssence {
             }
         }
 
+        /// The part of a saved item that the evidence cites. An absent field
+        /// means the item's image, which keeps 1.0 documents written before
+        /// textual evidence existed valid and unchanged.
+        public enum Field: String, Codable, Hashable, Sendable {
+            case image
+            /// The item's title.
+            case title
+            /// The item's captured text, which today also holds what the user
+            /// typed into the editor's Note field.
+            case text
+            /// The user's own note about why the item matters, stored apart
+            /// from captured text.
+            case note
+
+            public var isTextual: Bool {
+                self != .image
+            }
+        }
+
         public let assetID: Inspiration.ID
+        public let field: Field?
         public let region: NormalizedRegion?
+        /// The exact words cited from a textual field, so a rule can point at
+        /// what the user actually wrote rather than a paraphrase.
+        public let quote: String?
         public let cue: String
         public let measurement: String?
 
         public init(
             assetID: Inspiration.ID,
+            field: Field? = nil,
             region: NormalizedRegion? = nil,
+            quote: String? = nil,
             cue: String,
             measurement: String? = nil
         ) {
             self.assetID = assetID
+            self.field = field
             self.region = region
+            self.quote = quote
             self.cue = cue
             self.measurement = measurement
+        }
+
+        public var citedField: Field {
+            field ?? .image
+        }
+    }
+
+    /// One evidence entry together with its JSON path inside the essence.
+    struct CitedEvidence: Hashable, Sendable {
+        public let path: String
+        public let evidence: Evidence
+
+        public init(path: String, evidence: Evidence) {
+            self.path = path
+            self.evidence = evidence
         }
     }
 
@@ -572,6 +614,7 @@ public struct DesignEssenceValidationIssue: Codable, Hashable, Sendable {
         case invalidPaletteColor
         case duplicateSemanticAxis
         case invalidClusterPartition
+        case invalidEvidenceField
     }
 
     public let code: Code
@@ -624,6 +667,14 @@ public extension DesignEssence {
         try DesignEssenceValidator.validate(self)
         return self
     }
+
+    /// Every evidence entry in the document, in validation order, with the
+    /// path used by validation issues.
+    var citedEvidence: [CitedEvidence] {
+        var accumulator = DesignEssenceValidationAccumulator(essence: self)
+        accumulator.validate()
+        return accumulator.citedEvidence
+    }
 }
 
 private struct DesignEssenceValidationAccumulator {
@@ -632,6 +683,7 @@ private struct DesignEssenceValidationAccumulator {
     let essence: DesignEssence
     let sourceAssetIDs: Set<Inspiration.ID>
     var issues: [Issue] = []
+    var citedEvidence: [DesignEssence.CitedEvidence] = []
 
     init(essence: DesignEssence) {
         self.essence = essence
@@ -1068,7 +1120,9 @@ private struct DesignEssenceValidationAccumulator {
     private mutating func validateEvidence(_ evidence: [DesignEssence.Evidence], path: String) {
         for (index, item) in evidence.enumerated() {
             let itemPath = "\(path)[\(index)]"
+            citedEvidence.append(DesignEssence.CitedEvidence(path: itemPath, evidence: item))
             validateNonBlank(item.cue, path: "\(itemPath).cue", label: "Evidence cue")
+            validateEvidenceField(item, path: itemPath)
             if let measurement = item.measurement {
                 validateNonBlank(
                     measurement,
@@ -1103,6 +1157,33 @@ private struct DesignEssenceValidationAccumulator {
                     message: "A normalized region must have a non-negative origin, positive size, and fit within 0...1."
                 )
             }
+        }
+    }
+
+    private mutating func validateEvidenceField(_ item: DesignEssence.Evidence, path: String) {
+        if item.citedField.isTextual {
+            if item.region != nil {
+                append(
+                    .invalidEvidenceField,
+                    path: "\(path).region",
+                    message: "A region applies only to image evidence, not to the item's \(item.citedField.rawValue)."
+                )
+            }
+            guard let quote = item.quote else {
+                append(
+                    .invalidEvidenceField,
+                    path: "\(path).quote",
+                    message: "Evidence citing the item's \(item.citedField.rawValue) must quote the exact words it relies on."
+                )
+                return
+            }
+            validateNonBlank(quote, path: "\(path).quote", label: "Evidence quote")
+        } else if item.quote != nil {
+            append(
+                .invalidEvidenceField,
+                path: "\(path).quote",
+                message: "A quote applies only to evidence citing a title, text, or note."
+            )
         }
     }
 
