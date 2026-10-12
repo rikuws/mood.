@@ -77,13 +77,13 @@ See [AGENT_API.md](AGENT_API.md) for the success envelope and `invalid_essence` 
 
 ## Saved essences
 
-`mood-agent save-essence --file <path>` stores a validated project essence as an append-only revision at `Essences/<project-uuid>/<extractedAt>-<fingerprint>.json`, beside `library.json` and never inside it. Before writing, it checks that every reference is a saved item in that project and that every quote appears in the cited item, so a saved essence can only trace back to work the user chose and words the user wrote.
+`mood-agent save-essence --file <path>` stores a validated project essence as an append-only revision at `Essences/<project-uuid>/<sequence>-<fingerprint>.json`, beside `library.json` and never inside it. Before writing, it checks that every reference is a saved item in that project and that every quote appears in the cited item, so a saved essence can only trace back to work the user chose and words the user wrote.
 
 The earlier open questions are answered narrowly:
 
 - **Revision history:** each save is a new immutable file; the folder is the history. Nothing is overwritten or deleted.
-- **Staleness:** `mood-agent essence --project <ref>` returns the latest revision with the items added, removed, or edited since its `extractedAt`. Staleness is reported, never acted on; re-distilling is the user's call.
-- **User edits:** a correction is a new revision, not an edit in place.
+- **Staleness:** `mood-agent essence --project <ref>` returns the latest saved revision with the items added, removed, or changed since. Each revision records a content fingerprint of its source items, so an edit that syncs in late from another device with an older timestamp still counts. Staleness is reported, never acted on; re-distilling is the user's call.
+- **User edits:** a correction is a new revision, not an edit in place, and the most recently saved revision is the latest.
 - **CloudKit:** essences are local to the Mac for now and are not synced, which avoids merging generated analysis across devices.
 - **Model provenance:** each revision keeps its own `provenance.model` and `pipelineVersion`.
 

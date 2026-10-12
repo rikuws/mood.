@@ -179,10 +179,13 @@ saved essence can only cite what the user chose:
   diacritics, and whitespace runs. The library
   does not store a separate `note` yet, so `note` citations are rejected until it does.
 
-Revisions are written to `Essences/<project-uuid>/<extractedAt>-<fingerprint>.json`, where
-the timestamp is UTC to the millisecond and the fingerprint is the first 12 hex digits of
-the stored JSON's SHA-256. Files are never rewritten or deleted, so the folder is the
-revision history. Saving an identical document again writes nothing:
+Revisions are written to `Essences/<project-uuid>/<sequence>-<fingerprint>.json`, where the
+sequence is a zero-padded save counter and the fingerprint is the first 12 hex digits of the
+essence's SHA-256. The latest revision is the one saved last, so a correction wins even when it
+keeps the original `extractedAt`. Each file holds the essence together with `savedAt` and a
+content fingerprint of every referenced item as it was when saved. Files are never rewritten
+or deleted, so the folder is the revision history. Saving an identical essence again writes
+nothing and returns the original revision:
 
 ```json
 {
@@ -200,9 +203,11 @@ revision history. Saving an identical document again writes nothing:
   "referenceCount": 2,
   "revision": {
     "extractedAt": "2026-10-12T07:40:00Z",
-    "id": "20261012T074000.000Z-3f2a9c01b7de",
-    "path": "/Users/example/Library/Group Containers/group.com.rikuwikman.pinax/Essences/80D7254E-78FA-4BC3-95BF-0D721EF2B72D/20261012T074000.000Z-3f2a9c01b7de.json",
-    "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D"
+    "id": "000001-3f2a9c01b7de",
+    "path": "/Users/example/Library/Group Containers/group.com.rikuwikman.pinax/Essences/80D7254E-78FA-4BC3-95BF-0D721EF2B72D/000001-3f2a9c01b7de.json",
+    "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
+    "savedAt": "2026-10-12T07:41:12Z",
+    "sequence": 1
   },
   "schemaVersion": "1.0"
 }
@@ -234,8 +239,10 @@ includes the latest `revision`, the full `essence`, `stale`, and `staleness`:
 
 `addedAssetIDs` are project items the essence did not consider, `removedAssetIDs` are
 referenced items that were deleted or moved out of the project, and `changedAssetIDs` are
-referenced items edited after the essence's `provenance.extractedAt`. "Latest" means the
-latest `extractedAt`.
+referenced items edited after the essence's `provenance.extractedAt` or whose content no
+longer matches the fingerprint recorded at save time. The fingerprint covers every stored item
+field except capture bookkeeping and timestamps, plus the local image bytes, so an edit that
+syncs in late with an older `updatedAt` is still caught.
 
 ## Errors
 

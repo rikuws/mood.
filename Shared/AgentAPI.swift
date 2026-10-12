@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 
 /// The machine-facing API exposed by the macOS app's bundled `mood-agent`
@@ -497,9 +498,22 @@ public struct PinaxAgentAPI: Sendable {
         }
         try Self.validateTraceability(of: essence, to: project, in: snapshot)
 
+        let itemsByID = Dictionary(
+            snapshot.inspirations.map { ($0.id, $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+        let sources = essence.source.assetIDs.compactMap { assetID in
+            itemsByID[assetID].map {
+                DesignEssenceSourceFingerprint(
+                    assetID: assetID,
+                    fingerprint: Self.sourceFingerprint(of: $0, repository: repository)
+                )
+            }
+        }
+
         let result: (revision: DesignEssenceRevision, outcome: DesignEssenceSaveOutcome)
         do {
-            result = try await essenceStore.save(essence)
+            result = try await essenceStore.save(essence, sources: sources)
         } catch {
             throw PinaxAgentAPIError.essenceStorageFailed(error.localizedDescription)
         }
@@ -529,7 +543,7 @@ public struct PinaxAgentAPI: Sendable {
         let projectRecord = PinaxAgentProject(project: project, inspirationCount: items.count)
 
         let revisionCount: Int
-        let stored: (revision: DesignEssenceRevision, essence: DesignEssence)?
+        let stored: (revision: DesignEssenceRevision, record: DesignEssenceRecord)?
         do {
             revisionCount = try await essenceStore.revisionIDs(projectID: project.id).count
             stored = try await essenceStore.latest(projectID: project.id)
@@ -545,28 +559,74 @@ public struct PinaxAgentAPI: Sendable {
             )
         }
 
-        let staleness = Self.staleness(of: latest.essence, against: items)
+        let staleness = Self.staleness(
+            of: latest.record,
+            against: items,
+            fingerprint: { Self.sourceFingerprint(of: $0, repository: repository) }
+        )
         return PinaxAgentEssenceResponse(
             project: projectRecord,
             revisionCount: revisionCount,
-            latest: (revision: latest.revision, essence: latest.essence, staleness: staleness)
+            latest: (revision: latest.revision, essence: latest.record.essence, staleness: staleness)
         )
     }
 
+    /// An item counts as changed when it was edited after extraction, or when
+    /// its content no longer matches the fingerprint recorded at save time.
+    /// The fingerprint catches edits that sync in late with an older
+    /// `updatedAt`, such as an offline change made on another device.
     static func staleness(
-        of essence: DesignEssence,
-        against items: [Inspiration]
+        of record: DesignEssenceRecord,
+        against items: [Inspiration],
+        fingerprint: (Inspiration) -> String
     ) -> PinaxAgentEssenceStaleness {
+        let essence = record.essence
         let referencedIDs = Set(essence.source.assetIDs)
         let currentIDs = Set(items.map(\.id))
         let extractedAt = essence.provenance.extractedAt
+        let savedFingerprints = Dictionary(
+            record.sources.map { ($0.assetID, $0.fingerprint) },
+            uniquingKeysWith: { first, _ in first }
+        )
         return PinaxAgentEssenceStaleness(
             addedAssetIDs: Array(currentIDs.subtracting(referencedIDs)),
             removedAssetIDs: Array(referencedIDs.subtracting(currentIDs)),
             changedAssetIDs: items
-                .filter { referencedIDs.contains($0.id) && $0.updatedAt > extractedAt }
+                .filter { item in
+                    guard referencedIDs.contains(item.id) else { return false }
+                    if item.updatedAt > extractedAt { return true }
+                    guard let saved = savedFingerprints[item.id] else { return false }
+                    return saved != fingerprint(item)
+                }
                 .map(\.id)
         )
+    }
+
+    /// A content fingerprint of one item: every stored field except capture
+    /// bookkeeping and timestamps, plus the bytes of its local image. New
+    /// fields, such as a note, are included automatically.
+    static func sourceFingerprint(of item: Inspiration, repository: LibraryRepository) -> String {
+        var hasher = SHA256()
+        let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
+        if let encoded = try? encoder.encode(item),
+           var fields = try? JSONSerialization.jsonObject(with: encoded) as? [String: Any] {
+            for key in ["updatedAt", "lastCapturedAt", "captureCount"] {
+                fields.removeValue(forKey: key)
+            }
+            if let canonical = try? JSONSerialization.data(
+                withJSONObject: fields,
+                options: [.sortedKeys, .withoutEscapingSlashes]
+            ) {
+                hasher.update(data: canonical)
+            }
+        }
+        if let imageURL = repository.localImageURL(for: item),
+           let imageData = try? Data(contentsOf: imageURL, options: .mappedIfSafe) {
+            hasher.update(data: Data("\nimage\n".utf8))
+            hasher.update(data: imageData)
+        }
+        return "sha256:" + hasher.finalize().map { String(format: "%02x", $0) }.joined()
     }
 
     /// Every reference must be a saved item in the essence's project, every

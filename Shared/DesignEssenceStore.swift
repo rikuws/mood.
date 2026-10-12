@@ -9,18 +9,65 @@ public enum DesignEssenceStorage {
 
 /// One saved, immutable essence file.
 public struct DesignEssenceRevision: Codable, Hashable, Sendable {
-    /// The filename without its extension: the extraction time followed by a
-    /// content fingerprint, so revisions sort chronologically by name.
+    /// The filename without its extension: a zero-padded save sequence
+    /// followed by a fingerprint of the essence, so revisions sort in the
+    /// order they were saved.
     public let id: String
+    /// Save order within the project, starting at 1. A correction saved later
+    /// always has a higher sequence, whatever its `extractedAt`.
+    public let sequence: Int
     public let projectID: Project.ID
     public let extractedAt: Date
+    public let savedAt: Date
     public let path: String
 
-    public init(id: String, projectID: Project.ID, extractedAt: Date, path: String) {
+    public init(
+        id: String,
+        sequence: Int,
+        projectID: Project.ID,
+        extractedAt: Date,
+        savedAt: Date,
+        path: String
+    ) {
         self.id = id
+        self.sequence = sequence
         self.projectID = projectID
         self.extractedAt = extractedAt
+        self.savedAt = savedAt
         self.path = path
+    }
+}
+
+/// A fingerprint of one source item as it was when the essence was saved.
+public struct DesignEssenceSourceFingerprint: Codable, Hashable, Sendable {
+    public let assetID: Inspiration.ID
+    public let fingerprint: String
+
+    public init(assetID: Inspiration.ID, fingerprint: String) {
+        self.assetID = assetID
+        self.fingerprint = fingerprint
+    }
+}
+
+/// The on-disk shape of a revision: the essence exactly as validated, plus
+/// what the library looked like when it was saved.
+public struct DesignEssenceRecord: Codable, Hashable, Sendable {
+    public static let currentFormatVersion = 1
+
+    public let formatVersion: Int
+    public let savedAt: Date
+    public let sources: [DesignEssenceSourceFingerprint]
+    public let essence: DesignEssence
+
+    public init(
+        savedAt: Date,
+        sources: [DesignEssenceSourceFingerprint],
+        essence: DesignEssence
+    ) {
+        formatVersion = Self.currentFormatVersion
+        self.savedAt = savedAt
+        self.sources = sources
+        self.essence = essence
     }
 }
 
@@ -71,10 +118,13 @@ public actor DesignEssenceStore {
         directory.appendingPathComponent(projectID.uuidString, isDirectory: true)
     }
 
-    /// Stores a validated project essence as a new revision. Saving the same
-    /// document twice is idempotent and reports `alreadySaved`.
+    /// Stores a validated project essence as a new revision with the next
+    /// save sequence. Saving the same essence again is idempotent and reports
+    /// `alreadySaved` with the original revision.
     public func save(
-        _ essence: DesignEssence
+        _ essence: DesignEssence,
+        sources: [DesignEssenceSourceFingerprint],
+        savedAt: Date = Date()
     ) throws -> (revision: DesignEssenceRevision, outcome: DesignEssenceSaveOutcome) {
         guard essence.source.kind == .project,
               let projectID = essence.source.projectID else {
@@ -82,60 +132,57 @@ public actor DesignEssenceStore {
         }
         try DesignEssenceValidator.validate(essence)
 
-        let data: Data
+        let essenceData: Data
         do {
-            data = try Self.makeEncoder().encode(essence)
+            essenceData = try Self.makeEncoder().encode(essence)
         } catch {
             throw DesignEssenceStoreError.writeFailed(error.localizedDescription)
         }
+        let fingerprint = Self.fingerprint(of: essenceData)
 
-        let id = Self.revisionID(extractedAt: essence.provenance.extractedAt, data: data)
-        let folder = projectDirectory(for: projectID)
-        let destination = folder.appendingPathComponent("\(id).json", isDirectory: false)
-        let revision = DesignEssenceRevision(
-            id: id,
-            projectID: projectID,
-            extractedAt: essence.provenance.extractedAt,
-            path: destination.path
-        )
-
-        if let existing = try? Data(contentsOf: destination) {
-            guard existing == data else {
+        let existingIDs = try revisionIDs(projectID: projectID)
+        for id in existingIDs where id.hasSuffix("-\(fingerprint)") {
+            let stored = try readRevision(id: id, projectID: projectID)
+            guard (try? Self.makeEncoder().encode(stored.record.essence)) == essenceData else {
                 throw DesignEssenceStoreError.revisionConflict(id)
             }
-            return (revision, .alreadySaved)
+            return (stored.revision, .alreadySaved)
         }
+
+        let sequence = (existingIDs.compactMap(Self.sequence(of:)).max() ?? 0) + 1
+        let id = String(format: "%06ld", sequence) + "-\(fingerprint)"
+        let folder = projectDirectory(for: projectID)
+        let destination = folder.appendingPathComponent("\(id).json", isDirectory: false)
+        // Whole seconds, so the returned revision matches what is read back.
+        let record = DesignEssenceRecord(
+            savedAt: Date(timeIntervalSince1970: savedAt.timeIntervalSince1970.rounded(.down)),
+            sources: sources,
+            essence: essence
+        )
 
         let temporary = folder.appendingPathComponent(
             ".\(id).\(UUID().uuidString).tmp",
             isDirectory: false
         )
         do {
+            let recordData = try Self.makeEncoder().encode(record)
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            try data.write(to: temporary, options: .atomic)
-        } catch {
-            try? FileManager.default.removeItem(at: temporary)
-            throw DesignEssenceStoreError.writeFailed(error.localizedDescription)
-        }
-
-        do {
+            try recordData.write(to: temporary, options: .atomic)
             // Moving fails instead of replacing when the destination already
             // exists, which keeps a concurrent save from overwriting a revision.
             try FileManager.default.moveItem(at: temporary, to: destination)
         } catch {
             try? FileManager.default.removeItem(at: temporary)
-            if let existing = try? Data(contentsOf: destination) {
-                guard existing == data else {
-                    throw DesignEssenceStoreError.revisionConflict(id)
-                }
-                return (revision, .alreadySaved)
-            }
             throw DesignEssenceStoreError.writeFailed(error.localizedDescription)
         }
-        return (revision, .saved)
+
+        return (
+            Self.revision(id: id, projectID: projectID, record: record, path: destination.path),
+            .saved
+        )
     }
 
-    /// Revision identifiers for a project, oldest first.
+    /// Revision identifiers for a project, in save order.
     public func revisionIDs(projectID: Project.ID) throws -> [String] {
         let folder = projectDirectory(for: projectID)
         guard FileManager.default.fileExists(atPath: folder.path) else { return [] }
@@ -155,47 +202,74 @@ public actor DesignEssenceStore {
             .sorted()
     }
 
-    /// The most recently extracted revision for a project, if any.
+    /// The most recently saved revision for a project, if any.
     public func latest(
         projectID: Project.ID
-    ) throws -> (revision: DesignEssenceRevision, essence: DesignEssence)? {
+    ) throws -> (revision: DesignEssenceRevision, record: DesignEssenceRecord)? {
         guard let id = try revisionIDs(projectID: projectID).last else { return nil }
+        return try readRevision(id: id, projectID: projectID)
+    }
+
+    private func readRevision(
+        id: String,
+        projectID: Project.ID
+    ) throws -> (revision: DesignEssenceRevision, record: DesignEssenceRecord) {
         let fileURL = projectDirectory(for: projectID)
             .appendingPathComponent("\(id).json", isDirectory: false)
-
-        let essence: DesignEssence
+        let record: DesignEssenceRecord
         do {
             let data = try Data(contentsOf: fileURL)
-            essence = try JSONDecoder().decode(DesignEssence.self, from: data)
+            record = try Self.makeDecoder().decode(DesignEssenceRecord.self, from: data)
         } catch {
             throw DesignEssenceStoreError.unreadableRevision(id, error.localizedDescription)
         }
-        let revision = DesignEssenceRevision(
-            id: id,
-            projectID: projectID,
-            extractedAt: essence.provenance.extractedAt,
-            path: fileURL.path
+        return (
+            Self.revision(id: id, projectID: projectID, record: record, path: fileURL.path),
+            record
         )
-        return (revision, essence)
     }
 
-    private static let revisionFilenamePattern = #"^[0-9]{8}T[0-9]{6}\.[0-9]{3}Z-[0-9a-f]{12}\.json$"#
+    private static let revisionFilenamePattern = #"^[0-9]{6}-[0-9a-f]{12}\.json$"#
 
-    private static func revisionID(extractedAt: Date, data: Data) -> String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = TimeZone(secondsFromGMT: 0)
-        formatter.calendar = Calendar(identifier: .gregorian)
-        formatter.dateFormat = "yyyyMMdd'T'HHmmss.SSS'Z'"
-        let digest = SHA256.hash(data: data)
-            .map { String(format: "%02x", $0) }
-            .joined()
-        return "\(formatter.string(from: extractedAt))-\(digest.prefix(12))"
+    private static func revision(
+        id: String,
+        projectID: Project.ID,
+        record: DesignEssenceRecord,
+        path: String
+    ) -> DesignEssenceRevision {
+        DesignEssenceRevision(
+            id: id,
+            sequence: sequence(of: id) ?? 0,
+            projectID: projectID,
+            extractedAt: record.essence.provenance.extractedAt,
+            savedAt: record.savedAt,
+            path: path
+        )
+    }
+
+    private static func sequence(of id: String) -> Int? {
+        Int(id.prefix(6))
+    }
+
+    private static func fingerprint(of data: Data) -> String {
+        String(
+            SHA256.hash(data: data)
+                .map { String(format: "%02x", $0) }
+                .joined()
+                .prefix(12)
+        )
     }
 
     private static func makeEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
+        encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
         return encoder
+    }
+
+    private static func makeDecoder() -> JSONDecoder {
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        return decoder
     }
 }

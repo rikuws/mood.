@@ -103,8 +103,9 @@ every `quote` appears in it:
 ```
 
 Returns `outcome` (`saved` or `already_saved`), `project`, and `revision`
-(`id`, `projectID`, `extractedAt`, `path`). Revisions are append-only files at
-`Essences/<project-uuid>/<extractedAt>-<fingerprint>.json`, local to this Mac.
+(`id`, `sequence`, `projectID`, `extractedAt`, `savedAt`, `path`). Revisions are
+append-only files at `Essences/<project-uuid>/<sequence>-<fingerprint>.json`, local
+to this Mac. The latest is the one saved last, so a correction always wins.
 
 ## Read the latest saved essence
 
@@ -115,7 +116,7 @@ Returns `outcome` (`saved` or `already_saved`), `project`, and `revision`
 Returns `project`, `revisionCount`, and, when one exists, the latest `revision`,
 the full `essence`, `stale`, and `staleness` (`addedAssetIDs`, `removedAssetIDs`,
 `changedAssetIDs`). An item counts as changed when it was edited after the
-essence's `extractedAt`. With no saved essence, `revisionCount` is `0` and the
+essence's `extractedAt` or its content differs from what was saved. With no saved essence, `revisionCount` is `0` and the
 other fields are absent.
 
 ## Errors

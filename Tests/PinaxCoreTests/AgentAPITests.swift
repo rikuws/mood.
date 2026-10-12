@@ -328,7 +328,8 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(again.outcome, .alreadySaved)
         XCTAssertEqual(again.revision, first.revision)
         XCTAssertEqual(second.outcome, .saved)
-        XCTAssertTrue(first.revision.id.hasPrefix("20231114T221320.000Z-"))
+        XCTAssertTrue(first.revision.id.hasPrefix("000001-"))
+        XCTAssertEqual(second.revision.sequence, 2)
         XCTAssertEqual(
             URL(fileURLWithPath: first.revision.path).deletingLastPathComponent().path,
             repository.storageDirectory
@@ -371,6 +372,67 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(response.staleness?.addedAssetIDs, [added.id])
         XCTAssertEqual(response.staleness?.removedAssetIDs, [fixture.second.id])
         XCTAssertEqual(response.staleness?.changedAssetIDs, [fixture.first.id])
+    }
+
+    func testCorrectionWithTheSameExtractionTimeBecomesLatest() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        let original = fixture.essence(extractedAt: fixture.extractedAt)
+        let correction = fixture.essence(
+            extractedAt: fixture.extractedAt,
+            extraEvidence: [
+                DesignEssence.Evidence(
+                    assetID: fixture.second.id,
+                    cue: "A corrected reading of the second reference"
+                ),
+            ]
+        )
+
+        for essence in [original, correction] {
+            _ = try await api.saveEssence(
+                filePath: try writeEssence(essence, in: repository),
+                currentDirectory: repository.storageDirectory
+            )
+        }
+        let resave = try await api.saveEssence(
+            filePath: try writeEssence(original, in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let latest = try await api.essence(project: "Website")
+
+        XCTAssertEqual(resave.outcome, .alreadySaved)
+        XCTAssertEqual(resave.revision.sequence, 1)
+        XCTAssertEqual(latest.revisionCount, 2)
+        XCTAssertEqual(latest.revision?.sequence, 2)
+        XCTAssertEqual(latest.essence, correction)
+    }
+
+    func testEssenceDetectsEditsThatSyncInWithAnOlderTimestamp() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        _ = try await api.saveEssence(
+            filePath: try writeEssence(fixture.essence(extractedAt: fixture.extractedAt), in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+
+        var delayed = fixture.first
+        delayed.title = "Edited offline on the phone"
+        delayed.updatedAt = fixture.extractedAt.addingTimeInterval(-10)
+        var recaptured = fixture.second
+        recaptured.captureCount += 1
+        recaptured.lastCapturedAt = fixture.extractedAt.addingTimeInterval(-5)
+        try await repository.save(
+            LibrarySnapshot(projects: [fixture.project], inspirations: [delayed, recaptured])
+        )
+
+        let response = try await api.essence(project: "Website")
+
+        XCTAssertEqual(response.stale, true)
+        XCTAssertEqual(response.staleness?.changedAssetIDs, [fixture.first.id])
+        XCTAssertEqual(response.staleness?.addedAssetIDs, [])
+        XCTAssertEqual(response.staleness?.removedAssetIDs, [])
     }
 
     func testSaveEssenceAcceptsQuotesFromTheUsersOwnText() async throws {
