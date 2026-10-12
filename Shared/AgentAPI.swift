@@ -658,12 +658,8 @@ public struct PinaxAgentAPI: Sendable {
             guard kind.isTextual,
                   let item = itemsByID[evidence.assetID] else { continue }
 
-            guard let fieldValue = citableText(kind, of: item) else {
-                throw PinaxAgentAPIError.invalidEssence(
-                    "\(cited.path).kind: This library does not store a separate \(kind.rawValue) for items yet. Cite the item's `text` instead."
-                )
-            }
-            guard !fieldValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            guard let fieldValue = citableText(kind, of: item),
+                  !fieldValue.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 throw PinaxAgentAPIError.invalidEssence(
                     "\(cited.path).kind: Item \(evidence.assetID.uuidString) has no \(kind.rawValue) to cite."
                 )
@@ -689,9 +685,7 @@ public struct PinaxAgentAPI: Sendable {
         case .text:
             item.text
         case .note:
-            // A separate per-item note is being added to `Inspiration`; until
-            // it lands, the user's typed note lives in `text`.
-            nil
+            item.note
         }
     }
 

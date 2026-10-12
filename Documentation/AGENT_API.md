@@ -176,8 +176,8 @@ saved essence can only cite what the user chose:
   `source.projectID`;
 - every textual evidence entry (`kind` of `title`, `text`, or `note`) cites a field that is
   not empty on that item, and its optional `quote` appears in that field, ignoring case,
-  diacritics, and whitespace runs. The library
-  does not store a separate `note` yet, so `note` citations are rejected until it does.
+  diacritics, and whitespace runs. A `note` citation points at the item's `note`, the
+  user's own words about why it matters.
 
 Revisions are written to `Essences/<project-uuid>/<sequence>-<fingerprint>.json`, where the
 sequence is a zero-padded save counter and the fingerprint is the first 12 hex digits of the

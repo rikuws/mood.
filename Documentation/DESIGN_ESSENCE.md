@@ -54,7 +54,7 @@ The canonical result contains:
 
 Exact copy, logos, brand identity, named people or products, artist identity, and incidental subject matter are excluded by default. Accessibility or legibility problems can be recorded as limitations but are never promoted into portable directives.
 
-Evidence cites an item's image by default. It can instead cite the user's own words with `kind` (`title`, `text`, or `note`), ideally with the exact `quote`, so a rule can point at "the user said this" rather than a model's paraphrase. Textual evidence takes no region. This is the same `kind` marker the `mood-pack` skill reads. Today the note a user types in the item editor is stored in `text`; `note` is reserved for the separate per-item note being added to the library and is rejected by `save-essence` until it exists. These fields are optional additions, so the schema stays 1.0 and earlier documents remain valid.
+Evidence cites an item's image by default. It can instead cite the user's own words with `kind` (`title`, `text`, or `note`), ideally with the exact `quote`, so a rule can point at "the user said this" rather than a model's paraphrase. Textual evidence takes no region. This is the same `kind` marker the `mood-pack` skill reads. `note` cites the separate per-item note the user writes in the item editor about why the item matters. These fields are optional additions, so the schema stays 1.0 and earlier documents remain valid.
 
 Palette hex values estimated visually are marked `observed` and accompanied by a limitation
 that they are approximate. `measured` is reserved for values produced by pixel or color-analysis

@@ -462,6 +462,32 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(response.referenceCount, 2)
     }
 
+    func testSaveEssenceAcceptsAndReturnsANoteCitation() async throws {
+        let repository = try makeRepository()
+        let fixture = try await saveProjectFixture(in: repository)
+        let api = PinaxAgentAPI(repository: repository)
+        let noteEvidence = DesignEssence.Evidence(
+            assetID: fixture.first.id,
+            kind: .note,
+            quote: "quiet  BASELINE grid",
+            cue: "The user's note names the baseline grid."
+        )
+        let essence = fixture.essence(extractedAt: fixture.extractedAt, extraEvidence: [noteEvidence])
+
+        let saved = try await api.saveEssence(
+            filePath: try writeEssence(essence, in: repository),
+            currentDirectory: repository.storageDirectory
+        )
+        let readBack = try await api.essence(project: "Website")
+
+        XCTAssertEqual(saved.outcome, .saved)
+        XCTAssertEqual(readBack.essence, essence)
+        XCTAssertEqual(readBack.stale, false)
+        let cited = try XCTUnwrap(readBack.essence?.citedEvidence.map(\.evidence).first { $0.citedKind == .note })
+        XCTAssertEqual(cited.assetID, fixture.first.id)
+        XCTAssertEqual(cited.quote, "quiet  BASELINE grid")
+    }
+
     func testSaveEssenceRejectsQuotesTheItemDoesNotContain() async throws {
         let repository = try makeRepository()
         let fixture = try await saveProjectFixture(in: repository)
@@ -475,7 +501,12 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
             assetID: fixture.first.id,
             kind: .note,
             quote: "quiet spacing",
-            cue: "Cites a note field the library does not store yet."
+            cue: "Quotes the item's text as if it were the note."
+        )
+        let missingNote = DesignEssence.Evidence(
+            assetID: fixture.second.id,
+            kind: .note,
+            cue: "Cites a note the item does not have."
         )
 
         let empty = DesignEssence.Evidence(
@@ -484,7 +515,7 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
             cue: "Cites text the item does not have."
         )
 
-        for evidence in [invented, note, empty] {
+        for evidence in [invented, note, missingNote, empty] {
             await XCTAssertThrowsErrorAsync(
                 try await PinaxAgentAPI(repository: repository).saveEssence(
                     filePath: try self.writeEssence(
@@ -582,6 +613,7 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
             createdAt: Date(timeIntervalSince1970: 1_600_000_000)
         )
         first.text = "Kept for the quiet spacing and the single column."
+        first.note = "The nav labels sit on a quiet baseline grid."
         let second = makeInspiration(
             title: "Second",
             projectID: project.id,
