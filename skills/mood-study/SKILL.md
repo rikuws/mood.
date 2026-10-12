@@ -64,8 +64,8 @@ If the result is `not_a_study`, tell the user to start a study on that project i
 (project menu, **Start a Study…**) and stop. Don't start one yourself.
 
 Look at every item's image (`localImagePath`, or `imageURL` when there is no local file).
-Read titles, text and authors, and every suggestion's `status` and `reason`. Reasons the user
-wrote are the most important input you have. Before searching, write down for yourself:
+Read titles, text, authors, each item's `note` and `verdict`, and every suggestion's `status`
+and `reason`. Notes and reasons the user wrote are the most important input you have. Before searching, write down for yourself:
 
 - what the seeds visibly share (light, palette, composition, material, type, era);
 - what the user said they love, in their own words;

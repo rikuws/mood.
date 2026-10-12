@@ -339,6 +339,8 @@ public extension LibraryRepository {
     /// Saves a kept suggestion as a library item in the study, following the
     /// same rule as an explicit capture into a project: an existing item with
     /// the same canonical URL moves into the study instead of duplicating.
+    /// The item records the keep, and the user's reason becomes its note
+    /// unless the item already has one, so essences can cite it.
     private nonisolated static func saveKeptSuggestion(
         _ suggestion: StudySuggestion,
         to projectID: Project.ID,
@@ -348,11 +350,18 @@ public extension LibraryRepository {
         if let existingIndex = snapshot.inspirations.firstIndex(where: {
             $0.canonicalURL.absoluteString == suggestion.canonicalURL.absoluteString
         }) {
-            if snapshot.inspirations[existingIndex].projectID != projectID {
-                snapshot.inspirations[existingIndex].projectID = projectID
-                snapshot.inspirations[existingIndex].updatedAt = now
+            var existing = snapshot.inspirations[existingIndex]
+            let original = existing
+            existing.projectID = projectID
+            existing.verdict = .keep
+            if existing.note?.isEmpty ?? true {
+                existing.note = suggestion.reason
             }
-            return snapshot.inspirations[existingIndex].id
+            if existing != original {
+                existing.updatedAt = now
+                snapshot.inspirations[existingIndex] = existing
+            }
+            return existing.id
         }
 
         let inspiration = Inspiration(
@@ -360,6 +369,8 @@ public extension LibraryRepository {
             url: suggestion.url,
             canonicalURL: suggestion.canonicalURL,
             title: suggestion.title,
+            note: suggestion.reason,
+            verdict: .keep,
             authorName: suggestion.creator,
             imageURL: suggestion.imageURL,
             projectID: projectID,

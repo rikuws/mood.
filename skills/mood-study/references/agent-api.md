@@ -9,8 +9,9 @@ Successful responses include `apiVersion: 1` and `ok: true`. Errors print
 `{"apiVersion": 1, "ok": false, "error": {"code", "message"}}` to stdout and exit `2`. Treat
 unknown fields as forward-compatible additions. Dates are ISO 8601.
 
-`suggest` and `reflect` are the helper's only writes. They add **pending** proposals to a study
-the user started; nothing else in the library changes. No command keeps, rejects, confirms or
+`suggest` and `reflect` are the only commands this skill writes with. They add **pending**
+proposals to a study the user started; nothing else in the library changes. (The helper's
+other write, `save-essence`, belongs to `mood-distill`.) No command keeps, rejects, confirms or
 corrects anything.
 
 ## Read a study

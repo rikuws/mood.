@@ -291,6 +291,8 @@ final class StudyTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(item.title, "Pod bay")
         XCTAssertEqual(item.authorName, "Geoffrey Unsworth")
         XCTAssertEqual(item.imageURL, URL(string: "https://example.com/pod-bay.jpg"))
+        XCTAssertEqual(item.verdict, .keep)
+        XCTAssertEqual(item.note, "how empty the frame is")
         XCTAssertEqual(snapshot.project(id: study.id)?.study?.suggestions, [kept])
     }
 
@@ -317,6 +319,35 @@ final class StudyTests: XCTestCase, @unchecked Sendable {
         XCTAssertEqual(kept.savedInspirationID, general.inspiration.id)
         XCTAssertEqual(snapshot.inspirations.first?.projectID, study.id)
         XCTAssertEqual(snapshot.inspirations.first?.title, "Mine")
+        XCTAssertEqual(snapshot.inspirations.first?.verdict, .keep)
+        XCTAssertNil(snapshot.inspirations.first?.note)
+    }
+
+    func testKeepingAnItemWithANoteKeepsTheUsersOwnNote() async throws {
+        let repository = try makeRepository()
+        var general = try await repository.capture(
+            CapturePayload(source: .web, url: URL(string: "https://example.com/still")!, title: "Mine")
+        ).inspiration
+        general.note = "The grain I keep coming back to."
+        _ = try await repository.updateInspiration(general)
+        let study = try await repository.createStudy(subject: "2001")
+        let batch = try await repository.addStudySuggestions(
+            projectID: study.id,
+            drafts: [draft("https://example.com/still")]
+        )
+
+        _ = try await repository.decideStudySuggestion(
+            projectID: study.id,
+            suggestionID: batch.added[0].id,
+            verdict: .keep,
+            reason: "the symmetry"
+        )
+        let snapshot = try await repository.load()
+        let item = try XCTUnwrap(snapshot.inspirations.first)
+
+        XCTAssertEqual(item.note, "The grain I keep coming back to.")
+        XCTAssertEqual(item.verdict, .keep)
+        XCTAssertEqual(item.projectID, study.id)
     }
 
     func testRejectedSuggestionCanBeKeptLaterButKeptCannotBeRejected() async throws {

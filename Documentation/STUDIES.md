@@ -52,7 +52,9 @@ pending, then the later decision.
   `status` (`pending`, `kept`, `rejected`), `reason` and `decidedAt`.
   - **Keep** saves the source to the study's moodboard as a normal item
     (`savedInspirationID`). If the URL was already saved elsewhere in the library, that item
-    moves into the study instead of being duplicated, the same as an explicit capture.
+    moves into the study instead of being duplicated, the same as an explicit capture. The
+    item's `verdict` becomes `keep`, and the reason becomes its `note` unless the item
+    already has one, so essences can cite the person's own words.
   - **Reject** keeps the suggestion in the study with its reason. Rejects are taste data:
     they are shown to the agent, can be cited by patterns, and the same URL is never proposed
     again. A reject can be reconsidered and kept later.
@@ -73,10 +75,7 @@ job and, finally, the person's: nothing reaches the moodboard until they keep it
 
 ## Not yet
 
-- Per-item "why" notes for seeds and a keep/reject verdict on existing items come from the
-  item notes and verdicts work. Until then a seed's note is its text field, and verdicts exist
-  for suggestions only.
-- `mood-distill` doesn't yet read a study's verdicts and confirmed patterns as evidence, and
-  saved essences and the `GUI.md` pack are separate work.
+- `mood-distill` doesn't yet read a study's rejected suggestions and confirmed patterns as
+  evidence; it sees kept items with their notes and verdicts like any other project.
 - Built-in providers (Are.na, Refero, Mobbin) are not wired in; the skill can use them when the
   person's agent has access.
