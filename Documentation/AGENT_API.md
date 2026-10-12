@@ -75,12 +75,14 @@ and diacritics. Results are newest-first, matching the mood. library.
       "imageURL": "https://images.example.com/reference.jpg",
       "lastCapturedAt": "2026-08-01T09:05:00Z",
       "localImagePath": "/Users/example/Library/Group Containers/group.com.rikuwikman.pinax/Media/F168774A-16DB-4403-A244-F87A49EE54D7.jpg",
+      "note": "The nav labels sit on a quiet baseline grid.",
       "projectID": "80D7254E-78FA-4BC3-95BF-0D721EF2B72D",
       "source": "x",
       "text": "A useful layout detail.",
       "title": "Navigation reference",
       "updatedAt": "2026-08-01T09:05:00Z",
-      "url": "https://x.com/designer/status/123"
+      "url": "https://x.com/designer/status/123",
+      "verdict": "keep"
     }
   ],
   "ok": true,
@@ -98,6 +100,11 @@ and diacritics. Results are newest-first, matching the mood. library.
 Remote preview images use `imageURL`. Locally persisted media uses `localImagePath`, which
 is an absolute path suitable for an agent tool that can read local files. Either value may
 be absent.
+
+`text` is text captured with the item, such as an X post body or a page description.
+`note` is the user's own words about why the item matters, and `verdict` is `keep` or
+`reject` once the user has judged it. Both are omitted when unset. Treat `note` as the
+user's reasoning and `text` as source material; don't conflate them.
 
 ## Fetch one saved item
 

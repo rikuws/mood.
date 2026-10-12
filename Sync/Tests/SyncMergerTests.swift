@@ -248,6 +248,33 @@ final class SyncMergerTests: XCTestCase, @unchecked Sendable {
         )
     }
 
+    func testCanonicalDuplicateWinnerKeepsLoserNoteAndVerdictWhenUnset() throws {
+        var local = try makeInspiration(
+            url: "https://twitter.com/designer/status/123?s=20",
+            title: "Old",
+            updatedAt: firstDate
+        )
+        local.note = "The why behind this one."
+        local.verdict = .keep
+        let remote = try makeInspiration(
+            url: "https://x.com/designer/status/123/photo/1",
+            title: "New",
+            updatedAt: secondDate
+        )
+
+        let result = PinaxSyncMerger.merge(
+            local: LibrarySnapshot(inspirations: [local], updatedAt: secondDate),
+            remote: PinaxRemoteSnapshot(inspirations: [remote]),
+            state: .empty,
+            at: syncDate
+        )
+
+        XCTAssertEqual(result.snapshot.inspirations.count, 1)
+        XCTAssertEqual(result.snapshot.inspirations[0].id, remote.id)
+        XCTAssertEqual(result.snapshot.inspirations[0].note, "The why behind this one.")
+        XCTAssertEqual(result.snapshot.inspirations[0].verdict, .keep)
+    }
+
     func testMissingProjectReferenceMovesInspirationToGeneral() throws {
         let missingProjectID = UUID()
         let inspiration = try makeInspiration(

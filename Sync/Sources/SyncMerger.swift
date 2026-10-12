@@ -250,6 +250,8 @@ public enum PinaxSyncMerger {
     ) {
         if winner.title.isEmpty { winner.title = other.title }
         if winner.text.isEmpty { winner.text = other.text }
+        if winner.note == nil { winner.note = other.note }
+        if winner.verdict == nil { winner.verdict = other.verdict }
         if winner.authorName == nil { winner.authorName = other.authorName }
         if winner.authorHandle == nil { winner.authorHandle = other.authorHandle }
         if winner.imageURL == nil { winner.imageURL = other.imageURL }

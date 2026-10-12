@@ -59,6 +59,9 @@ Each inspiration may include:
 - `localImagePath` — absolute path to media stored by mood.; prefer this for vision
 - `imageURL` — remote preview when no local file was kept
 - `title`, `text`, `authorName`, `authorHandle`, `source`, `url`, `canonicalURL`
+- `note` — the user's own words about why the item matters; `text` is captured
+  source text (a post body or page description), not the user's reasoning
+- `verdict` — `keep` or `reject` when the user has judged the item; absent when undecided
 
 Either image field may be absent. Text-only items are first-class references.
 

@@ -101,6 +101,28 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         )
     }
 
+    func testInspirationsExposeNoteAndVerdict() async throws {
+        let repository = try makeRepository()
+        var inspiration = makeInspiration(
+            title: "Judged reference",
+            createdAt: Date(timeIntervalSince1970: 300),
+            localImageFilename: nil
+        )
+        inspiration.note = "Too decorative for this project."
+        inspiration.verdict = .reject
+        try await repository.save(LibrarySnapshot(inspirations: [inspiration]))
+
+        let response = try await PinaxAgentAPI(repository: repository)
+            .inspiration(id: inspiration.id.uuidString)
+        let encoded = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(response.inspiration)) as? [String: Any]
+        )
+
+        XCTAssertEqual(response.inspiration.note, "Too decorative for this project.")
+        XCTAssertEqual(response.inspiration.verdict, .reject)
+        XCTAssertEqual(encoded["verdict"] as? String, "reject")
+    }
+
     func testMissingInspirationReturnsStableAgentError() async throws {
         let repository = try makeRepository()
         let missingID = UUID().uuidString

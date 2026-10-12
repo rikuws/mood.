@@ -1,5 +1,12 @@
 import Foundation
 
+/// The user's own judgment on a saved item. Keeps and rejects are both taste
+/// signal: a reject is retained so it can later act as a negative reference.
+public enum InspirationVerdict: String, Codable, CaseIterable, Hashable, Sendable {
+    case keep
+    case reject
+}
+
 public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
     public typealias ID = UUID
 
@@ -9,7 +16,12 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
     public var url: URL
     public var canonicalURL: URL
     public var title: String
+    /// Text captured with the item, such as an X post body or a page description.
     public var text: String
+    /// The user's own words about why the item matters, kept separate from
+    /// captured `text` so agents can cite them as the user's reasoning.
+    public var note: String?
+    public var verdict: InspirationVerdict?
     public var authorName: String?
     public var authorHandle: String?
     public var imageURL: URL?
@@ -29,6 +41,8 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         canonicalURL: URL,
         title: String = "",
         text: String = "",
+        note: String? = nil,
+        verdict: InspirationVerdict? = nil,
         authorName: String? = nil,
         authorHandle: String? = nil,
         imageURL: URL? = nil,
@@ -45,6 +59,8 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         self.canonicalURL = canonicalURL
         self.title = title
         self.text = text
+        self.note = note
+        self.verdict = verdict
         self.authorName = authorName
         self.authorHandle = authorHandle
         self.imageURL = imageURL
@@ -63,6 +79,8 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         case canonicalURL
         case title
         case text
+        case note
+        case verdict
         case authorName
         case authorHandle
         case imageURL
@@ -82,6 +100,8 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         canonicalURL = try container.decode(URL.self, forKey: .canonicalURL)
         title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
         text = try container.decodeIfPresent(String.self, forKey: .text) ?? ""
+        note = try container.decodeIfPresent(String.self, forKey: .note)
+        verdict = try container.decodeIfPresent(InspirationVerdict.self, forKey: .verdict)
         authorName = try container.decodeIfPresent(String.self, forKey: .authorName)
         authorHandle = try container.decodeIfPresent(String.self, forKey: .authorHandle)
         imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)

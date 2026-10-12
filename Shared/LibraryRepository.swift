@@ -433,6 +433,7 @@ public actor LibraryRepository {
             updated.canonicalURL = canonicalURL
             updated.title = Self.cleaned(updated.title)
             updated.text = Self.cleaned(updated.text)
+            updated.note = Self.cleanedOptional(updated.note)
             updated.authorName = Self.cleanedOptional(updated.authorName)
             updated.authorHandle = Self.cleanedHandle(updated.authorHandle)
             updated.createdAt = old.createdAt
@@ -503,6 +504,7 @@ public actor LibraryRepository {
             let searchable = [
                 inspiration.title,
                 inspiration.text,
+                inspiration.note ?? "",
                 inspiration.authorName ?? "",
                 inspiration.authorHandle ?? "",
                 inspiration.url.absoluteString
