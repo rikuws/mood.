@@ -228,6 +228,10 @@ public extension PinaxAgentAPI {
         )
         do {
             return try JSONDecoder().decode(Input.self, from: data)
+        } catch let error as DecodingError {
+            throw PinaxAgentAPIError.invalidStudyInput(
+                "The JSON does not match the expected shape (\(error.agentDescription))."
+            )
         } catch {
             throw PinaxAgentAPIError.invalidStudyInput(
                 "The JSON does not match the expected shape (\(error.localizedDescription))."

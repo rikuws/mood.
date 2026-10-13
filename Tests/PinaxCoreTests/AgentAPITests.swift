@@ -271,6 +271,30 @@ final class AgentAPITests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    func testEssenceDecodingErrorNamesTheFailingField() throws {
+        let repository = try makeRepository()
+        let fileURL = repository.storageDirectory.appendingPathComponent("bad-basis.json")
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: JSONEncoder().encode(makeValidEssence())) as? [String: Any]
+        )
+        var summary = try XCTUnwrap(object["summary"] as? [String: Any])
+        var essence = try XCTUnwrap(summary["essence"] as? [String: Any])
+        essence["basis"] = "guessed"
+        summary["essence"] = essence
+        object["summary"] = summary
+        try JSONSerialization.data(withJSONObject: object).write(to: fileURL)
+
+        XCTAssertThrowsError(
+            try PinaxAgentAPI.validateEssence(
+                filePath: fileURL.path,
+                currentDirectory: repository.storageDirectory
+            )
+        ) { error in
+            let message = PinaxAgentErrorResponse(error: error).error.message
+            XCTAssertTrue(message.contains("summary.essence.basis"), message)
+        }
+    }
+
     func testCommandParserAcceptsEssenceStorageCommands() throws {
         XCTAssertEqual(
             try PinaxAgentCommand.parse(
