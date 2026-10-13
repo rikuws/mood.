@@ -60,7 +60,8 @@ necessarily the user's own. Any other kind is unresolved.
 
 - every required file exists, and nothing but Markdown and JSON ships (no media);
 - every top-level bullet in GUI.md and the three guidance references cites at least one
-  kept ID, or starts with `- Not evidenced:` or `- Open question:`;
+  kept ID, or starts with `- Not evidenced:`, `- Open question:` or `- Limit:` (an essence
+  limitation, listed under Limits and Open Questions);
 - no file cites a dropped or unknown ID;
 - every kept `P`, `T` and `R` entry appears in GUI.md;
 - every kept entry has sources, and every source is listed in sources.md;

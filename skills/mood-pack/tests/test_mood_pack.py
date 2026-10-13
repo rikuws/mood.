@@ -185,6 +185,11 @@ class RenderAndCheckTests(unittest.TestCase):
         dropped = json.loads((self.pack / "pack.json").read_text())["dropped"]
         self.assertEqual([d["id"] for d in dropped], ["T3", "R2", "R3", "R4"])
 
+    def test_limitations_are_limits_not_missing_evidence(self) -> None:
+        text = self.gui()
+        self.assertIn("- Limit: Palette hex values are approximate visual estimates.", text)
+        self.assertNotIn("- Not evidenced: Palette hex values", text)
+
     def test_light_dark_marks_the_unshown_mode(self) -> None:
         text = (self.pack / "references/light-dark.md").read_text()
         self.assertIn("- [T1] `#F6F5F2` background", text)

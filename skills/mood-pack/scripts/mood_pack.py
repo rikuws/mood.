@@ -62,7 +62,7 @@ GUIDANCE_FILES = [
     "references/components.md",
     "references/composition.md",
 ]
-UNTAGGED_PREFIXES = ("- Not evidenced:", "- Open question:")
+UNTAGGED_PREFIXES = ("- Not evidenced:", "- Open question:", "- Limit:")
 SKILL_NAMES = ["gui-build", "gui-apply", "gui-review"]
 
 
@@ -594,7 +594,7 @@ def render_gui(
     if limitations or trace["openQuestions"]:
         lines += ["## Limits and Open Questions", ""]
         for limitation in limitations:
-            lines.append(f"- Not evidenced: {limitation}")
+            lines.append(f"- Limit: {limitation}")
         for question in trace["openQuestions"]:
             lines.append(f"- Open question: the references disagree here, so ask the user: {question}")
         lines.append("")
@@ -787,9 +787,12 @@ def render_skill(skill: str, name: str, install_path: str, plain_name: str | Non
                 "   Don'ts. Use token values exactly as given.",
                 "2. Honour every Must preserve and Must avoid rule. Use Prefer rules unless the",
                 "   screen gives a concrete reason not to, and say what that reason is.",
-                "3. When the screen needs something GUI.md marks Not evidenced or does not cover,",
-                "   stop and ask the user rather than inventing a direction.",
-                "4. In your summary, list the rule IDs (for example [R2], [T1]) the new UI applies.",
+                "3. May vary rules describe allowed range: use them where they help, not by default.",
+                "4. When the screen needs something GUI.md marks Not evidenced or does not cover,",
+                "   stop and ask the user rather than inventing a direction. If you cannot ask,",
+                "   use the plainest option, mark it in the code as an assumption, and list it",
+                "   as a question for the user.",
+                "5. In your summary, list the rule IDs (for example [R2], [T1]) the new UI applies.",
             ],
         ),
         "gui-apply": (
@@ -812,7 +815,8 @@ def render_skill(skill: str, name: str, install_path: str, plain_name: str | Non
                 f"Read `{gui}` in full first.",
                 "",
                 "1. Check the UI against each Must preserve, Must avoid and Prefer guideline and each",
-                "   token. Record a finding only when you can name the ID it breaks.",
+                "   token. Record a finding only when you can name the ID it breaks. May vary",
+                "   rules describe allowed range and are never findings.",
                 "2. Rank findings: Must avoid and Must preserve breaks first, then token drift,",
                 "   then Prefer departures.",
                 "3. Fix findings when asked to; otherwise list them with file, rule ID and the",
@@ -1031,7 +1035,7 @@ def check_pack(out_dir: Path) -> list[str]:
             if line.startswith("- ") and not tags and not line.startswith(UNTAGGED_PREFIXES):
                 problems.append(
                     f"{relative}:{number} is guidance with no entry ID; cite one, or mark it "
-                    "'Not evidenced:' or 'Open question:'."
+                    "'Not evidenced:', 'Open question:' or 'Limit:'."
                 )
 
     for entry_id in kept:
