@@ -398,6 +398,22 @@ public struct StudySuggestionDraft: Codable, Equatable, Sendable {
         self.rationale = rationale
         self.basedOnInspirationIDs = basedOnInspirationIDs
     }
+
+    /// Missing text fields decode as empty so the repository skips that entry
+    /// with a reason instead of the whole batch failing to decode.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        url = try container.decode(URL.self, forKey: .url)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        creator = try container.decodeIfPresent(String.self, forKey: .creator) ?? ""
+        sourceName = try container.decodeIfPresent(String.self, forKey: .sourceName)
+        imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+        rationale = try container.decodeIfPresent(String.self, forKey: .rationale) ?? ""
+        basedOnInspirationIDs = try container.decodeIfPresent(
+            [Inspiration.ID].self,
+            forKey: .basedOnInspirationIDs
+        )
+    }
 }
 
 /// Agent-supplied proposal for a reflected pattern.

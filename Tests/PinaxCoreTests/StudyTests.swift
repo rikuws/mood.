@@ -238,6 +238,32 @@ final class StudyTests: XCTestCase, @unchecked Sendable {
         ])
     }
 
+    func testSuggestInputWithMissingFieldsSkipsOnlyThoseEntries() async throws {
+        let json = """
+        {"suggestions":[
+          {"url":"https://example.com/credited","title":"Credited","creator":"Studio","rationale":"Matches your seed."},
+          {"url":"https://example.com/no-creator","title":"Uncredited","rationale":"Matches your seed."},
+          {"url":"https://example.com/no-why","title":"No reason","creator":"Studio"},
+          {"url":"https://example.com/no-title","creator":"Studio","rationale":"Matches your seed."}
+        ]}
+        """
+        let input = try JSONDecoder().decode(PinaxAgentSuggestInput.self, from: Data(json.utf8))
+        let repository = try makeRepository()
+        let study = try await repository.createStudy(subject: "2001")
+
+        let result = try await repository.addStudySuggestions(
+            projectID: study.id,
+            drafts: input.suggestions
+        )
+
+        XCTAssertEqual(result.added.map(\.title), ["Credited"])
+        XCTAssertEqual(result.skipped.map(\.reason), [
+            .missingCreator,
+            .missingRationale,
+            .missingTitle,
+        ])
+    }
+
     func testRejectedSavedAndPendingURLsAreNeverProposedAgain() async throws {
         let repository = try makeRepository()
         let study = try await repository.createStudy(subject: "2001")
