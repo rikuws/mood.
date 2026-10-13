@@ -67,6 +67,14 @@ struct MacLibraryView: View {
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { Task { await syncAndReload() } }
             }
+            // The library window is AppKit-owned, so `scenePhase` does not
+            // change when the user switches back from another app. Reload then,
+            // so suggestions and patterns an agent added with mood-agent appear.
+            .onReceive(
+                NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            ) { _ in
+                Task { await syncAndReload() }
+            }
             .onChange(of: store.inspirations) { _, inspirations in
                 if let selectedInspirationID,
                    !inspirations.contains(where: { $0.id == selectedInspirationID }) {
@@ -248,6 +256,7 @@ struct MacLibraryView: View {
             if let studyProjectID = currentStudyProjectID {
                 Button {
                     sheet = .study(studyProjectID)
+                    Task { await store.reload() }
                 } label: {
                     Label("Study", systemImage: "eye")
                 }

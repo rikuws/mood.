@@ -734,7 +734,7 @@ public struct PinaxAgentAPI: Sendable {
             throw PinaxAgentAPIError.invalidEssence(error.localizedDescription)
         } catch let error as DecodingError {
             throw PinaxAgentAPIError.invalidEssence(
-                "The JSON does not match DesignEssence 1.0 (\(error.localizedDescription))."
+                "The JSON does not match DesignEssence 1.0 (\(error.agentDescription))."
             )
         } catch {
             throw PinaxAgentAPIError.invalidEssence("The file could not be read (\(error.localizedDescription)).")
@@ -981,5 +981,34 @@ public enum PinaxAgentCommand: Equatable, Sendable {
             values[flag] = arguments[index + 1]
         }
         return values
+    }
+}
+
+extension DecodingError {
+    /// Names the failing field, such as `invariants[0].importance`, so an agent
+    /// can correct its JSON instead of guessing from a generic message.
+    var agentDescription: String {
+        let context: Context
+        switch self {
+        case .typeMismatch(_, let value), .valueNotFound(_, let value), .dataCorrupted(let value):
+            context = value
+        case .keyNotFound(let key, let value):
+            let path = Self.pathString(value.codingPath + [key])
+            return "\(path): required key is missing"
+        @unknown default:
+            return localizedDescription
+        }
+        let path = Self.pathString(context.codingPath)
+        return path.isEmpty ? context.debugDescription : "\(path): \(context.debugDescription)"
+    }
+
+    private static func pathString(_ codingPath: [any CodingKey]) -> String {
+        codingPath.reduce(into: "") { path, key in
+            if let index = key.intValue {
+                path += "[\(index)]"
+            } else {
+                path += path.isEmpty ? key.stringValue : ".\(key.stringValue)"
+            }
+        }
     }
 }
