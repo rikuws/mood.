@@ -94,8 +94,8 @@ public struct StudyAgentContext: Equatable, Sendable {
     public var skillDirectory: String
     /// A scratch directory the agent may write temporary JSON into.
     public var workingDirectory: String
-    /// The library folder `mood-agent` writes to, for agents whose sandbox
-    /// has to allow it explicitly.
+    /// The library folder, passed to custom agents that call `mood-agent`
+    /// themselves as `MOOD_LIBRARY_DIRECTORY`.
     public var storageDirectory: String
 
     public init(
@@ -199,14 +199,13 @@ public extension StudyAgentConfiguration {
             ])
         case .codex:
             // Codex's workspace-write sandbox has no network for commands and
-            // writes only to the scratch folder and the library folder that
-            // mood-agent updates; web research uses its built-in search.
+            // writes only to the scratch folder; web research uses its
+            // built-in search.
             return launch([
                 "exec",
                 "--skip-git-repo-check",
                 "--ephemeral",
                 "--sandbox", "workspace-write",
-                "--add-dir", context.storageDirectory,
                 "-c", #"web_search="live""#,
                 prompt,
             ])
@@ -230,18 +229,11 @@ public extension StudyAgentConfiguration {
     }
 
     /// Claude Code runs unattended, so it gets only what the study needs:
-    /// reading images and skill files, web research, and the bundled helper.
-    /// Temporary JSON is written in the working directory under
-    /// `acceptEdits`; no other shell command is allowed.
+    /// reading the study, images and skill files, and web research. It writes
+    /// its proposals in the scratch folder under `acceptEdits`; it can't run
+    /// other programs, and it never touches the library.
     static func claudeCodeAllowedTools(context: StudyAgentContext) -> [String] {
-        [
-            "Read",
-            "Glob",
-            "Grep",
-            "WebSearch",
-            "WebFetch",
-            "Bash(\(context.moodAgentPath):*)",
-        ]
+        ["Read", "Glob", "Grep", "WebSearch", "WebFetch"]
     }
 
     /// Splits a shell-like argument line on whitespace, honoring single and
@@ -297,42 +289,43 @@ public extension StudyAgentConfiguration {
 /// follows the bundled `mood-study` skill and can only add pending proposals.
 public enum StudyAgentPrompt {
     public static func make(task: StudyAgentTask, context: StudyAgentContext) -> String {
-        let helper = context.moodAgentPath
-        let project = context.projectID.uuidString
         let skill = (context.skillDirectory as NSString).appendingPathComponent("SKILL.md")
+        let study = StudyAgentHandoff.studyFilename
+        let output = StudyAgentHandoff.proposalsFilename(for: task)
 
         let job: String = switch task {
         case .findSources:
             """
             Your task: find 6 to 10 real, credited sources for this study, following the skill's \
-            "Find sources" section, and add them with `\(helper) suggest --project \(project) --file <json>`. \
-            Don't add reflections in this run.
+            "Find sources" section. Write them to ./\(output) in the `suggest --file` format \
+            ({"suggestions": [...]}). Don't propose patterns in this run.
             """
         case .reflect:
             """
             Your task: reflect 2 to 4 patterns in the user's keeps and rejects, following the skill's \
-            "Reflect patterns back" section, and add them with `\(helper) reflect --project \(project) --file <json>`. \
-            Don't suggest new sources in this run.
+            "Reflect patterns back" section. Write them to ./\(output) in the `reflect --file` format \
+            ({"reflections": [...]}). Don't suggest new sources in this run.
             """
         }
 
         return """
-        mood. started you from its study panel to help with the visual study "\(context.projectName)" \
-        (project \(project)), subject: "\(context.subject)".
+        mood. started you from its study panel to help with the visual study "\(context.projectName)", \
+        subject: "\(context.subject)".
 
         Read the mood-study skill at \(skill) and its references/agent-api.md, and follow its hard rules: \
         real, credited work only, never generated imagery; tie each proposal to the user's seeds, notes and verdicts.
 
-        The mood-agent helper is already located at \(helper). Call it by that absolute path for every \
-        command (start with `\(helper) study --project \(project) --pretty`); don't run the finder script or use \
-        a shell variable. Write temporary JSON files only in the current working directory.
+        In this run you don't use mood-agent. The study is already in ./\(study), exactly as \
+        `mood-agent study` prints it: look at every item's image (localImagePath, or imageURL), and read \
+        every note, verdict, suggestion and reason. Write files only in the current working directory, \
+        and leave your output file there: mood. cleans up the folder.
 
         \(job)
 
-        You only propose. The user keeps, rejects, confirms or corrects everything in mood., so never claim \
-        anything was kept and never change the library any other way. Nobody can answer questions during \
-        this run: if the study isn't ready, say why and stop. Finish with a short plain summary of what you \
-        added and anything mood-agent skipped.
+        When you finish, mood. checks your file and adds what passes as pending proposals. You only \
+        propose: the user keeps, rejects, confirms or corrects everything in mood. Nobody can answer \
+        questions during this run: if the study isn't ready, say why and stop without writing the file. \
+        Finish with a short plain summary of what you proposed.
         """
     }
 }

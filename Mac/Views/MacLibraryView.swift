@@ -511,9 +511,9 @@ struct MacLibraryView: View {
                 },
                 agentControls: { [store, syncCoordinator] project, study in
                     AnyView(
-                        StudyAgentSection(store: store, project: project, study: study) { isFinal in
+                        StudyAgentSection(store: store, project: project, study: study) {
                             await store.reload()
-                            guard isFinal, let syncCoordinator else { return }
+                            guard let syncCoordinator else { return }
                             _ = await syncCoordinator.sync()
                             await store.reload()
                         }

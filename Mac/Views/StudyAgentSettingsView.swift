@@ -80,9 +80,9 @@ struct StudyAgentSettingsView: View {
     private var footer: String {
         switch configuration.preset {
         case .automatic, .claudeCode, .codex:
-            "mood. starts the agent with its bundled mood-study skill. The agent reads your study, searches the web, and adds pending sources and patterns through mood-agent. Claude Code can't run any other program. Codex runs in its sandbox, which only lets it write to a scratch folder and your library folder. You keep or reject everything."
+            "mood. starts the agent with its bundled mood-study skill and a copy of your study. When it finishes, mood. checks what it proposed and adds what passes for you to judge. The agent never touches your library, and you keep or reject everything."
         case .custom:
-            "mood. starts this command in a scratch folder. The prompt points it at the bundled mood-study skill and the mood-agent helper. Give the agent only the permissions it needs. It should add pending proposals through mood-agent suggest and reflect, and you keep or reject everything."
+            "mood. starts this command in a scratch folder holding study.json. The prompt points it at the bundled mood-study skill and asks it to write suggestions.json or reflections.json there. When it exits, mood. checks that file and adds what passes for you to judge. The agent needs no access to your library."
         }
     }
 }
@@ -93,7 +93,7 @@ struct StudyAgentSection: View {
     let store: LibraryStore
     let project: Project
     let study: ProjectStudy
-    var onChange: @Sendable @MainActor (_ isFinal: Bool) async -> Void = { _ in }
+    var onChange: @Sendable @MainActor () async -> Void = {}
 
     @Environment(\.openSettings) private var openSettings
     @State private var runner = StudyAgentRunner.shared
@@ -234,16 +234,16 @@ struct StudyAgentSection: View {
                 switch run.phase {
                 case .running:
                     ProgressView().controlSize(.small)
-                    Text("\(run.agentName) is working: \(run.task.displayName.lowercased()). New proposals appear below as it adds them.")
-                case .finished:
+                    Text("\(run.agentName) is working: \(run.task.displayName.lowercased()). This can take several minutes. What it proposes appears below when it's done.")
+                case .finished(let summary):
                     Image(systemName: "checkmark.circle").foregroundStyle(.secondary)
-                    Text("\(run.agentName) finished. Judge what it added below.")
+                    Text("\(run.agentName) finished. \(summary)")
                 case .failed(let message):
                     Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
                     Text("\(message) If \(run.agentName) isn't signed in yet, open it in Terminal once to sign in.")
                 case .cancelled:
                     Image(systemName: "stop.circle").foregroundStyle(.secondary)
-                    Text("Stopped. Anything it already added is waiting below.")
+                    Text("Stopped. Nothing was added.")
                 }
             }
             .font(.callout)
@@ -286,17 +286,19 @@ struct StudyAgentSection: View {
     private func start(_ task: StudyAgentTask) {
         errorMessage = nil
         guard let agent else { return }
-        do {
-            try runner.start(
-                task: task,
-                project: project,
-                agent: agent,
-                configuration: configuration,
-                storageDirectory: store.repository.storageDirectory,
-                onChange: onChange
-            )
-        } catch {
-            errorMessage = error.localizedDescription
+        Task {
+            do {
+                try await runner.start(
+                    task: task,
+                    project: project,
+                    agent: agent,
+                    configuration: configuration,
+                    repository: store.repository,
+                    onChange: onChange
+                )
+            } catch {
+                errorMessage = error.localizedDescription
+            }
         }
     }
 }

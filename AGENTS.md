@@ -4,7 +4,7 @@ mood. is a local-first native macOS and iOS visual moodboard for collecting imag
 
 ## Architecture
 
-- `Mac/`: macOS lifecycle, SwiftUI library UI, resources, Chromium native-messaging installer (`Mac/BrowserIntegration`), and the study agent runner that finds an installed coding agent (Claude Code, then Codex, or a command set in Settings › Study Agent) and starts it with the bundled `mood-study` skill; built by `PinaxMac` as `mood.app`.
+- `Mac/`: macOS lifecycle, SwiftUI library UI, resources, Chromium native-messaging installer (`Mac/BrowserIntegration`), and the study agent runner that finds an installed coding agent (Claude Code, then Codex, or a command set in Settings › Study Agent) and starts it with the bundled `mood-study` skill, handing the study over as `study.json` and adding the `suggestions.json`/`reflections.json` it writes; built by `PinaxMac` as `mood.app`.
 - `iOS/`: iOS/iPadOS lifecycle, views, support, and resources; built by `PinaxiOS`, which embeds the share extension.
 - `Shared/`: `PinaxCore` package target—models, URL canonicalization, `LibraryRepository` actor, observable store, previews, product identity, and agent API contract.
 - `AppUI/`: platform-shared SwiftUI image-loading UI included directly in both application targets.

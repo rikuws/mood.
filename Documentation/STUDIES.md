@@ -46,33 +46,35 @@ and uses it. Commands are looked up on the login shell's `PATH` plus common inst
 **Get Claude Code** and **Check Again**. When both are installed, Claude Code is used; the
 panel's **Using …** menu switches between installed agents.
 
+No agent gets access to the library. Before a run, mood. writes the study into a fresh scratch
+folder as `study.json` (the same JSON `mood-agent study` prints). The agent follows the bundled
+`mood-study` skill and writes its batch to `suggestions.json` or `reflections.json` in the
+`suggest --file`/`reflect --file` formats. When it exits, mood. adds that file through the same
+checks as `mood-agent` (credit, rationale, generator hosts, past rejects) and shows what it
+added and skipped. So sandboxed agents work, and only mood. writes the library.
+
 How each one is started:
 
 - **Claude Code:** `claude -p` with `--permission-mode acceptEdits` and
-  `--allowedTools Read,Glob,Grep,WebSearch,WebFetch,Bash(<mood-agent>:*)`. It can read the
-  study and its images, search and open web pages, write temporary JSON in its scratch folder,
-  and run the bundled `mood-agent`. Any other program, and any write outside the scratch folder,
-  needs an approval nobody can give in this unattended run, so it is denied.
-- **Codex:** `codex exec --sandbox workspace-write --add-dir <library folder>` with live web
-  search. Its sandbox has no network for commands and only lets it write to the scratch
-  folder and the library folder that `mood-agent` updates. The App Group lookup fails inside
-  that sandbox, so mood. passes the library folder to `mood-agent` as
-  `MOOD_LIBRARY_DIRECTORY`. That is looser than Claude Code's
-  allowlist, so the prompt and skill carry the rule that only `mood-agent` changes the library.
+  `--allowedTools Read,Glob,Grep,WebSearch,WebFetch`. It can read the study and its images,
+  search and open web pages, and write in its scratch folder. It can't run other programs or
+  write anywhere else; those need an approval nobody can give in this unattended run.
+- **Codex:** `codex exec --sandbox workspace-write` with live web search. Its sandbox has no
+  network for commands and only lets it write to the scratch folder.
 - **Other command** (Settings → Study Agent): any executable plus an argument line with the
   placeholders `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without
   `{prompt}`, the prompt goes to the agent's standard input. The same values are also in the
-  `MOOD_AGENT`, `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK` and
-  `MOOD_STUDY_PROMPT` environment variables. Its permissions are the agent's own to configure.
+  `MOOD_AGENT`, `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK`,
+  `MOOD_STUDY_PROMPT` and `MOOD_LIBRARY_DIRECTORY` environment variables. Its permissions are
+  the agent's own to configure.
 
 The study panel's **Find sources** (from the `explore` stage) and **Reflect patterns** (after the
-first verdict) buttons start the agent in a fresh scratch folder with a prompt that points at
-the `mood-study` skill and `mood-agent` bundled inside mood.app
-(`Contents/Resources/Skills/mood-study`, `Contents/Helpers/mood-agent`), so nothing needs to be
-installed besides the agent. While it runs, the panel reloads every few seconds so proposals
-appear as they are added, shows the agent's output, and offers **Stop**. When it finishes, the
-library syncs. Runs continue if the panel is closed. **Copy prompt for another agent** still
-works for agents mood. doesn't start.
+first verdict) buttons start the agent with a prompt that points at the `mood-study` skill
+bundled inside mood.app (`Contents/Resources/Skills/mood-study`), so nothing needs to be
+installed besides the agent. While it runs, the panel shows its output and offers **Stop**. When
+it finishes, the panel says what was added and skipped, and the library syncs. Runs continue
+if the panel is closed. **Copy prompt for another agent** still works for agents mood. doesn't
+start; those use `mood-agent` directly.
 
 On iOS, the panel copies a ready prompt for an agent on another machine.
 

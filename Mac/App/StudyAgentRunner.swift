@@ -137,7 +137,8 @@ struct ResolvedStudyAgent: Equatable, Sendable {
 final class StudyAgentRunner {
     enum Phase: Equatable {
         case running
-        case finished
+        /// The agent finished; the summary says what mood. added.
+        case finished(String)
         case failed(String)
         case cancelled
     }
@@ -166,24 +167,42 @@ final class StudyAgentRunner {
         runs[projectID]?.phase == .running
     }
 
-    /// Launches the agent. `onChange` is called as the library may have
-    /// changed: periodically while running, then once with `isFinal`.
+    /// Writes the study into a scratch folder and launches the agent there.
+    /// When it exits, mood. adds the proposals it wrote (see
+    /// `StudyAgentHandoff`) and calls `onChange` so the library reloads.
     func start(
         task: StudyAgentTask,
         project: Project,
         agent: ResolvedStudyAgent,
         configuration: StudyAgentConfiguration,
-        storageDirectory: URL,
-        onChange: @escaping @Sendable @MainActor (_ isFinal: Bool) async -> Void
-    ) throws {
+        repository: LibraryRepository,
+        onChange: @escaping @Sendable @MainActor () async -> Void
+    ) async throws {
         guard !isRunning(project.id) else { return }
         let invocation = try makeInvocation(
             task: task,
             project: project,
             agent: agent,
             configuration: configuration,
-            storageDirectory: storageDirectory
+            storageDirectory: repository.storageDirectory
         )
+        let workingDirectory = URL(fileURLWithPath: invocation.workingDirectory, isDirectory: true)
+        let api = PinaxAgentAPI(repository: repository)
+        let projectID = project.id
+        runs[projectID] = Run(
+            task: task,
+            agentName: agent.displayName,
+            startedAt: Date(),
+            phase: .running,
+            output: ""
+        )
+        do {
+            try await StudyAgentHandoff.prepare(api: api, projectID: projectID, in: workingDirectory)
+        } catch {
+            runs[projectID] = nil
+            try? FileManager.default.removeItem(at: workingDirectory)
+            throw error
+        }
         let executable = agent.executable
 
         let process = Process()
@@ -208,7 +227,6 @@ final class StudyAgentRunner {
             input = nil
         }
 
-        let projectID = project.id
         output.fileHandleForReading.readabilityHandler = { [weak self] handle in
             let data = handle.availableData
             guard !data.isEmpty else {
@@ -224,21 +242,16 @@ final class StudyAgentRunner {
             Task { @MainActor in
                 await self?.finish(
                     projectID,
+                    task: task,
                     status: status,
                     reason: reason,
-                    workingDirectory: invocation.workingDirectory,
+                    workingDirectory: workingDirectory,
+                    api: api,
                     onChange: onChange
                 )
             }
         }
 
-        runs[projectID] = Run(
-            task: task,
-            agentName: agent.displayName,
-            startedAt: Date(),
-            phase: .running,
-            output: ""
-        )
         do {
             try process.run()
         } catch {
@@ -254,14 +267,6 @@ final class StudyAgentRunner {
             DispatchQueue.global(qos: .userInitiated).async {
                 try? handle.write(contentsOf: Data(text.utf8))
                 try? handle.close()
-            }
-        }
-
-        Task { @MainActor [weak self] in
-            while self?.isRunning(projectID) == true {
-                try? await Task.sleep(for: .seconds(3))
-                guard self?.isRunning(projectID) == true else { break }
-                await onChange(false)
             }
         }
     }
@@ -330,16 +335,30 @@ final class StudyAgentRunner {
 
     private func finish(
         _ projectID: Project.ID,
+        task: StudyAgentTask,
         status: Int32,
         reason: Process.TerminationReason,
-        workingDirectory: String,
-        onChange: @MainActor (_ isFinal: Bool) async -> Void
+        workingDirectory: URL,
+        api: PinaxAgentAPI,
+        onChange: @MainActor () async -> Void
     ) async {
         processes[projectID] = nil
-        try? FileManager.default.removeItem(atPath: workingDirectory)
+        defer { try? FileManager.default.removeItem(at: workingDirectory) }
         if runs[projectID]?.phase == .running {
             if reason == .exit, status == 0 {
-                runs[projectID]?.phase = .finished
+                do {
+                    let result = try await StudyAgentHandoff.collect(
+                        api: api,
+                        projectID: projectID,
+                        task: task,
+                        from: workingDirectory
+                    )
+                    runs[projectID]?.phase = .finished(result.summary)
+                } catch {
+                    runs[projectID]?.phase = .failed(
+                        "mood. couldn't add what the agent proposed: \(error.localizedDescription)"
+                    )
+                }
             } else {
                 runs[projectID]?.phase = .failed(
                     reason == .uncaughtSignal
@@ -349,7 +368,7 @@ final class StudyAgentRunner {
             }
         }
         logger.notice("Study agent finished with status \(status)")
-        await onChange(true)
+        await onChange()
     }
 }
 
