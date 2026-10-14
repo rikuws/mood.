@@ -9,13 +9,19 @@ final class StudyAgentTests: XCTestCase {
         subject: "2001: A Space Odyssey",
         moodAgentPath: "/Applications/mood.app/Contents/Helpers/mood-agent",
         skillDirectory: "/Applications/mood.app/Contents/Resources/Skills/mood-study",
-        workingDirectory: "/tmp/mood-study-run"
+        workingDirectory: "/tmp/mood-study-run",
+        storageDirectory: "/Users/me/Library/Group Containers/group.com.rikuwikman.pinax"
     )
 
     func testClaudeCodePresetRunsUnattendedWithOnlyTheHelperAsShell() throws {
-        let invocation = try StudyAgentConfiguration.claudeCode.invocation(task: .findSources, context: context)
+        let invocation = try StudyAgentConfiguration.automatic.invocation(
+            task: .findSources,
+            context: context,
+            agent: .claudeCode,
+            executable: "/Users/me/.local/bin/claude"
+        )
 
-        XCTAssertEqual(invocation.executable, "claude")
+        XCTAssertEqual(invocation.executable, "/Users/me/.local/bin/claude")
         XCTAssertEqual(invocation.arguments.first, "-p")
         XCTAssertEqual(invocation.arguments[1], StudyAgentPrompt.make(task: .findSources, context: context))
         XCTAssertEqual(
@@ -40,7 +46,12 @@ final class StudyAgentTests: XCTestCase {
             arguments: #"exec --cd "{workdir}" --note 'project {project}' {prompt}"#
         )
 
-        let invocation = try configuration.invocation(task: .reflect, context: context)
+        let invocation = try configuration.invocation(
+            task: .reflect,
+            context: context,
+            agent: .custom,
+            executable: configuration.trimmedExecutable
+        )
 
         XCTAssertEqual(invocation.executable, "/opt/homebrew/bin/codex")
         XCTAssertEqual(
@@ -57,20 +68,64 @@ final class StudyAgentTests: XCTestCase {
     func testCustomAgentWithoutPromptPlaceholderReadsPromptFromStdin() throws {
         let configuration = StudyAgentConfiguration(preset: .custom, executable: "my-agent", arguments: "run -")
 
-        let invocation = try configuration.invocation(task: .findSources, context: context)
+        let invocation = try configuration.invocation(
+            task: .findSources,
+            context: context,
+            agent: .custom,
+            executable: "my-agent"
+        )
 
         XCTAssertEqual(invocation.arguments, ["run", "-"])
         XCTAssertEqual(invocation.standardInput, StudyAgentPrompt.make(task: .findSources, context: context))
     }
 
+    func testCodexPresetSandboxesWritesToScratchAndLibraryFolders() throws {
+        let invocation = try StudyAgentConfiguration.automatic.invocation(
+            task: .findSources,
+            context: context,
+            agent: .codex,
+            executable: "/opt/homebrew/bin/codex"
+        )
+
+        XCTAssertEqual(
+            invocation.arguments,
+            [
+                "exec", "--skip-git-repo-check", "--ephemeral",
+                "--sandbox", "workspace-write",
+                "--add-dir", "/Users/me/Library/Group Containers/group.com.rikuwikman.pinax",
+                "-c", #"web_search="live""#,
+                StudyAgentPrompt.make(task: .findSources, context: context),
+            ]
+        )
+        XCTAssertFalse(invocation.arguments.contains("danger-full-access"))
+    }
+
+    func testAutomaticLooksForKnownAgentsInOrderAndCustomUsesItsCommand() {
+        XCTAssertEqual(StudyAgentConfiguration.automatic.candidates.map(\.command), ["claude", "codex"])
+        XCTAssertEqual(StudyAgentConfiguration(preset: .codex).candidates.map(\.preset), [.codex])
+        XCTAssertEqual(
+            StudyAgentConfiguration(preset: .custom, executable: " my-agent ").candidates.map(\.command),
+            ["my-agent"]
+        )
+        XCTAssertTrue(StudyAgentConfiguration(preset: .custom).candidates.isEmpty)
+    }
+
     func testIncompleteOrMalformedConfigurationIsRefused() {
         XCTAssertThrowsError(
-            try StudyAgentConfiguration(preset: .custom, executable: "  ").invocation(task: .findSources, context: context)
+            try StudyAgentConfiguration(preset: .custom).invocation(
+                task: .findSources, context: context, agent: .custom, executable: "  "
+            )
+        ) { XCTAssertEqual($0 as? StudyAgentConfigurationError, .missingExecutable) }
+
+        XCTAssertThrowsError(
+            try StudyAgentConfiguration.automatic.invocation(
+                task: .findSources, context: context, agent: .automatic, executable: "claude"
+            )
         ) { XCTAssertEqual($0 as? StudyAgentConfigurationError, .missingExecutable) }
 
         XCTAssertThrowsError(
             try StudyAgentConfiguration(preset: .custom, executable: "agent", arguments: "say \"hi")
-                .invocation(task: .findSources, context: context)
+                .invocation(task: .findSources, context: context, agent: .custom, executable: "agent")
         ) { XCTAssertEqual($0 as? StudyAgentConfigurationError, .unbalancedQuote) }
     }
 

@@ -40,21 +40,28 @@ source, and the agent's reason, and the person keeps or rejects it.
 
 ### Connecting an agent (Mac)
 
-**Settings → Study Agent** picks the agent mood. starts:
+There is nothing to set up if Claude Code or Codex is installed and signed in: mood. finds it
+and uses it. Commands are looked up on the login shell's `PATH` plus common install folders
+(`~/.local/bin`, `/opt/homebrew/bin`, …). Without an agent, the study panel offers
+**Get Claude Code** and **Check Again**. When both are installed, Claude Code is used; the
+panel's **Using …** menu switches between installed agents.
 
-- **Claude Code** (default): runs `claude -p` with `--permission-mode acceptEdits` and
+How each one is started:
+
+- **Claude Code:** `claude -p` with `--permission-mode acceptEdits` and
   `--allowedTools Read,Glob,Grep,WebSearch,WebFetch,Bash(<mood-agent>:*)`. It can read the
   study and its images, search and open web pages, write temporary JSON in its scratch folder,
   and run the bundled `mood-agent`. Any other program, and any write outside the scratch folder,
   needs an approval nobody can give in this unattended run, so it is denied.
-- **Other command-line agent**: any executable plus an argument line with the placeholders
-  `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without `{prompt}`, the
-  prompt goes to the agent's standard input. The same values are also in the `MOOD_AGENT`,
-  `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK` and `MOOD_STUDY_PROMPT`
-  environment variables. Its permissions are the agent's own to configure.
-
-Commands are looked up on the login shell's `PATH` plus common install folders
-(`~/.local/bin`, `/opt/homebrew/bin`, …), or can be given as an absolute path.
+- **Codex:** `codex exec --sandbox workspace-write --add-dir <library folder>` with live web
+  search. Its sandbox has no network for commands and only lets it write to the scratch
+  folder and the library folder that `mood-agent` updates. That is looser than Claude Code's
+  allowlist, so the prompt and skill carry the rule that only `mood-agent` changes the library.
+- **Other command** (Settings → Study Agent): any executable plus an argument line with the
+  placeholders `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without
+  `{prompt}`, the prompt goes to the agent's standard input. The same values are also in the
+  `MOOD_AGENT`, `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK` and
+  `MOOD_STUDY_PROMPT` environment variables. Its permissions are the agent's own to configure.
 
 The study panel's **Find sources** (from the `explore` stage) and **Reflect patterns** (after the
 first verdict) buttons start the agent in a fresh scratch folder with a prompt that points at

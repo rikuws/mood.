@@ -16,49 +16,70 @@ public enum StudyAgentTask: String, Codable, CaseIterable, Hashable, Sendable {
     }
 }
 
-/// The coding agent mood. launches for a study. Claude Code is the built-in
-/// preset; any other command-line agent can be configured as `custom`.
+/// The coding agent mood. starts for a study. By default mood. picks the
+/// first known agent installed on the Mac, so there is nothing to set up;
+/// any other command-line agent can be configured as `custom`.
 public struct StudyAgentConfiguration: Codable, Equatable, Hashable, Sendable {
     public enum Preset: String, Codable, CaseIterable, Hashable, Sendable {
+        /// The first installed agent from `detectable`.
+        case automatic
         case claudeCode
+        case codex
         case custom
+
+        /// Agents mood. knows how to start safely, in the order it tries them.
+        public static let detectable: [Preset] = [.claudeCode, .codex]
 
         public var displayName: String {
             switch self {
+            case .automatic: "Automatic"
             case .claudeCode: "Claude Code"
-            case .custom: "Other command-line agent"
+            case .codex: "Codex"
+            case .custom: "Other command"
+            }
+        }
+
+        /// The command a known agent installs on the user's PATH.
+        public var commandName: String? {
+            switch self {
+            case .claudeCode: "claude"
+            case .codex: "codex"
+            case .automatic, .custom: nil
             }
         }
     }
 
     public var preset: Preset
-    /// A command name looked up on the user's PATH, or an absolute path.
+    /// For `custom`: a command name looked up on the user's PATH, or an
+    /// absolute path.
     public var executable: String
-    /// Arguments for `custom`, written as one shell-like line. Placeholders:
+    /// For `custom`: arguments written as one shell-like line. Placeholders:
     /// `{prompt}`, `{moodAgent}`, `{skill}`, `{project}`, `{workdir}`. When
     /// `{prompt}` is absent, the prompt is written to the agent's stdin.
     public var arguments: String
 
-    public init(preset: Preset, executable: String, arguments: String = "") {
+    public init(preset: Preset = .automatic, executable: String = "", arguments: String = "{prompt}") {
         self.preset = preset
         self.executable = executable
         self.arguments = arguments
     }
 
-    public static let claudeCode = StudyAgentConfiguration(preset: .claudeCode, executable: "claude")
-
-    public static let customTemplate = StudyAgentConfiguration(
-        preset: .custom,
-        executable: "",
-        arguments: "{prompt}"
-    )
+    public static let automatic = StudyAgentConfiguration()
 
     public var trimmedExecutable: String {
         executable.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    public var isComplete: Bool {
-        !trimmedExecutable.isEmpty
+    /// The commands to look for, in order, for this configuration.
+    public var candidates: [(preset: Preset, command: String)] {
+        switch preset {
+        case .automatic:
+            Preset.detectable.compactMap { preset in preset.commandName.map { (preset, $0) } }
+        case .claudeCode, .codex:
+            preset.commandName.map { [(preset, $0)] } ?? []
+        case .custom:
+            trimmedExecutable.isEmpty ? [] : [(.custom, trimmedExecutable)]
+        }
     }
 }
 
@@ -73,6 +94,9 @@ public struct StudyAgentContext: Equatable, Sendable {
     public var skillDirectory: String
     /// A scratch directory the agent may write temporary JSON into.
     public var workingDirectory: String
+    /// The library folder `mood-agent` writes to, for agents whose sandbox
+    /// has to allow it explicitly.
+    public var storageDirectory: String
 
     public init(
         projectID: Project.ID,
@@ -80,7 +104,8 @@ public struct StudyAgentContext: Equatable, Sendable {
         subject: String,
         moodAgentPath: String,
         skillDirectory: String,
-        workingDirectory: String
+        workingDirectory: String,
+        storageDirectory: String
     ) {
         self.projectID = projectID
         self.projectName = projectName
@@ -88,6 +113,7 @@ public struct StudyAgentContext: Equatable, Sendable {
         self.moodAgentPath = moodAgentPath
         self.skillDirectory = skillDirectory
         self.workingDirectory = workingDirectory
+        self.storageDirectory = storageDirectory
     }
 }
 
@@ -122,7 +148,7 @@ public enum StudyAgentConfigurationError: Error, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .missingExecutable:
-            "Choose the command that starts your agent in Settings."
+            "Choose the agent to use in Settings › Study Agent."
         case .unbalancedQuote:
             "The agent arguments have an unclosed quote."
         }
@@ -130,11 +156,18 @@ public enum StudyAgentConfigurationError: Error, Equatable, LocalizedError {
 }
 
 public extension StudyAgentConfiguration {
+    /// Builds the launch for a resolved agent. `agent` is the concrete preset
+    /// that was found (never `automatic`), and `executable` its path.
     func invocation(
         task: StudyAgentTask,
-        context: StudyAgentContext
+        context: StudyAgentContext,
+        agent: Preset,
+        executable: String
     ) throws -> StudyAgentInvocation {
-        guard isComplete else { throw StudyAgentConfigurationError.missingExecutable }
+        let executable = executable.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !executable.isEmpty, agent != .automatic else {
+            throw StudyAgentConfigurationError.missingExecutable
+        }
         let prompt = StudyAgentPrompt.make(task: task, context: context)
         let environment = [
             "MOOD_AGENT": context.moodAgentPath,
@@ -144,19 +177,38 @@ public extension StudyAgentConfiguration {
             "MOOD_STUDY_PROMPT": prompt,
         ]
 
-        switch preset {
-        case .claudeCode:
-            return StudyAgentInvocation(
-                executable: trimmedExecutable,
-                arguments: [
-                    "-p", prompt,
-                    "--permission-mode", "acceptEdits",
-                    "--allowedTools", Self.claudeCodeAllowedTools(context: context).joined(separator: ","),
-                ],
+        func launch(_ arguments: [String], stdin: String? = nil) -> StudyAgentInvocation {
+            StudyAgentInvocation(
+                executable: executable,
+                arguments: arguments,
                 environment: environment,
                 workingDirectory: context.workingDirectory,
-                standardInput: nil
+                standardInput: stdin
             )
+        }
+
+        switch agent {
+        case .automatic:
+            throw StudyAgentConfigurationError.missingExecutable
+        case .claudeCode:
+            return launch([
+                "-p", prompt,
+                "--permission-mode", "acceptEdits",
+                "--allowedTools", Self.claudeCodeAllowedTools(context: context).joined(separator: ","),
+            ])
+        case .codex:
+            // Codex's workspace-write sandbox has no network for commands and
+            // writes only to the scratch folder and the library folder that
+            // mood-agent updates; web research uses its built-in search.
+            return launch([
+                "exec",
+                "--skip-git-repo-check",
+                "--ephemeral",
+                "--sandbox", "workspace-write",
+                "--add-dir", context.storageDirectory,
+                "-c", #"web_search="live""#,
+                prompt,
+            ])
         case .custom:
             let tokens = try Self.splitArguments(arguments)
             let placeholders = [
@@ -172,13 +224,7 @@ public extension StudyAgentConfiguration {
                     result.replacingOccurrences(of: entry.key, with: entry.value)
                 }
             }
-            return StudyAgentInvocation(
-                executable: trimmedExecutable,
-                arguments: resolved,
-                environment: environment,
-                workingDirectory: context.workingDirectory,
-                standardInput: usesPromptPlaceholder ? nil : prompt
-            )
+            return launch(resolved, stdin: usesPromptPlaceholder ? nil : prompt)
         }
     }
 

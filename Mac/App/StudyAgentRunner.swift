@@ -11,7 +11,7 @@ enum StudyAgentSettings {
     static func load(from defaults: UserDefaults = .standard) -> StudyAgentConfiguration {
         guard let data = defaults.data(forKey: defaultsKey),
               let configuration = try? JSONDecoder().decode(StudyAgentConfiguration.self, from: data) else {
-            return .claudeCode
+            return .automatic
         }
         return configuration
     }
@@ -100,6 +100,34 @@ enum StudyAgentExecutableLocator {
     }
 }
 
+/// An agent found on this Mac for a configuration.
+struct ResolvedStudyAgent: Equatable, Sendable {
+    let preset: StudyAgentConfiguration.Preset
+    let executable: URL
+
+    var displayName: String {
+        preset == .custom ? executable.lastPathComponent : preset.displayName
+    }
+
+    /// The first installed agent the configuration allows. Can block briefly
+    /// the first time, while the login shell's PATH is read.
+    static func resolve(_ configuration: StudyAgentConfiguration) -> ResolvedStudyAgent? {
+        for candidate in configuration.candidates {
+            if let url = StudyAgentExecutableLocator.resolve(candidate.command) {
+                return ResolvedStudyAgent(preset: candidate.preset, executable: url)
+            }
+        }
+        return nil
+    }
+
+    /// Every known agent installed on this Mac, for the agent menu.
+    static func installed() -> [ResolvedStudyAgent] {
+        StudyAgentConfiguration.Preset.detectable.compactMap { preset in
+            resolve(StudyAgentConfiguration(preset: preset))
+        }
+    }
+}
+
 /// Runs the connected agent for a study and keeps its progress observable.
 /// The agent writes back only through `mood-agent suggest`/`reflect`, which
 /// add pending proposals, so the library reloads while it runs and the user
@@ -143,14 +171,20 @@ final class StudyAgentRunner {
     func start(
         task: StudyAgentTask,
         project: Project,
+        agent: ResolvedStudyAgent,
         configuration: StudyAgentConfiguration,
+        storageDirectory: URL,
         onChange: @escaping @Sendable @MainActor (_ isFinal: Bool) async -> Void
     ) throws {
         guard !isRunning(project.id) else { return }
-        let invocation = try makeInvocation(task: task, project: project, configuration: configuration)
-        guard let executable = StudyAgentExecutableLocator.resolve(invocation.executable) else {
-            throw StudyAgentRunnerError.executableNotFound(invocation.executable)
-        }
+        let invocation = try makeInvocation(
+            task: task,
+            project: project,
+            agent: agent,
+            configuration: configuration,
+            storageDirectory: storageDirectory
+        )
+        let executable = agent.executable
 
         let process = Process()
         process.executableURL = executable
@@ -200,7 +234,7 @@ final class StudyAgentRunner {
 
         runs[projectID] = Run(
             task: task,
-            agentName: configuration.preset == .claudeCode ? "Claude Code" : executable.lastPathComponent,
+            agentName: agent.displayName,
             startedAt: Date(),
             phase: .running,
             output: ""
@@ -246,7 +280,9 @@ final class StudyAgentRunner {
     private func makeInvocation(
         task: StudyAgentTask,
         project: Project,
-        configuration: StudyAgentConfiguration
+        agent: ResolvedStudyAgent,
+        configuration: StudyAgentConfiguration,
+        storageDirectory: URL
     ) throws -> StudyAgentInvocation {
         let fileManager = FileManager.default
         let helper = StudyAgentSettings.bundledMoodAgent
@@ -267,10 +303,16 @@ final class StudyAgentRunner {
             subject: project.study?.subject ?? project.name,
             moodAgentPath: helper.path,
             skillDirectory: skill.path,
-            workingDirectory: workingDirectory.path
+            workingDirectory: workingDirectory.path,
+            storageDirectory: storageDirectory.path
         )
         do {
-            return try configuration.invocation(task: task, context: context)
+            return try configuration.invocation(
+                task: task,
+                context: context,
+                agent: agent.preset,
+                executable: agent.executable.path
+            )
         } catch {
             try? fileManager.removeItem(at: workingDirectory)
             throw error
@@ -312,13 +354,10 @@ final class StudyAgentRunner {
 }
 
 enum StudyAgentRunnerError: Error, LocalizedError {
-    case executableNotFound(String)
     case missingBundledResource(String)
 
     var errorDescription: String? {
         switch self {
-        case .executableNotFound(let command):
-            "mood. couldn't find “\(command)”. Install the agent, or set its full path in Settings › Study Agent."
         case .missingBundledResource(let name):
             "This build of mood. is missing its bundled \(name). Reinstall mood. for Mac."
         }
