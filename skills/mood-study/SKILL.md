@@ -41,6 +41,9 @@ The user is the source of taste. You never decide what belongs in the study.
 
 ## Prepare the helper
 
+When mood. starts you from its study panel, the prompt gives the helper's absolute path. Use
+that path for every command and skip the finder.
+
 Read [references/agent-api.md](references/agent-api.md), then run the finder once from this
 skill directory and keep the result:
 

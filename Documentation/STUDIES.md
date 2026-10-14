@@ -32,11 +32,40 @@ a study, with its items as the seeds.
 
 Stages only guide the panel's prompt. Nothing is locked behind one.
 
-Finding sources runs in the person's coding agent with the
-[`mood-study`](../skills/mood-study) skill: the study panel copies a ready prompt. The agent
-reads the study with `mood-agent study`, searches for real work, and adds it with
-`mood-agent suggest`. The app shows each suggestion with its thumbnail, credit, source, and the
-agent's reason, and the person keeps or rejects it.
+Finding sources and reflecting patterns run in a coding agent the person connects. The agent
+follows the [`mood-study`](../skills/mood-study) skill: it reads the study with
+`mood-agent study`, searches for real work, and adds it with `mood-agent suggest` (or proposes
+patterns with `mood-agent reflect`). The app shows each suggestion with its thumbnail, credit,
+source, and the agent's reason, and the person keeps or rejects it.
+
+### Connecting an agent (Mac)
+
+**Settings → Study Agent** picks the agent mood. starts:
+
+- **Claude Code** (default): runs `claude -p` with `--permission-mode acceptEdits` and
+  `--allowedTools Read,Glob,Grep,WebSearch,WebFetch,Bash(<mood-agent>:*)`. It can read the
+  study and its images, search and open web pages, write temporary JSON in its scratch folder,
+  and run the bundled `mood-agent`. Any other program, and any write outside the scratch folder,
+  needs an approval nobody can give in this unattended run, so it is denied.
+- **Other command-line agent**: any executable plus an argument line with the placeholders
+  `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without `{prompt}`, the
+  prompt goes to the agent's standard input. The same values are also in the `MOOD_AGENT`,
+  `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK` and `MOOD_STUDY_PROMPT`
+  environment variables. Its permissions are the agent's own to configure.
+
+Commands are looked up on the login shell's `PATH` plus common install folders
+(`~/.local/bin`, `/opt/homebrew/bin`, …), or can be given as an absolute path.
+
+The study panel's **Find sources** (from the `explore` stage) and **Reflect patterns** (after the
+first verdict) buttons start the agent in a fresh scratch folder with a prompt that points at
+the `mood-study` skill and `mood-agent` bundled inside mood.app
+(`Contents/Resources/Skills/mood-study`, `Contents/Helpers/mood-agent`), so nothing needs to be
+installed besides the agent. While it runs, the panel reloads every few seconds so proposals
+appear as they are added, shows the agent's output, and offers **Stop**. When it finishes, the
+library syncs. Runs continue if the panel is closed. **Copy prompt for another agent** still
+works for agents mood. doesn't start.
+
+On iOS, the panel copies a ready prompt for an agent on another machine.
 
 ## What is stored
 

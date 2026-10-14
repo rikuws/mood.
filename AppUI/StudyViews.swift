@@ -117,6 +117,9 @@ struct StudyPanel: View {
     let projectID: Project.ID
     var onMutation: () -> Void = {}
     var onEdit: () -> Void = {}
+    /// Platform controls that run a connected agent. Without them, the panel
+    /// offers a prompt to paste into an agent instead.
+    var agentControls: ((Project, ProjectStudy) -> AnyView)?
 
     @Environment(\.dismiss) private var dismiss
     @State private var errorMessage: String?
@@ -222,6 +225,23 @@ struct StudyPanel: View {
 
     private func findSection(project: Project, study: ProjectStudy) -> some View {
         section("Find inspirations") {
+            if let agentControls {
+                agentControls(project, study)
+                Button(didCopyPrompt ? "Copied" : "Copy prompt for another agent") {
+                    copyToClipboard(Self.agentPrompt(for: project, study: study))
+                    didCopyPrompt = true
+                }
+                .buttonStyle(.link)
+                .font(.caption)
+            } else {
+                manualAgentInstructions(project: project, study: study)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func manualAgentInstructions(project: Project, study: ProjectStudy) -> some View {
+        Group {
             Text("An agent looks for real, credited work related to your seeds and notes, and adds it here for you to judge. It never generates images, and it won't suggest anything you've rejected.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
