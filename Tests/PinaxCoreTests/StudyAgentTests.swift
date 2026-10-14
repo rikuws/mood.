@@ -37,6 +37,7 @@ final class StudyAgentTests: XCTestCase {
         XCTAssertNil(invocation.standardInput)
         XCTAssertEqual(invocation.environment["MOOD_AGENT"], context.moodAgentPath)
         XCTAssertEqual(invocation.environment["MOOD_STUDY_TASK"], "findSources")
+        XCTAssertEqual(invocation.environment["MOOD_LIBRARY_DIRECTORY"], context.storageDirectory)
     }
 
     func testCustomAgentSubstitutesPlaceholdersInQuotedArguments() throws {
@@ -154,5 +155,35 @@ final class StudyAgentTests: XCTestCase {
         let configuration = StudyAgentConfiguration(preset: .custom, executable: "agent", arguments: "{prompt}")
         let data = try JSONEncoder().encode(configuration)
         XCTAssertEqual(try JSONDecoder().decode(StudyAgentConfiguration.self, from: data), configuration)
+    }
+
+    func testAgentOpensTheLibraryFolderItIsGiven() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("mood-agent-location-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let repository = try PinaxAgentLibraryLocation.repository(
+            environment: ["MOOD_LIBRARY_DIRECTORY": directory.path]
+        )
+
+        XCTAssertEqual(repository.storageDirectory.standardizedFileURL, directory.standardizedFileURL)
+    }
+
+    func testAgentRefusesAMissingOrRelativeLibraryFolderInsteadOfAnEmptyLibrary() {
+        let missing = "/tmp/mood-agent-missing-\(UUID().uuidString)"
+        XCTAssertThrowsError(
+            try PinaxAgentLibraryLocation.repository(environment: ["MOOD_LIBRARY_DIRECTORY": missing])
+        ) { XCTAssertEqual($0 as? PinaxAgentLibraryLocationError, .missingDirectory(missing)) }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: missing))
+
+        XCTAssertThrowsError(
+            try PinaxAgentLibraryLocation.repository(environment: ["MOOD_LIBRARY_DIRECTORY": "library"])
+        ) { XCTAssertEqual($0 as? PinaxAgentLibraryLocationError, .invalidPath("library")) }
+
+        XCTAssertEqual(
+            PinaxAgentErrorResponse(error: PinaxAgentLibraryLocationError.invalidPath("library")).error.code,
+            "storage_error"
+        )
     }
 }

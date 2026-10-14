@@ -175,6 +175,7 @@ public extension StudyAgentConfiguration {
             "MOOD_STUDY_PROJECT": context.projectID.uuidString,
             "MOOD_STUDY_TASK": task.rawValue,
             "MOOD_STUDY_PROMPT": prompt,
+            PinaxAgentLibraryLocation.environmentKey: context.storageDirectory,
         ]
 
         func launch(_ arguments: [String], stdin: String? = nil) -> StudyAgentInvocation {

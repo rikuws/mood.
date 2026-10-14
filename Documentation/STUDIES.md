@@ -55,7 +55,9 @@ How each one is started:
   needs an approval nobody can give in this unattended run, so it is denied.
 - **Codex:** `codex exec --sandbox workspace-write --add-dir <library folder>` with live web
   search. Its sandbox has no network for commands and only lets it write to the scratch
-  folder and the library folder that `mood-agent` updates. That is looser than Claude Code's
+  folder and the library folder that `mood-agent` updates. The App Group lookup fails inside
+  that sandbox, so mood. passes the library folder to `mood-agent` as
+  `MOOD_LIBRARY_DIRECTORY`. That is looser than Claude Code's
   allowlist, so the prompt and skill carry the rule that only `mood-agent` changes the library.
 - **Other command** (Settings → Study Agent): any executable plus an argument line with the
   placeholders `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without

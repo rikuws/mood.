@@ -352,6 +352,11 @@ public struct PinaxAgentErrorResponse: Codable, Equatable, Sendable {
                 code: "storage_error",
                 message: storeError.localizedDescription
             )
+        } else if let locationError = error as? PinaxAgentLibraryLocationError {
+            self.init(
+                code: "storage_error",
+                message: locationError.localizedDescription
+            )
         } else if let repositoryError = error as? LibraryRepositoryError {
             self.init(
                 code: "storage_error",

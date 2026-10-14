@@ -18,7 +18,10 @@ pending proposals to a guided visual study (see
 signed helper carries the `group.com.rikuwikman.pinax` entitlement so it can read the
 production library. An unsigned Debug helper follows the app's normal development fallback
 to `~/Library/Application Support/Pinax`; `PINAX_STORAGE_DIRECTORY` can override that path
-in Debug builds.
+in Debug builds. `MOOD_LIBRARY_DIRECTORY`, in any build, names the library folder outright;
+mood. sets it when it starts a study agent, so the helper finds the real library even inside
+an agent's sandbox, where the App Group lookup fails. A path that isn't an existing folder is
+an error rather than a new empty library.
 
 All machine responses use API version `1`, write JSON to stdout, and terminate with a
 newline. Successful calls exit `0`. Invalid input, missing records, invalid essence files,

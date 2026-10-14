@@ -23,7 +23,7 @@ private struct PinaxAgentExecutable {
                 return
             }
 
-            let repository = try LibraryRepository.appGroup()
+            let repository = try PinaxAgentLibraryLocation.repository()
             let api = PinaxAgentAPI(repository: repository)
 
             switch command {
