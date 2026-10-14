@@ -45,7 +45,7 @@ public enum StudyAgentHandoff {
         api: PinaxAgentAPI,
         projectID: Project.ID,
         in directory: URL,
-        fetchImage: ImageFetcher = urlSessionFetcher
+        fetchImage: @escaping ImageFetcher = urlSessionFetcher
     ) async throws -> Int {
         let response = try await api.study(project: projectID.uuidString)
         let staged = await stageImages(for: response.study.items, in: directory, fetchImage: fetchImage)
@@ -62,7 +62,7 @@ public enum StudyAgentHandoff {
     private static func stageImages(
         for items: [PinaxAgentInspiration],
         in directory: URL,
-        fetchImage: ImageFetcher
+        fetchImage: @escaping ImageFetcher
     ) async -> Int {
         let imagesDirectory = directory.appendingPathComponent(imagesDirectoryName, isDirectory: true)
         guard (try? FileManager.default.createDirectory(at: imagesDirectory, withIntermediateDirectories: true)) != nil else {
