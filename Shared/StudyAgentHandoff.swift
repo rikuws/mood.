@@ -9,6 +9,25 @@ public enum StudyAgentHandoff {
     public static let studyFilename = "study.json"
     public static let suggestionsFilename = "suggestions.json"
     public static let reflectionsFilename = "reflections.json"
+    /// Every study item's image, copied in as `<item id>.<ext>` so an agent
+    /// can look at it without network or library access.
+    public static let imagesDirectoryName = "images"
+    private static let maximumImageBytes = 25 * 1_024 * 1_024
+
+    /// Downloads one remote image. Injected so tests stay offline.
+    public typealias ImageFetcher = @Sendable (URL) async -> Data?
+
+    public static let urlSessionFetcher: ImageFetcher = { url in
+        guard let scheme = url.scheme?.lowercased(), scheme == "https" || scheme == "http" else { return nil }
+        var request = URLRequest(url: url, timeoutInterval: 20)
+        request.setValue("image/*", forHTTPHeaderField: "Accept")
+        guard let result = try? await URLSession.shared.data(for: request),
+              let http = result.1 as? HTTPURLResponse,
+              (200..<300).contains(http.statusCode) else {
+            return nil
+        }
+        return result.0
+    }
 
     public static func proposalsFilename(for task: StudyAgentTask) -> String {
         switch task {
@@ -17,13 +36,19 @@ public enum StudyAgentHandoff {
         }
     }
 
-    /// Writes the study as `mood-agent study` prints it.
+    /// Writes the study as `mood-agent study` prints it, and copies each
+    /// item's image into `images/`: the stored file when there is one,
+    /// otherwise a best-effort download of its `imageURL`. Returns how many
+    /// images were staged.
+    @discardableResult
     public static func prepare(
         api: PinaxAgentAPI,
         projectID: Project.ID,
-        in directory: URL
-    ) async throws {
+        in directory: URL,
+        fetchImage: ImageFetcher = urlSessionFetcher
+    ) async throws -> Int {
         let response = try await api.study(project: projectID.uuidString)
+        let staged = await stageImages(for: response.study.items, in: directory, fetchImage: fetchImage)
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
@@ -31,6 +56,56 @@ public enum StudyAgentHandoff {
             to: directory.appendingPathComponent(studyFilename, isDirectory: false),
             options: .atomic
         )
+        return staged
+    }
+
+    private static func stageImages(
+        for items: [PinaxAgentInspiration],
+        in directory: URL,
+        fetchImage: ImageFetcher
+    ) async -> Int {
+        let imagesDirectory = directory.appendingPathComponent(imagesDirectoryName, isDirectory: true)
+        guard (try? FileManager.default.createDirectory(at: imagesDirectory, withIntermediateDirectories: true)) != nil else {
+            return 0
+        }
+        return await withTaskGroup(of: Bool.self, returning: Int.self) { group in
+            for item in items {
+                group.addTask {
+                    let data: Data?
+                    var fileExtension: String?
+                    if let path = item.localImagePath {
+                        data = try? Data(contentsOf: URL(fileURLWithPath: path), options: .mappedIfSafe)
+                        fileExtension = URL(fileURLWithPath: path).pathExtension
+                    } else if let remote = item.imageURL {
+                        data = await fetchImage(remote)
+                        fileExtension = remote.pathExtension
+                    } else {
+                        data = nil
+                    }
+                    guard let data, !data.isEmpty, data.count <= maximumImageBytes else { return false }
+                    let name = item.id.uuidString.lowercased()
+                        + "." + imageExtension(for: data, fallback: fileExtension)
+                    return (try? data.write(to: imagesDirectory.appendingPathComponent(name), options: .atomic)) != nil
+                }
+            }
+            var count = 0
+            for await staged in group where staged { count += 1 }
+            return count
+        }
+    }
+
+    /// Names files by their bytes, so an agent's image viewer accepts them.
+    private static func imageExtension(for data: Data, fallback: String?) -> String {
+        let bytes = [UInt8](data.prefix(12))
+        if bytes.starts(with: [0xFF, 0xD8, 0xFF]) { return "jpg" }
+        if bytes.starts(with: [0x89, 0x50, 0x4E, 0x47]) { return "png" }
+        if bytes.starts(with: Array("GIF8".utf8)) { return "gif" }
+        if bytes.count >= 12, bytes[0..<4] == [0x52, 0x49, 0x46, 0x46], bytes[8..<12] == [0x57, 0x45, 0x42, 0x50] {
+            return "webp"
+        }
+        if bytes.count >= 12, Array(bytes[4..<8]) == Array("ftyp".utf8) { return "heic" }
+        let fallback = fallback?.lowercased() ?? ""
+        return fallback.isEmpty || fallback.count > 5 ? "img" : fallback
     }
 
     /// Adds what the agent proposed for `task`, if it wrote anything.

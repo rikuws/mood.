@@ -291,6 +291,7 @@ public enum StudyAgentPrompt {
     public static func make(task: StudyAgentTask, context: StudyAgentContext) -> String {
         let skill = (context.skillDirectory as NSString).appendingPathComponent("SKILL.md")
         let study = StudyAgentHandoff.studyFilename
+        let images = StudyAgentHandoff.imagesDirectoryName
         let output = StudyAgentHandoff.proposalsFilename(for: task)
 
         let job: String = switch task {
@@ -316,8 +317,10 @@ public enum StudyAgentPrompt {
         real, credited work only, never generated imagery; tie each proposal to the user's seeds, notes and verdicts.
 
         In this run you don't use mood-agent. The study is already in ./\(study), exactly as \
-        `mood-agent study` prints it: look at every item's image (localImagePath, or imageURL), and read \
-        every note, verdict, suggestion and reason. Write files only in the current working directory, \
+        `mood-agent study` prints it, and each item's image is copied to ./\(images)/<item id>.<ext> \
+        (lowercase id). Look at every one of those images, and read every note, verdict, suggestion \
+        and reason. If an item has no image there, go by its title, text and note; don't search the \
+        computer for it. Write files only in the current working directory, \
         and leave your output file there: mood. cleans up the folder.
 
         \(job)

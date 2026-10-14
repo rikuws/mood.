@@ -47,7 +47,9 @@ and uses it. Commands are looked up on the login shell's `PATH` plus common inst
 panel's **Using …** menu switches between installed agents.
 
 No agent gets access to the library. Before a run, mood. writes the study into a fresh scratch
-folder as `study.json` (the same JSON `mood-agent study` prints). The agent follows the bundled
+folder as `study.json` (the same JSON `mood-agent study` prints), and copies each item's image
+into `images/<item id>.<ext>`: the stored file, or a download of its image URL, since sandboxed
+agents often have no network for commands. The agent follows the bundled
 `mood-study` skill and writes its batch to `suggestions.json` or `reflections.json` in the
 `suggest --file`/`reflect --file` formats. When it exits, mood. adds that file through the same
 checks as `mood-agent` (credit, rationale, generator hosts, past rejects) and shows what it

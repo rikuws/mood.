@@ -1,0 +1,74 @@
+# Temporary: verifies the study agent PR on macOS. Remove before merge.
+name: Verify study agent
+
+on:
+  push:
+    branches: [claude/project-thread-1l2rqo]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  verify:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Select Xcode
+        run: |
+          sudo xcode-select -s "$(ls -d /Applications/Xcode_26*.app | grep -v beta | sort -V | tail -1)"
+          ls -d /Applications/Xcode*.app
+          xcodebuild -version
+          swift --version
+
+      - name: Regenerate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+          if ! git diff --quiet -- Pinax.xcodeproj; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add Pinax.xcodeproj
+            git commit -m "Regenerate Pinax.xcodeproj for the study agent"
+            git push origin HEAD:${GITHUB_REF_NAME}
+          fi
+
+      - name: Swift package tests
+        run: swift test
+
+      - name: Skill tests
+        run: |
+          bash skills/mood-study/tests/find-mood-agent.test.sh
+          bash skills/mood-distill/tests/find-mood-agent.test.sh
+          python3 -m unittest discover -s skills/mood-pack/tests
+
+      - name: Build PinaxMac
+        run: |
+          xcodebuild -project Pinax.xcodeproj -scheme PinaxMac \
+            -destination 'platform=macOS' \
+            -derivedDataPath /tmp/PinaxDerivedData \
+            CODE_SIGNING_ALLOWED=NO build > build-PinaxMac.log 2>&1 && status=0 || status=$?
+          grep -E "error:|warning:.*(Sendable|actor|isolated)" build-PinaxMac.log | sort -u | head -80 || true
+          tail -5 build-PinaxMac.log
+          exit $status
+
+      - name: Check bundled skill and helper
+        run: |
+          app=/tmp/PinaxDerivedData/Build/Products/Debug/mood.app
+          test -f "$app/Contents/Resources/Skills/mood-study/SKILL.md"
+          test -f "$app/Contents/Resources/Skills/mood-study/references/agent-api.md"
+          test ! -e "$app/Contents/Resources/Skills/mood-study/tests"
+          "$app/Contents/Helpers/mood-agent" --help | grep -q "suggest --project"
+
+      - name: Build PinaxiOS
+        run: |
+          xcodebuild -project Pinax.xcodeproj -scheme PinaxiOS \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath /tmp/PinaxDerivedData \
+            CODE_SIGNING_ALLOWED=NO build > build-PinaxiOS.log 2>&1 && status=0 || status=$?
+          grep -E "error:|warning:.*(Sendable|actor|isolated)" build-PinaxiOS.log | sort -u | head -80 || true
+          tail -5 build-PinaxiOS.log
+          exit $status

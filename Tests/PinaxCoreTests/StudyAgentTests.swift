@@ -142,6 +142,7 @@ final class StudyAgentTests: XCTestCase, @unchecked Sendable {
         let find = StudyAgentPrompt.make(task: .findSources, context: context)
         XCTAssertTrue(find.contains("/Applications/mood.app/Contents/Resources/Skills/mood-study/SKILL.md"))
         XCTAssertTrue(find.contains("./study.json"))
+        XCTAssertTrue(find.contains("./images/<item id>.<ext>"))
         XCTAssertTrue(find.contains("./suggestions.json"))
         XCTAssertFalse(find.contains("./reflections.json"))
         XCTAssertFalse(find.contains(context.moodAgentPath))
@@ -159,8 +160,31 @@ final class StudyAgentTests: XCTestCase, @unchecked Sendable {
         let repository = try LibraryRepository(storageDirectory: library)
         let api = PinaxAgentAPI(repository: repository)
         let study = try await repository.createStudy(subject: "Apple + Artek", brief: "wood meets aluminium")
+        let seed = try await repository.capture(
+            CapturePayload(
+                source: .web,
+                url: URL(string: "https://example.com/seed")!,
+                title: "Seed",
+                imageURL: URL(string: "https://i.example.com/seed")!,
+                projectID: study.id
+            )
+        ).inspiration
+        _ = try await repository.capture(
+            CapturePayload(source: .web, url: URL(string: "https://example.com/no-image")!, title: "Text only", projectID: study.id)
+        )
+        let png = Data([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 0])
 
-        try await StudyAgentHandoff.prepare(api: api, projectID: study.id, in: scratch)
+        let staged = try await StudyAgentHandoff.prepare(
+            api: api,
+            projectID: study.id,
+            in: scratch,
+            fetchImage: { url in url.host() == "i.example.com" ? png : nil }
+        )
+        XCTAssertEqual(staged, 1)
+        XCTAssertEqual(
+            try Data(contentsOf: scratch.appendingPathComponent("images/\(seed.id.uuidString.lowercased()).png")),
+            png
+        )
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         let handed = try decoder.decode(
