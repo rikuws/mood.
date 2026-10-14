@@ -231,7 +231,7 @@ struct StudyPanel: View {
                     copyToClipboard(Self.agentPrompt(for: project, study: study))
                     didCopyPrompt = true
                 }
-                .buttonStyle(.link)
+                .buttonStyle(.borderless)
                 .font(.caption)
             } else {
                 manualAgentInstructions(project: project, study: study)
