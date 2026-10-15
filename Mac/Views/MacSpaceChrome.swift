@@ -21,7 +21,7 @@ enum MacChromeMotion {
     static let fade = Animation.easeOut(duration: 0.14)
 }
 
-private struct MacFloatingGlassCapsuleModifier: ViewModifier {
+struct MacFloatingGlassCapsuleModifier: ViewModifier {
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     @ViewBuilder
@@ -36,7 +36,8 @@ private struct MacFloatingGlassCapsuleModifier: ViewModifier {
     }
 }
 
-private extension View {
+extension View {
+    /// The floating glass capsule the canvas controls share.
     func macFloatingGlassCapsule() -> some View {
         modifier(MacFloatingGlassCapsuleModifier())
     }

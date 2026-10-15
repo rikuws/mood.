@@ -27,6 +27,11 @@ struct IOSLibraryView: View {
     @State private var inspirationToDelete: Inspiration?
     @State private var message: LibraryMessage?
     @State private var operationError: String?
+    @AppStorage("iosStudyShowsBoard") private var prefersStudyBoard = true
+    @State private var studyFilter = StudyBoardFilter.all
+    @State private var studyArrivals = StudyBoardArrivals()
+    @State private var studyCloseLookEntryID: StudyBoardEntry.ID?
+    @State private var studyNudge = ""
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -85,6 +90,7 @@ struct IOSLibraryView: View {
                 StudyStartForm { subject, brief in
                     let project = try await store.createStudy(subject: subject, brief: brief)
                     store.scope = .project(project.id)
+                    prefersStudyBoard = true
                     showMessage("Study started")
                     requestSync()
                 }
@@ -93,21 +99,15 @@ struct IOSLibraryView: View {
                 StudyStartForm(existingProject: project) { subject, brief in
                     try await store.startStudy(projectID: project.id, subject: subject, brief: brief)
                     store.scope = .project(project.id)
+                    if !project.isStudy {
+                        prefersStudyBoard = true
+                    }
                     showMessage(project.isStudy ? "Study updated" : "Study started")
                     requestSync()
                 }
                 .presentationDetents([.medium, .large])
-            case .study(let projectID):
-                StudyPanel(
-                    store: store,
-                    projectID: projectID,
-                    onMutation: requestSync,
-                    onEdit: {
-                        if let studyProject = store.snapshot.project(id: projectID) {
-                            sheet = .startStudy(studyProject)
-                        }
-                    }
-                )
+            case .studyCloseLook(let projectID):
+                studyCloseLookSheet(projectID: projectID)
             }
         }
         .confirmationDialog(
@@ -184,7 +184,20 @@ struct IOSLibraryView: View {
                 sheet = .projects
             }
 
-            if store.isLoading, store.snapshot.inspirations.isEmpty {
+            if selectedProject?.isStudy == true {
+                Picker("Show", selection: $prefersStudyBoard) {
+                    Text("Moodboard").tag(false)
+                    Text("Study board").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+            }
+
+            if showsStudyBoard, let project = selectedProject, let study = project.study {
+                studyBoard(project: project, study: study)
+            } else if store.isLoading, store.snapshot.inspirations.isEmpty {
                 Spacer()
                 ProgressView("Opening library…")
                 Spacer()
@@ -277,16 +290,6 @@ struct IOSLibraryView: View {
 
     @ToolbarContentBuilder
     private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarLeading) {
-            if let project = selectedProject, project.isStudy {
-                Button {
-                    sheet = .study(project.id)
-                } label: {
-                    Label("Study", systemImage: "eye")
-                }
-            }
-        }
-
         ToolbarItem(placement: .principal) {
             Text(ProductIdentity.displayName)
                 .font(.system(.headline, design: .serif, weight: .semibold))
@@ -322,6 +325,362 @@ struct IOSLibraryView: View {
                 Image(systemName: "plus")
             }
             .accessibilityLabel("Add to mood")
+        }
+    }
+
+    // MARK: Study board
+
+    private var showsStudyBoard: Bool {
+        prefersStudyBoard && selectedProject?.isStudy == true
+    }
+
+    /// Every find and pattern of the selected study, on the same pinch-zoom
+    /// masonry as the moodboard. Finds that arrive while it's open develop
+    /// into place.
+    private func studyBoard(project: Project, study: ProjectStudy) -> some View {
+        let board = StudyBoard(study: study)
+        let entries = board.entries(for: studyFilter, matching: store.searchText)
+        let isSearchingText = !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let observation = IOSStudyBoardObservation(projectID: project.id, entryIDs: board.entries.map(\.id))
+
+        return ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                StudyBoardHeader(
+                    study: study,
+                    board: board,
+                    filter: $studyFilter,
+                    onEdit: { sheet = .startStudy(project) }
+                ) {
+                    studyAgentHandoff(for: project)
+                }
+
+                if entries.isEmpty {
+                    StudyBoardEmptyState(
+                        stage: study.stage(itemCount: store.studyItems(for: project.id).count),
+                        filter: studyFilter,
+                        boardIsEmpty: board.isEmpty,
+                        isSearchingText: isSearchingText && !board.isEmpty
+                    )
+                } else {
+                    InterleavedCardLayout(
+                        columnPosition: reduceMotion
+                            ? CGFloat(activeCanvasColumnCount)
+                            : canvasLayoutColumnPosition,
+                        minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
+                        maximumColumnCount: maximumCanvasColumnCount
+                    ) {
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                            studyCard(entry, project: project, columnCount: activeCanvasColumnCount)
+                                .transition(
+                                    StudyBoardMotion.cardTransition(
+                                        index: index,
+                                        arrivedJustNow: studyArrivals.fresh.contains(entry.id),
+                                        reduceMotion: reduceMotion
+                                    )
+                                )
+                        }
+                    }
+                    .scaleEffect(
+                        reduceMotion ? 1 : canvasBoundaryScale,
+                        anchor: canvasPinch.anchor
+                    )
+                }
+            }
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.top, 16)
+            .padding(.bottom, 34)
+            .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: entries.map(\.id))
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("studyBoard")
+        .simultaneousGesture(canvasZoomGesture)
+        .refreshable {
+            await syncAndReload()
+        }
+        .onChange(of: observation, initial: true) { old, new in
+            noteStudyArrivals(from: old, to: new)
+        }
+    }
+
+    /// iOS doesn't start agents itself: it hands over a prompt, with the
+    /// person's nudge, for an agent on another machine.
+    private func studyAgentHandoff(for project: Project) -> some View {
+        HStack(spacing: 8) {
+            TextField("Nudge", text: $studyNudge, prompt: Text("Nudge it: warmer light…"))
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .accessibilityLabel("Nudge the search")
+
+            Button {
+                StudyAgentPromptText.copy(for: project, nudge: studyNudge)
+                showMessage("Copied. Paste it into an agent with mood-study")
+            } label: {
+                Label("Copy prompt", systemImage: "doc.on.doc")
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    @ViewBuilder
+    private func studyCard(_ entry: StudyBoardEntry, project: Project, columnCount: Int) -> some View {
+        switch entry {
+        case .finding(let suggestion):
+            let item = savedInspiration(for: suggestion)
+                ?? suggestion.previewInspiration(projectID: project.id)
+            Button {
+                guard allowsCardInteraction else { return }
+                openStudyCloseLook(entry.id, projectID: project.id)
+            } label: {
+                IOSInspirationCard(
+                    inspiration: item,
+                    localImageURL: store.localImageURL(for: item),
+                    canvasColumnCount: columnCount
+                )
+                .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
+                .studyBoardVerdict(entry.verdict)
+            }
+            .buttonStyle(CollectedCardButtonStyle())
+            .contextMenu { studyFindingMenu(suggestion, projectID: project.id) }
+            .disabled(!allowsCardInteraction)
+            .allowsHitTesting(allowsCardInteraction)
+        case .pattern(let reflection):
+            Button {
+                guard allowsCardInteraction else { return }
+                openStudyCloseLook(entry.id, projectID: project.id)
+            } label: {
+                StudyPatternCard(
+                    reflection: reflection,
+                    columns: columnCount,
+                    developsOnArrival: studyArrivals.fresh.contains(entry.id)
+                )
+                .studyBoardVerdict(entry.verdict)
+            }
+            .buttonStyle(CollectedCardButtonStyle())
+            .contextMenu { studyPatternMenu(reflection, projectID: project.id) }
+            .disabled(!allowsCardInteraction)
+            .allowsHitTesting(allowsCardInteraction)
+        }
+    }
+
+    @ViewBuilder
+    private func studyFindingMenu(_ suggestion: StudySuggestion, projectID: Project.ID) -> some View {
+        Button {
+            openStudyCloseLook(suggestion.id, projectID: projectID)
+        } label: {
+            Label("Look closer", systemImage: "eye")
+        }
+        switch suggestion.status {
+        case .pending:
+            Button {
+                decide(suggestion, projectID: projectID, verdict: .keep, reason: nil, advancing: false)
+            } label: {
+                Label("Keep", systemImage: "checkmark")
+            }
+            Button {
+                decide(suggestion, projectID: projectID, verdict: .reject, reason: nil, advancing: false)
+            } label: {
+                Label("Reject", systemImage: "xmark")
+            }
+        case .kept:
+            EmptyView()
+        case .rejected:
+            Button {
+                decide(suggestion, projectID: projectID, verdict: .keep, reason: suggestion.reason, advancing: false)
+            } label: {
+                Label("Keep instead", systemImage: "arrow.uturn.backward")
+            }
+        }
+        Link(destination: suggestion.url) {
+            Label("Open source page", systemImage: "safari")
+        }
+        ShareLink(item: suggestion.url) {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+    }
+
+    @ViewBuilder
+    private func studyPatternMenu(_ reflection: StudyReflection, projectID: Project.ID) -> some View {
+        Button {
+            openStudyCloseLook(reflection.id, projectID: projectID)
+        } label: {
+            Label("Look closer", systemImage: "eye")
+        }
+        Button {
+            respond(reflection, projectID: projectID, with: .confirm, advancing: false)
+        } label: {
+            Label("That's right", systemImage: "checkmark")
+        }
+        .disabled(reflection.status == .confirmed)
+        Button {
+            respond(reflection, projectID: projectID, with: .dismiss, advancing: false)
+        } label: {
+            Label("Not me", systemImage: "xmark")
+        }
+        .disabled(reflection.status == .dismissed)
+    }
+
+    @ViewBuilder
+    private func studyCloseLookSheet(projectID: Project.ID) -> some View {
+        if let study = store.snapshot.project(id: projectID)?.study,
+           let entryID = studyCloseLookEntryID,
+           let entry = StudyBoard(study: study).entry(id: entryID) {
+            let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
+            let index = entries.firstIndex(where: { $0.id == entry.id })
+
+            CloseLookFrame(
+                position: index.map { $0 + 1 },
+                count: entries.count,
+                onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries),
+                onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries),
+                onClose: { sheet = nil }
+            ) {
+                // Stacked, so stepping crossfades one entry into the next
+                // while the frame and its counter stay still.
+                ZStack {
+                    Group {
+                        switch entry {
+                        case .finding(let suggestion):
+                            StudyFindingCloseLook(
+                                suggestion: suggestion,
+                                savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                                relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                                onDecide: { verdict, reason in
+                                    decide(suggestion, projectID: projectID, verdict: verdict, reason: reason, advancing: true)
+                                }
+                            )
+                        case .pattern(let reflection):
+                            StudyPatternCloseLook(
+                                reflection: reflection,
+                                citedItems: studyCloseLookItems(reflection.inspirationIDs),
+                                contrasts: reflection.rejectedSuggestionIDs.compactMap { id in
+                                    study.suggestions.first(where: { $0.id == id })
+                                },
+                                onRespond: { response in
+                                    respond(reflection, projectID: projectID, with: response, advancing: true)
+                                }
+                            )
+                        }
+                    }
+                    .id(entry.id)
+                    .transition(.opacity)
+                }
+            }
+            .presentationDragIndicator(.visible)
+            .modifier(PageSizedSheet())
+        } else {
+            ContentUnavailableView(
+                "Nothing to show",
+                systemImage: "eye.slash",
+                description: Text("This is no longer part of the study.")
+            )
+        }
+    }
+
+    private func openStudyCloseLook(_ id: StudyBoardEntry.ID, projectID: Project.ID) {
+        studyCloseLookEntryID = id
+        sheet = .studyCloseLook(projectID)
+    }
+
+    private func studyEntrySelector(at index: Int?, in entries: [StudyBoardEntry]) -> (() -> Void)? {
+        guard let index, entries.indices.contains(index) else { return nil }
+        let id = entries[index].id
+        return { showStudyCloseLookEntry(id) }
+    }
+
+    private func showStudyCloseLookEntry(_ id: StudyBoardEntry.ID) {
+        withAnimation(reduceMotion ? nil : StudyBoardMotion.step) {
+            studyCloseLookEntryID = id
+        }
+    }
+
+    /// Finds that arrive while the board is open develop into place; what was
+    /// there when it opened stays still.
+    private func noteStudyArrivals(from old: IOSStudyBoardObservation, to new: IOSStudyBoardObservation) {
+        if old.projectID != new.projectID || old == new {
+            studyArrivals.reset()
+        }
+        let arrived = studyArrivals.note(new.entryIDs)
+        guard !arrived.isEmpty else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(20))
+            studyArrivals.settle(arrived)
+        }
+    }
+
+    /// The next entry still waiting for a verdict, so judging up close moves
+    /// straight on to it.
+    private func nextStudyEntryToJudge(after id: StudyBoardEntry.ID, projectID: Project.ID) -> StudyBoardEntry.ID? {
+        guard let study = store.snapshot.project(id: projectID)?.study else { return nil }
+        let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
+        guard let index = entries.firstIndex(where: { $0.id == id }) else { return nil }
+        let later = entries[(index + 1)...].first(where: { $0.verdict == .pending })
+        let earlier = entries[..<index].first(where: { $0.verdict == .pending })
+        return (later ?? earlier)?.id
+    }
+
+    private func savedInspiration(for suggestion: StudySuggestion) -> Inspiration? {
+        guard let savedID = suggestion.savedInspirationID else { return nil }
+        return store.snapshot.inspirations.first { $0.id == savedID }
+    }
+
+    private func studyCloseLookItems(_ ids: [Inspiration.ID]) -> [StudyCloseLookItem] {
+        ids.compactMap { id in store.snapshot.inspirations.first { $0.id == id } }
+            .map { StudyCloseLookItem(inspiration: $0, localImageURL: store.localImageURL(for: $0)) }
+    }
+
+    private func decide(
+        _ suggestion: StudySuggestion,
+        projectID: Project.ID,
+        verdict: StudyVerdict,
+        reason: String?,
+        advancing: Bool
+    ) {
+        let upcoming = advancing && suggestion.status == .pending
+            ? nextStudyEntryToJudge(after: suggestion.id, projectID: projectID)
+            : nil
+        Task { @MainActor in
+            do {
+                try await store.decideStudySuggestion(
+                    projectID: projectID,
+                    suggestionID: suggestion.id,
+                    verdict: verdict,
+                    reason: reason
+                )
+                if let upcoming, studyCloseLookEntryID == suggestion.id {
+                    showStudyCloseLookEntry(upcoming)
+                }
+                requestSync()
+            } catch {
+                operationError = error.localizedDescription
+            }
+        }
+    }
+
+    private func respond(
+        _ reflection: StudyReflection,
+        projectID: Project.ID,
+        with response: StudyReflectionResponse,
+        advancing: Bool
+    ) {
+        let upcoming = advancing && reflection.status == .pending
+            ? nextStudyEntryToJudge(after: reflection.id, projectID: projectID)
+            : nil
+        Task { @MainActor in
+            do {
+                try await store.respondToStudyReflection(
+                    projectID: projectID,
+                    reflectionID: reflection.id,
+                    response: response
+                )
+                if let upcoming, studyCloseLookEntryID == reflection.id {
+                    showStudyCloseLookEntry(upcoming)
+                }
+                requestSync()
+            } catch {
+                operationError = error.localizedDescription
+            }
         }
     }
 
@@ -906,13 +1265,32 @@ private struct CollectedCardButtonStyle: ButtonStyle {
     }
 }
 
+/// A close look gets the whole page on iPad, so the image can sit beside
+/// its details; iPhone sheets are full height already.
+private struct PageSizedSheet: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.presentationSizing(.page)
+        } else {
+            content
+        }
+    }
+}
+
+/// What the study board shows, watched so finds that arrive while it's open
+/// can develop into place.
+private struct IOSStudyBoardObservation: Equatable {
+    var projectID: Project.ID
+    var entryIDs: [StudyBoardEntry.ID]
+}
+
 private enum LibrarySheet: Identifiable {
     case manualCapture
     case projects
     case editInspiration(Inspiration)
     case newStudy
     case startStudy(Project)
-    case study(Project.ID)
+    case studyCloseLook(Project.ID)
 
     var id: String {
         switch self {
@@ -926,8 +1304,8 @@ private enum LibrarySheet: Identifiable {
             "new-study"
         case .startStudy(let project):
             "start-study-\(project.id.uuidString)"
-        case .study(let projectID):
-            "study-\(projectID.uuidString)"
+        case .studyCloseLook(let projectID):
+            "study-close-look-\(projectID.uuidString)"
         }
     }
 }

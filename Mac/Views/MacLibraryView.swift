@@ -23,6 +23,11 @@ struct MacLibraryView: View {
     @State private var searchActivation = UUID()
     @AppStorage("libraryCanvasZoom") private var canvasZoom = 0.5
     @AppStorage("macProjectSidebarCollapsed") private var isProjectSidebarCollapsed = false
+    @AppStorage("macStudyShowsBoard") private var prefersStudyBoard = true
+    @State private var studyFilter = StudyBoardFilter.all
+    @State private var selectedStudyEntryID: StudyBoardEntry.ID?
+    @State private var studyArrivals = StudyBoardArrivals()
+    @State private var studyRunner = StudyAgentRunner.shared
 
     private static let defaultCanvasZoom = 0.5
     private let canvasHorizontalPadding: CGFloat = 20
@@ -80,6 +85,9 @@ struct MacLibraryView: View {
                    !inspirations.contains(where: { $0.id == selectedInspirationID }) {
                     setSelectedInspiration(nil)
                 }
+            }
+            .onChange(of: studyBoardObservation, initial: true) { old, new in
+                noteStudyArrivals(from: old, to: new)
             }
         )
     }
@@ -162,7 +170,11 @@ struct MacLibraryView: View {
                 onCreateStudy: { sheet = .newStudy },
                 onEdit: { sheet = .editProject($0) },
                 onStudy: { project in
-                    sheet = project.isStudy ? .study(project.id) : .startStudy(project)
+                    if project.isStudy {
+                        openStudyBoard(project.id)
+                    } else {
+                        sheet = .startStudy(project)
+                    }
                 },
                 onDelete: { pendingProjectDeletion = $0 },
                 onCapture: { sheet = .capture },
@@ -200,67 +212,146 @@ struct MacLibraryView: View {
                     canvasChrome
                 }
 
-            if let selectedInspiration {
-                Color.clear
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .contentShape(Rectangle())
-                    .onTapGesture(perform: closeDetailInspector)
-                    .accessibilityHidden(true)
+            if isShowingCloseLook {
+                closeLookScrim
+            }
 
-                InspirationDetailView(
-                    inspiration: selectedInspiration,
-                    localImageURL: store.localImageURL(for: selectedInspiration),
-                    project: selectedInspiration.projectID.flatMap(project(with:)),
-                    projects: projects,
-                    onMove: { projectID in move(selectedInspiration, to: projectID) },
-                    onEdit: { sheet = .editInspiration(selectedInspiration) },
-                    onDelete: { pendingInspirationDeletion = selectedInspiration },
-                    onClose: closeDetailInspector
-                )
-                .id(selectedInspiration.id)
-                .frame(width: 420)
-                .clipShape(detailPanelShape)
-                .overlay {
-                    detailPanelShape.strokeBorder(detailPanelStroke, lineWidth: 1)
+            if !showsStudyBoard, let selectedInspiration {
+                closeLookCard {
+                    inspirationCloseLook(selectedInspiration)
                 }
-                .background {
-                    detailPanelShape
-                        .fill(PinaxCatalogPalette.folio(for: colorScheme))
-                        .shadow(
-                            color: .black.opacity(colorScheme == .dark ? 0.48 : 0.12),
-                            radius: 18,
-                            x: -8,
-                            y: 4
-                        )
-                        .shadow(
-                            color: .black.opacity(colorScheme == .dark ? 0.28 : 0.08),
-                            radius: 4,
-                            x: -1,
-                            y: 1
-                        )
+            }
+
+            if showsStudyBoard,
+               let studyProject = currentStudyProject,
+               let study = studyProject.study,
+               let entry = selectedStudyEntryID.flatMap({ StudyBoard(study: study).entry(id: $0) }) {
+                closeLookCard {
+                    studyCloseLook(entry, project: studyProject, study: study)
                 }
-                .contentShape(detailPanelShape)
-                .padding(12)
-                .transition(
-                    reduceMotion
-                        ? .opacity
-                        : .move(edge: .trailing).combined(with: .opacity)
-                )
-                .zIndex(1)
             }
         }
     }
 
+    /// A moodboard item up close, in the same frame as a study find, so ⌘[
+    /// and ⌘] step through the visible board here too.
+    private func inspirationCloseLook(_ inspiration: Inspiration) -> some View {
+        let visible = store.visibleInspirations
+        let index = visible.firstIndex(where: { $0.id == inspiration.id })
+
+        // No "3 of 214" here: browsing a moodboard isn't a queue to work through.
+        return CloseLookFrame(
+            position: nil,
+            count: visible.count,
+            onPrevious: inspirationSelector(at: index.map { $0 - 1 }, in: visible),
+            onNext: inspirationSelector(at: index.map { $0 + 1 }, in: visible),
+            onClose: closeDetailInspector
+        ) {
+            // Stacked, so stepping crossfades the old item into the new one
+            // in place while the frame stays still.
+            ZStack {
+                InspirationDetailView(
+                    inspiration: inspiration,
+                    localImageURL: store.localImageURL(for: inspiration),
+                    project: inspiration.projectID.flatMap(project(with:)),
+                    projects: projects,
+                    onMove: { projectID in move(inspiration, to: projectID) },
+                    onEdit: { sheet = .editInspiration(inspiration) },
+                    onDelete: { pendingInspirationDeletion = inspiration },
+                    onClose: closeDetailInspector,
+                    showsCloseButton: false
+                )
+                .id(inspiration.id)
+                .transition(.opacity)
+            }
+        }
+    }
+
+    private func inspirationSelector(at index: Int?, in inspirations: [Inspiration]) -> (() -> Void)? {
+        guard let index, inspirations.indices.contains(index) else { return nil }
+        let id = inspirations[index].id
+        return { setSelectedInspiration(id) }
+    }
+
+    private var isShowingCloseLook: Bool {
+        showsStudyBoard ? selectedStudyEntryID != nil : selectedInspirationID != nil
+    }
+
+    /// Dims the canvas behind a close look; clicking it closes the look.
+    private var closeLookScrim: some View {
+        Color.black
+            .opacity(colorScheme == .dark ? 0.55 : 0.28)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if showsStudyBoard {
+                    closeStudyCloseLook()
+                } else {
+                    closeDetailInspector()
+                }
+            }
+            .accessibilityHidden(true)
+            .transition(.opacity)
+            .zIndex(1)
+    }
+
+    /// A close look as large as the canvas allows: the image gets most of
+    /// the room and the details a column beside it.
+    private func closeLookCard<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+        content()
+            .frame(maxWidth: 1240, maxHeight: 900)
+            .clipShape(detailPanelShape)
+            .overlay {
+                detailPanelShape.strokeBorder(detailPanelStroke, lineWidth: 1)
+            }
+            .background {
+                detailPanelShape
+                    .fill(PinaxCatalogPalette.folio(for: colorScheme))
+                    .shadow(
+                        color: .black.opacity(colorScheme == .dark ? 0.4 : 0.1),
+                        radius: 3,
+                        y: 1
+                    )
+                    .shadow(
+                        color: .black.opacity(colorScheme == .dark ? 0.45 : 0.16),
+                        radius: 30,
+                        y: 16
+                    )
+            }
+            .contentShape(detailPanelShape)
+            // Fades as one layer, so the shadow and content don't show
+            // through each other mid-transition.
+            .compositingGroup()
+            .padding(.horizontal, 28)
+            .padding(.vertical, 22)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .transition(
+                reduceMotion
+                    ? .opacity
+                    : .asymmetric(
+                        insertion: .scale(scale: 0.96).combined(with: .opacity),
+                        removal: .scale(scale: 0.98).combined(with: .opacity)
+                    )
+            )
+            .zIndex(2)
+    }
+
     private var canvasChrome: some View {
         HStack(spacing: 8) {
-            if let studyProjectID = currentStudyProjectID {
-                Button {
-                    sheet = .study(studyProjectID)
-                    Task { await store.reload() }
-                } label: {
-                    Label("Study", systemImage: "eye")
+            if currentStudyProjectID != nil {
+                Picker("Show", selection: studyCanvasSelection) {
+                    Text("Moodboard").tag(false)
+                    Text("Study board").tag(true)
                 }
-                .help("Open the visual study")
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
+                .padding(.horizontal, 4)
+                .frame(height: 34)
+                .macFloatingGlassCapsule()
+                .overlay {
+                    Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+                }
+                .help("Switch between the study's moodboard and the board of everything it found")
             }
 
             MacCanvasSearchControl(
@@ -276,108 +367,500 @@ struct MacLibraryView: View {
         .accessibilitySortPriority(1)
     }
 
-    @ViewBuilder
     private var libraryContent: some View {
-        let visibleInspirations = store.visibleInspirations
-
         Group {
-            if store.isLoading && store.inspirations.isEmpty {
-                ProgressView("Opening your moodboard…")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if visibleInspirations.isEmpty {
-                emptyState
+            if showsStudyBoard, let project = currentStudyProject, let study = project.study {
+                studyBoard(project: project, study: study)
             } else {
-                GeometryReader { geometry in
-                    let availableWidth = max(
-                        1,
-                        geometry.size.width - (canvasHorizontalPadding * 2)
-                    )
-                    let activeColumnCount = canvasColumnCount(
-                        for: availableWidth,
-                        zoom: CGFloat(canvasZoom)
-                    )
-                    let maximumColumnCount = maximumCanvasColumnCount(for: availableWidth)
-
-                    ScrollView {
-                        InterleavedCanvasLayout(
-                            columnPosition: canvasLayoutColumnPosition(for: availableWidth),
-                            minimumColumnCount: 1,
-                            maximumColumnCount: maximumColumnCount,
-                            horizontalSpacing: canvasSpacing,
-                            verticalSpacing: canvasSpacing
-                        ) {
-                            ForEach(visibleInspirations) { inspiration in
-                                InspirationCard(
-                                    inspiration: inspiration,
-                                    localImageURL: store.localImageURL(for: inspiration),
-                                    canvasColumnCount: activeColumnCount,
-                                    isSelected: selectedInspirationID == inspiration.id,
-                                    onSelect: {
-                                        guard canvasInteractionPhase == .idle else { return }
-                                        setSelectedInspiration(inspiration.id)
-                                    }
-                                )
-                                .contextMenu { cardContextMenu(for: inspiration) }
-                                .transition(
-                                    reduceMotion
-                                        ? .opacity
-                                        : .scale(scale: 0.98).combined(with: .opacity)
-                                )
-                            }
-                        }
-                        .scaleEffect(
-                            reduceMotion ? 1 : canvasGesturePresentation.boundaryScale,
-                            anchor: canvasGesturePresentation.anchor
-                        )
-                        .padding(.horizontal, canvasHorizontalPadding)
-                        // Preserve an initial panoramic field so the built-in
-                        // landscape reads as scenery, even on a full board.
-                        // It scrolls away naturally once the user starts
-                        // working through the collection.
-                        .padding(.top, landscapeRevealHeight(for: geometry.size.height))
-                        .padding(.bottom, 28)
-                    }
-                    .contentShape(Rectangle())
-                    .simultaneousGesture(canvasMagnificationGesture)
-                    .accessibilityAction(named: "Zoom In") {
-                        zoomCanvas(byColumnDelta: -1)
-                    }
-                    .accessibilityAction(named: "Zoom Out") {
-                        zoomCanvas(byColumnDelta: 1)
-                    }
-                    .accessibilityAction(named: "Reset Zoom") {
-                        resetCanvasZoom()
-                    }
-                    .onAppear { canvasWidth = availableWidth }
-                    .onChange(of: availableWidth) { _, newWidth in
-                        canvasWidth = newWidth
-                    }
-                    .dropDestination(for: URL.self) { urls, _ in
-                        let webURLs = urls.filter(isWebURL)
-                        guard !webURLs.isEmpty else { return false }
-                        captureDropped(webURLs)
-                        return true
-                    } isTargeted: { isDropTargeted = $0 }
-                    .overlay {
-                        if isDropTargeted {
-                            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .strokeBorder(
-                                    PinaxCatalogPalette.accentInk(for: colorScheme),
-                                    style: StrokeStyle(lineWidth: 2, dash: [7, 5])
-                                )
-                                .background(
-                                    PinaxCatalogPalette.accentInk(for: colorScheme).opacity(0.045),
-                                    in: RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                )
-                                .padding(10)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                }
+                moodboard
             }
         }
         .task(id: canvasInteractionPhase) {
             await finishCanvasInteractionAfterSettling()
+        }
+    }
+
+    @ViewBuilder
+    private var moodboard: some View {
+        let visibleInspirations = store.visibleInspirations
+
+        if store.isLoading && store.inspirations.isEmpty {
+            ProgressView("Opening your moodboard…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else if visibleInspirations.isEmpty {
+            emptyState
+        } else {
+            zoomableCanvas { activeColumnCount in
+                ForEach(visibleInspirations) { inspiration in
+                    InspirationCard(
+                        inspiration: inspiration,
+                        localImageURL: store.localImageURL(for: inspiration),
+                        canvasColumnCount: activeColumnCount,
+                        isSelected: selectedInspirationID == inspiration.id,
+                        onSelect: {
+                            guard canvasInteractionPhase == .idle else { return }
+                            setSelectedInspiration(inspiration.id)
+                        }
+                    )
+                    .contextMenu { cardContextMenu(for: inspiration) }
+                    .transition(
+                        reduceMotion
+                            ? .opacity
+                            : .scale(scale: 0.98).combined(with: .opacity)
+                    )
+                }
+            }
+        }
+    }
+
+    private func zoomableCanvas<Cards: View>(
+        @ViewBuilder cards: @escaping (_ activeColumnCount: Int) -> Cards
+    ) -> some View {
+        zoomableCanvas(header: { EmptyView() }, cards: cards)
+    }
+
+    /// The pinch-zoomable masonry both the moodboard and the study board sit
+    /// on, below the landscape reveal. `header` scrolls with the cards.
+    private func zoomableCanvas<Header: View, Cards: View>(
+        @ViewBuilder header: @escaping () -> Header,
+        @ViewBuilder cards: @escaping (_ activeColumnCount: Int) -> Cards
+    ) -> some View {
+        GeometryReader { geometry in
+            let availableWidth = max(
+                1,
+                geometry.size.width - (canvasHorizontalPadding * 2)
+            )
+            let activeColumnCount = canvasColumnCount(
+                for: availableWidth,
+                zoom: CGFloat(canvasZoom)
+            )
+            let maximumColumnCount = maximumCanvasColumnCount(for: availableWidth)
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    header()
+
+                    InterleavedCanvasLayout(
+                        columnPosition: canvasLayoutColumnPosition(for: availableWidth),
+                        minimumColumnCount: 1,
+                        maximumColumnCount: maximumColumnCount,
+                        horizontalSpacing: canvasSpacing,
+                        verticalSpacing: canvasSpacing
+                    ) {
+                        cards(activeColumnCount)
+                    }
+                    .scaleEffect(
+                        reduceMotion ? 1 : canvasGesturePresentation.boundaryScale,
+                        anchor: canvasGesturePresentation.anchor
+                    )
+                }
+                .padding(.horizontal, canvasHorizontalPadding)
+                // Preserve an initial panoramic field so the built-in
+                // landscape reads as scenery, even on a full board.
+                // It scrolls away naturally once the user starts
+                // working through the collection.
+                .padding(.top, landscapeRevealHeight(for: geometry.size.height))
+                .padding(.bottom, 28)
+            }
+            .contentShape(Rectangle())
+            .simultaneousGesture(canvasMagnificationGesture)
+            .accessibilityAction(named: "Zoom In") {
+                zoomCanvas(byColumnDelta: -1)
+            }
+            .accessibilityAction(named: "Zoom Out") {
+                zoomCanvas(byColumnDelta: 1)
+            }
+            .accessibilityAction(named: "Reset Zoom") {
+                resetCanvasZoom()
+            }
+            .onAppear { canvasWidth = availableWidth }
+            .onChange(of: availableWidth) { _, newWidth in
+                canvasWidth = newWidth
+            }
+            .dropDestination(for: URL.self) { urls, _ in
+                let webURLs = urls.filter(isWebURL)
+                guard !webURLs.isEmpty else { return false }
+                captureDropped(webURLs)
+                return true
+            } isTargeted: { isDropTargeted = $0 }
+            .overlay {
+                if isDropTargeted {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(
+                            PinaxCatalogPalette.accentInk(for: colorScheme),
+                            style: StrokeStyle(lineWidth: 2, dash: [7, 5])
+                        )
+                        .background(
+                            PinaxCatalogPalette.accentInk(for: colorScheme).opacity(0.045),
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        )
+                        .padding(10)
+                        .allowsHitTesting(false)
+                }
+            }
+        }
+    }
+
+    // MARK: Study board
+
+    /// Every find and pattern of the open study on the same zoomable canvas as
+    /// the moodboard. A running agent's finds develop into place at the end,
+    /// after grain tiles that hold the slots it's still filling.
+    private func studyBoard(project: Project, study: ProjectStudy) -> some View {
+        let board = StudyBoard(study: study)
+        let entries = board.entries(for: studyFilter, matching: store.searchText)
+        let isLooking = studyRunner.isRunning(project.id)
+        let isSearchingText = !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+
+        return zoomableCanvas {
+            VStack(alignment: .leading, spacing: 18) {
+                studyBoardHeader(project: project, study: study, board: board)
+
+                if entries.isEmpty, !isLooking {
+                    StudyBoardEmptyState(
+                        stage: study.stage(itemCount: store.studyItems(for: project.id).count),
+                        filter: studyFilter,
+                        boardIsEmpty: board.isEmpty,
+                        isSearchingText: isSearchingText && !board.isEmpty
+                    )
+                    .padding(.horizontal, 18)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+            }
+            .padding(.bottom, 18)
+        } cards: { activeColumnCount in
+            ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
+                studyBoardCard(entry, project: project, columnCount: activeColumnCount)
+                    .transition(
+                        StudyBoardMotion.cardTransition(
+                            index: index,
+                            arrivedJustNow: studyArrivals.fresh.contains(entry.id),
+                            reduceMotion: reduceMotion
+                        )
+                    )
+            }
+            if isLooking {
+                StudyLatentCard(columns: activeColumnCount, aspectRatio: 0.86)
+                    .transition(.opacity)
+                StudyLatentCard(columns: activeColumnCount, aspectRatio: 1.18, phase: .pi)
+                    .transition(.opacity)
+            }
+        }
+        .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: entries.map(\.id))
+        .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: isLooking)
+    }
+
+    private func studyBoardHeader(project: Project, study: ProjectStudy, board: StudyBoard) -> some View {
+        StudyBoardHeader(
+            study: study,
+            board: board,
+            filter: $studyFilter,
+            onEdit: { sheet = .startStudy(project) }
+        ) {
+            StudyAgentSection(
+                store: store,
+                project: project,
+                study: study,
+                onProgress: { [store] in
+                    await store.reload()
+                },
+                onChange: { [store, syncCoordinator] in
+                    await store.reload()
+                    guard let syncCoordinator else { return }
+                    _ = await syncCoordinator.sync()
+                    await store.reload()
+                }
+            )
+        }
+        .padding(.horizontal, 18)
+        .padding(.top, 14)
+        .padding(.bottom, 4)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+        }
+    }
+
+    @ViewBuilder
+    private func studyBoardCard(_ entry: StudyBoardEntry, project: Project, columnCount: Int) -> some View {
+        let isSelected = selectedStudyEntryID == entry.id
+        switch entry {
+        case .finding(let suggestion):
+            let item = savedInspiration(for: suggestion)
+                ?? suggestion.previewInspiration(projectID: project.id)
+            InspirationCard(
+                inspiration: item,
+                localImageURL: store.localImageURL(for: item),
+                canvasColumnCount: columnCount,
+                isSelected: isSelected,
+                onSelect: {
+                    guard canvasInteractionPhase == .idle else { return }
+                    selectStudyEntry(entry.id)
+                }
+            )
+            .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
+            .studyBoardVerdict(entry.verdict)
+            .modifier(
+                MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
+                    decide(suggestion, verdict: verdict, reason: nil, advancing: false)
+                }
+            )
+            .contextMenu { studyFindingMenu(suggestion) }
+        case .pattern(let reflection):
+            Button {
+                guard canvasInteractionPhase == .idle else { return }
+                selectStudyEntry(entry.id)
+            } label: {
+                StudyPatternCard(
+                    reflection: reflection,
+                    columns: columnCount,
+                    isSelected: isSelected,
+                    developsOnArrival: studyArrivals.fresh.contains(entry.id)
+                )
+            }
+            .buttonStyle(.plain)
+            .studyBoardVerdict(entry.verdict)
+            .contextMenu { studyPatternMenu(reflection) }
+            .accessibilityHint("Opens the pattern up close")
+        }
+    }
+
+    @ViewBuilder
+    private func studyFindingMenu(_ suggestion: StudySuggestion) -> some View {
+        Button("Look Closer") { selectStudyEntry(suggestion.id) }
+        switch suggestion.status {
+        case .pending:
+            Button("Keep") { decide(suggestion, verdict: .keep, reason: nil, advancing: false) }
+            Button("Reject") { decide(suggestion, verdict: .reject, reason: nil, advancing: false) }
+        case .kept:
+            if let savedID = suggestion.savedInspirationID {
+                Button("Show on Moodboard") { showOnMoodboard(savedID) }
+            }
+        case .rejected:
+            Button("Keep Instead") {
+                decide(suggestion, verdict: .keep, reason: suggestion.reason, advancing: false)
+            }
+        }
+        Divider()
+        Button("Open Source Page") { NSWorkspace.shared.open(suggestion.url) }
+        Button("Copy Link") {
+            NSPasteboard.general.clearContents()
+            NSPasteboard.general.setString(suggestion.url.absoluteString, forType: .string)
+            showToast("Link copied", symbol: "doc.on.doc")
+        }
+    }
+
+    @ViewBuilder
+    private func studyPatternMenu(_ reflection: StudyReflection) -> some View {
+        Button("Look Closer") { selectStudyEntry(reflection.id) }
+        Button("That's Right") { respond(reflection, with: .confirm, advancing: false) }
+            .disabled(reflection.status == .confirmed)
+        Button("Not Me") { respond(reflection, with: .dismiss, advancing: false) }
+            .disabled(reflection.status == .dismissed)
+    }
+
+    @ViewBuilder
+    private func studyCloseLook(_ entry: StudyBoardEntry, project: Project, study: ProjectStudy) -> some View {
+        let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
+        let index = entries.firstIndex(where: { $0.id == entry.id })
+
+        CloseLookFrame(
+            position: index.map { $0 + 1 },
+            count: entries.count,
+            onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries),
+            onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries),
+            onClose: closeStudyCloseLook
+        ) {
+            // Stacked, so stepping crossfades one entry into the next in
+            // place while the frame and its counter stay still.
+            ZStack {
+                Group {
+                    switch entry {
+                    case .finding(let suggestion):
+                        StudyFindingCloseLook(
+                            suggestion: suggestion,
+                            savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                            relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                            onDecide: { verdict, reason in
+                                decide(suggestion, verdict: verdict, reason: reason, advancing: true)
+                            }
+                        )
+                    case .pattern(let reflection):
+                        StudyPatternCloseLook(
+                            reflection: reflection,
+                            citedItems: studyCloseLookItems(reflection.inspirationIDs),
+                            contrasts: reflection.rejectedSuggestionIDs.compactMap { id in
+                                study.suggestions.first(where: { $0.id == id })
+                            },
+                            onRespond: { response in
+                                respond(reflection, with: response, advancing: true)
+                            }
+                        )
+                    }
+                }
+                .id(entry.id)
+                .transition(.opacity)
+            }
+        }
+    }
+
+    private var showsStudyBoard: Bool {
+        prefersStudyBoard && currentStudyProjectID != nil
+    }
+
+    private var currentStudyProject: Project? {
+        currentStudyProjectID.flatMap(project(with:))
+    }
+
+    private var studyCanvasSelection: Binding<Bool> {
+        Binding(
+            get: { prefersStudyBoard },
+            set: { setStudyBoardShown($0) }
+        )
+    }
+
+    private var studyBoardObservation: MacStudyBoardObservation {
+        guard showsStudyBoard, let study = currentStudyProject?.study else {
+            return MacStudyBoardObservation(projectID: nil, entryIDs: [])
+        }
+        return MacStudyBoardObservation(
+            projectID: currentStudyProjectID,
+            entryIDs: StudyBoard(study: study).entries.map(\.id)
+        )
+    }
+
+    /// Finds that arrive while the board is open develop into place; what was
+    /// there when it opened stays still.
+    private func noteStudyArrivals(from old: MacStudyBoardObservation, to new: MacStudyBoardObservation) {
+        if old.projectID != new.projectID || new.projectID == nil || old == new {
+            studyArrivals.reset()
+        }
+        let arrived = studyArrivals.note(new.entryIDs)
+        if let selectedStudyEntryID, !new.entryIDs.contains(selectedStudyEntryID) {
+            selectStudyEntry(nil)
+        }
+        guard !arrived.isEmpty else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(20))
+            studyArrivals.settle(arrived)
+        }
+    }
+
+    private func setStudyBoardShown(_ shown: Bool) {
+        withAnimation(reduceMotion ? nil : MacChromeMotion.fade) {
+            prefersStudyBoard = shown
+            selectedStudyEntryID = nil
+            if shown { selectedInspirationID = nil }
+        }
+    }
+
+    private func openStudyBoard(_ projectID: Project.ID) {
+        selectSpace(.project(projectID))
+        setStudyBoardShown(true)
+    }
+
+    private func showOnMoodboard(_ inspirationID: Inspiration.ID) {
+        setStudyBoardShown(false)
+        setSelectedInspiration(inspirationID)
+    }
+
+    private func selectStudyEntry(_ id: StudyBoardEntry.ID?) {
+        let changesPanelPresentation = (selectedStudyEntryID == nil) != (id == nil)
+        if changesPanelPresentation {
+            withAnimation(detailInspectorAnimation) {
+                selectedStudyEntryID = id
+            }
+        } else {
+            withAnimation(reduceMotion ? nil : StudyBoardMotion.step) {
+                selectedStudyEntryID = id
+            }
+        }
+    }
+
+    private func closeStudyCloseLook() {
+        guard selectedStudyEntryID != nil else { return }
+        selectStudyEntry(nil)
+    }
+
+    private func studyEntrySelector(at index: Int?, in entries: [StudyBoardEntry]) -> (() -> Void)? {
+        guard let index, entries.indices.contains(index) else { return nil }
+        let id = entries[index].id
+        return { selectStudyEntry(id) }
+    }
+
+    /// The next entry still waiting for a verdict, so judging up close moves
+    /// straight on to it.
+    private func nextStudyEntryToJudge(after id: StudyBoardEntry.ID) -> StudyBoardEntry.ID? {
+        guard let study = currentStudyProject?.study else { return nil }
+        let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
+        guard let index = entries.firstIndex(where: { $0.id == id }) else { return nil }
+        let later = entries[(index + 1)...].first(where: { $0.verdict == .pending })
+        let earlier = entries[..<index].first(where: { $0.verdict == .pending })
+        return (later ?? earlier)?.id
+    }
+
+    private func savedInspiration(for suggestion: StudySuggestion) -> Inspiration? {
+        guard let savedID = suggestion.savedInspirationID else { return nil }
+        return store.snapshot.inspirations.first { $0.id == savedID }
+    }
+
+    private func studyCloseLookItems(_ ids: [Inspiration.ID]) -> [StudyCloseLookItem] {
+        ids.compactMap { id in store.snapshot.inspirations.first { $0.id == id } }
+            .map { StudyCloseLookItem(inspiration: $0, localImageURL: store.localImageURL(for: $0)) }
+    }
+
+    private func decide(
+        _ suggestion: StudySuggestion,
+        verdict: StudyVerdict,
+        reason: String?,
+        advancing: Bool
+    ) {
+        guard let projectID = currentStudyProjectID else { return }
+        let upcoming = advancing && suggestion.status == .pending
+            ? nextStudyEntryToJudge(after: suggestion.id)
+            : nil
+        Task { @MainActor in
+            do {
+                try await store.decideStudySuggestion(
+                    projectID: projectID,
+                    suggestionID: suggestion.id,
+                    verdict: verdict,
+                    reason: reason
+                )
+                if let upcoming, selectedStudyEntryID == suggestion.id {
+                    selectStudyEntry(upcoming)
+                }
+                requestSync()
+            } catch {
+                showToast(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+            }
+        }
+    }
+
+    private func respond(
+        _ reflection: StudyReflection,
+        with response: StudyReflectionResponse,
+        advancing: Bool
+    ) {
+        guard let projectID = currentStudyProjectID else { return }
+        let upcoming = advancing && reflection.status == .pending
+            ? nextStudyEntryToJudge(after: reflection.id)
+            : nil
+        Task { @MainActor in
+            do {
+                try await store.respondToStudyReflection(
+                    projectID: projectID,
+                    reflectionID: reflection.id,
+                    response: response
+                )
+                if let upcoming, selectedStudyEntryID == reflection.id {
+                    selectStudyEntry(upcoming)
+                }
+                requestSync()
+            } catch {
+                showToast(error.localizedDescription, symbol: "exclamationmark.triangle.fill")
+            }
         }
     }
 
@@ -488,38 +971,21 @@ struct MacLibraryView: View {
         case .newStudy:
             StudyStartForm { subject, brief in
                 let project = try await store.createStudy(subject: subject, brief: brief)
-                store.scope = .project(project.id)
+                openStudyBoard(project.id)
                 showToast("Study started", symbol: "eye")
                 requestSync()
             }
         case .startStudy(let project):
             StudyStartForm(existingProject: project) { subject, brief in
                 try await store.startStudy(projectID: project.id, subject: subject, brief: brief)
-                store.scope = .project(project.id)
+                if project.isStudy {
+                    store.scope = .project(project.id)
+                } else {
+                    openStudyBoard(project.id)
+                }
                 showToast(project.isStudy ? "Study updated" : "Study started", symbol: "eye")
                 requestSync()
             }
-        case .study(let projectID):
-            StudyPanel(
-                store: store,
-                projectID: projectID,
-                onMutation: requestSync,
-                onEdit: {
-                    if let studyProject = project(with: projectID) {
-                        sheet = .startStudy(studyProject)
-                    }
-                },
-                agentControls: { [store, syncCoordinator] project, study in
-                    AnyView(
-                        StudyAgentSection(store: store, project: project, study: study) {
-                            await store.reload()
-                            guard let syncCoordinator else { return }
-                            _ = await syncCoordinator.sync()
-                            await store.reload()
-                        }
-                    )
-                }
-            )
         }
     }
 
@@ -626,7 +1092,9 @@ struct MacLibraryView: View {
                 selectedInspirationID = id
             }
         } else {
-            selectedInspirationID = id
+            withAnimation(reduceMotion ? nil : StudyBoardMotion.step) {
+                selectedInspirationID = id
+            }
         }
     }
 
@@ -764,6 +1232,10 @@ struct MacLibraryView: View {
     }
 
     private func selectSpace(_ scope: LibraryScope) {
+        if scope != store.scope {
+            selectStudyEntry(nil)
+            studyFilter = .all
+        }
         store.scope = scope
         if let selectedInspiration, !scope.contains(selectedInspiration) {
             setSelectedInspiration(nil)
@@ -771,7 +1243,9 @@ struct MacLibraryView: View {
     }
 
     private func handleExitCommand() {
-        if selectedInspirationID != nil {
+        if selectedStudyEntryID != nil {
+            closeStudyCloseLook()
+        } else if selectedInspirationID != nil {
             closeDetailInspector()
         } else if isSearching {
             if store.searchText.isEmpty {
@@ -1273,6 +1747,86 @@ private struct InterleavedCanvasLayout: Layout {
     }
 }
 
+/// What the study board shows, watched so finds that arrive while it's open
+/// can develop into place.
+private struct MacStudyBoardObservation: Equatable {
+    var projectID: Project.ID?
+    var entryIDs: [StudyBoardEntry.ID]
+}
+
+/// Keep and reject on a find's card, shown on hover, for judging at a glance.
+/// The close look is where the person says why.
+private struct MacStudyQuickVerdict: ViewModifier {
+    let isAvailable: Bool
+    let onDecide: (StudyVerdict) -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isHovering = false
+
+    func body(content: Content) -> some View {
+        content
+            .onHover { isHovering = $0 }
+            .overlay(alignment: .topTrailing) {
+                if isAvailable, isHovering {
+                    HStack(spacing: 5) {
+                        verdictButton("Keep", symbol: "checkmark", verdict: .keep)
+                        verdictButton("Reject", symbol: "xmark", verdict: .reject)
+                    }
+                    .padding(9)
+                    // Grows out of the corner it sits in, rather than just fading.
+                    .transition(
+                        reduceMotion
+                            ? .opacity
+                            : .scale(scale: 0.85, anchor: .topTrailing).combined(with: .opacity)
+                    )
+                }
+            }
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.82),
+                value: isHovering
+            )
+            .accessibilityActions {
+                if isAvailable {
+                    Button("Keep") { onDecide(.keep) }
+                    Button("Reject") { onDecide(.reject) }
+                }
+            }
+    }
+
+    private func verdictButton(_ title: String, symbol: String, verdict: StudyVerdict) -> some View {
+        Button {
+            onDecide(verdict)
+        } label: {
+            Label(title, systemImage: symbol)
+                .labelStyle(.iconOnly)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.black.opacity(0.85))
+                .frame(width: 26, height: 26)
+                .background(Color.white, in: Circle())
+                .overlay { Circle().strokeBorder(.black.opacity(0.1), lineWidth: 0.5) }
+                .shadow(color: .black.opacity(0.14), radius: 2, y: 1)
+                .contentShape(Circle())
+        }
+        .buttonStyle(MacQuickVerdictButtonStyle())
+        .help(title)
+    }
+}
+
+/// Presses in under the pointer and springs back, like the cards around it.
+private struct MacQuickVerdictButtonStyle: ButtonStyle {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.9 : 1)
+            .brightness(configuration.isPressed ? -0.04 : 0)
+            .animation(
+                reduceMotion ? nil : .spring(response: 0.2, dampingFraction: 0.7),
+                value: configuration.isPressed
+            )
+    }
+}
+
 private enum SheetDestination: Identifiable {
     case capture
     case newProject
@@ -1281,7 +1835,6 @@ private enum SheetDestination: Identifiable {
     case browserSetup
     case newStudy
     case startStudy(Project)
-    case study(Project.ID)
 
     var id: String {
         switch self {
@@ -1292,7 +1845,6 @@ private enum SheetDestination: Identifiable {
         case .browserSetup: "browser-setup"
         case .newStudy: "new-study"
         case .startStudy(let project): "start-study-\(project.id)"
-        case .study(let projectID): "study-\(projectID)"
         }
     }
 }

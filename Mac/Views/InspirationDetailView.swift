@@ -10,18 +10,62 @@ struct InspirationDetailView: View {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onClose: () -> Void
+    /// Off when the surrounding close look already has a close control.
+    var showsCloseButton = true
 
     @Environment(\.openURL) private var openURL
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
+        GeometryReader { geometry in
+            if geometry.size.width >= CloseLookMetrics.wideMinimumWidth {
+                wideLayout(width: geometry.size.width)
+            } else {
+                compactLayout
+            }
+        }
+        .background(folio)
+        .overlay(alignment: .topTrailing) {
+            if showsCloseButton {
+                closeButton
+            }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    /// The image large on the left, everything about it in a column beside
+    /// it, the same arrangement as a study find's close look.
+    private func wideLayout(width: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            hero(isWide: true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+            Rectangle()
+                .fill(.primary.opacity(0.08))
+                .frame(width: 0.5)
+
+            VStack(spacing: 0) {
+                ScrollView {
+                    details(bodyLineLimit: nil)
+                        .padding(.horizontal, 24)
+                        .padding(.top, showsCloseButton ? 56 : 24)
+                        .padding(.bottom, 20)
+                }
+
+                actionBar
+            }
+            .frame(width: CloseLookMetrics.detailsWidth(for: width))
+        }
+    }
+
+    private var compactLayout: some View {
         VStack(spacing: 0) {
-            hero
+            hero(isWide: false)
                 .frame(maxWidth: .infinity, minHeight: 240, maxHeight: .infinity)
                 .layoutPriority(1)
 
-            details
+            details(bodyLineLimit: 8)
                 .padding(.horizontal, 22)
                 .padding(.top, 6)
                 .padding(.bottom, 18)
@@ -29,13 +73,9 @@ struct InspirationDetailView: View {
             actionBar
         }
         .frame(maxHeight: .infinity, alignment: .top)
-        .background(folio)
-        .overlay(alignment: .topTrailing) { closeButton }
-        .frame(minWidth: 360, idealWidth: 420, maxWidth: 480)
-        .accessibilityElement(children: .contain)
     }
 
-    private var hero: some View {
+    private func hero(isWide: Bool) -> some View {
         GeometryReader { geometry in
             let topFade = min(88, max(52, geometry.size.height * 0.12))
             let bottomFade = min(160, max(72, geometry.size.height * 0.22))
@@ -68,35 +108,15 @@ struct InspirationDetailView: View {
                     } failure: {
                         previewPlaceholder
                     }
+                    .padding(isWide ? 32 : 0)
+                    .closeLookPrintShadow(isEnabled: isWide)
                 } else {
                     previewPlaceholder
                 }
 
-                VStack(spacing: 0) {
-                    LinearGradient(
-                        colors: [
-                            Color.black.opacity(colorScheme == .dark ? 0.38 : 0.16),
-                            Color.clear,
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: topFade)
-
-                    Spacer(minLength: 0)
-
-                    LinearGradient(
-                        stops: [
-                            .init(color: folio.opacity(0), location: 0),
-                            .init(color: folio.opacity(0.55), location: 0.52),
-                            .init(color: folio, location: 1),
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: bottomFade)
+                if !isWide {
+                    fades(topHeight: topFade, bottomHeight: bottomFade)
                 }
-                .allowsHitTesting(false)
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .clipped()
@@ -106,7 +126,37 @@ struct InspirationDetailView: View {
         .accessibilityAddTraits(.isImage)
     }
 
-    private var details: some View {
+    /// Lets the close button read over the image and the image melt into
+    /// the details below it.
+    private func fades(topHeight: CGFloat, bottomHeight: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [
+                    Color.black.opacity(colorScheme == .dark ? 0.38 : 0.16),
+                    Color.clear,
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: topHeight)
+
+            Spacer(minLength: 0)
+
+            LinearGradient(
+                stops: [
+                    .init(color: folio.opacity(0), location: 0),
+                    .init(color: folio.opacity(0.55), location: 0.52),
+                    .init(color: folio, location: 1),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: bottomHeight)
+        }
+        .allowsHitTesting(false)
+    }
+
+    private func details(bodyLineLimit: Int?) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 8) {
                 Text(displayTitle)
@@ -128,7 +178,7 @@ struct InspirationDetailView: View {
                         .font(bodyFont)
                         .foregroundStyle(.primary)
                         .lineSpacing(5)
-                        .lineLimit(8)
+                        .lineLimit(bodyLineLimit)
                         .textSelection(.enabled)
                 }
             }
