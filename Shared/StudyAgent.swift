@@ -97,6 +97,9 @@ public struct StudyAgentContext: Equatable, Sendable {
     /// The library folder, passed to custom agents that call `mood-agent`
     /// themselves as `MOOD_LIBRARY_DIRECTORY`.
     public var storageDirectory: String
+    /// A direction the user gave this run, such as "more interiors, less
+    /// type". Cleaned with `StudyAgentNudge.cleaned`.
+    public var nudge: String?
 
     public init(
         projectID: Project.ID,
@@ -105,7 +108,8 @@ public struct StudyAgentContext: Equatable, Sendable {
         moodAgentPath: String,
         skillDirectory: String,
         workingDirectory: String,
-        storageDirectory: String
+        storageDirectory: String,
+        nudge: String? = nil
     ) {
         self.projectID = projectID
         self.projectName = projectName
@@ -114,6 +118,7 @@ public struct StudyAgentContext: Equatable, Sendable {
         self.skillDirectory = skillDirectory
         self.workingDirectory = workingDirectory
         self.storageDirectory = storageDirectory
+        self.nudge = StudyAgentNudge.cleaned(nudge)
     }
 }
 
@@ -169,7 +174,7 @@ public extension StudyAgentConfiguration {
             throw StudyAgentConfigurationError.missingExecutable
         }
         let prompt = StudyAgentPrompt.make(task: task, context: context)
-        let environment = [
+        var environment = [
             "MOOD_AGENT": context.moodAgentPath,
             "MOOD_STUDY_SKILL": context.skillDirectory,
             "MOOD_STUDY_PROJECT": context.projectID.uuidString,
@@ -177,6 +182,9 @@ public extension StudyAgentConfiguration {
             "MOOD_STUDY_PROMPT": prompt,
             PinaxAgentLibraryLocation.environmentKey: context.storageDirectory,
         ]
+        if let nudge = context.nudge {
+            environment["MOOD_STUDY_NUDGE"] = nudge
+        }
 
         func launch(_ arguments: [String], stdin: String? = nil) -> StudyAgentInvocation {
             StudyAgentInvocation(
@@ -298,11 +306,13 @@ public enum StudyAgentPrompt {
         case .findSources:
             """
             Your task: find 6 to 10 real, credited sources for this study, following the skill's \
-            "Find sources" section. Save each source the moment you have confirmed its credit, as its \
-            own file: ./\(folder)/01.json, ./\(folder)/02.json, and so on, each holding one object \
-            with the fields of a `suggest --file` entry. Don't hold them back for the end: mood. adds \
-            each file as it appears, so the user starts judging while you keep looking. Never rewrite \
-            a file you've saved. Don't propose patterns in this run.
+            "Find sources" section. Every source already on the board is in ./\(study), kept, \
+            rejected or waiting: look further, in new directions, not near-copies of those. Save each \
+            source the moment you have confirmed its credit, as its own file: ./\(folder)/01.json, \
+            ./\(folder)/02.json, and so on, each holding one object with the fields of a \
+            `suggest --file` entry. Don't hold them back for the end: mood. adds each file as it \
+            appears, so the user starts judging while you keep looking. Never rewrite a file you've \
+            saved. Don't propose patterns in this run.
             """
         case .reflect:
             """
@@ -313,6 +323,11 @@ public enum StudyAgentPrompt {
             appears. Never rewrite a file you've saved. Don't suggest new sources in this run.
             """
         }
+
+        let direction = context.nudge.map { nudge in
+            "\n\nThe user nudged this run: \"\(nudge)\". Lean that way, as long as everything you "
+                + "propose still ties to their seeds, notes and verdicts."
+        } ?? ""
 
         return """
         mood. started you from its study board to help with the visual study "\(context.projectName)", \
@@ -328,12 +343,30 @@ public enum StudyAgentPrompt {
         computer for it. Write files only in the current working directory, \
         and leave your files there: mood. cleans up the folder.
 
-        \(job)
+        \(job)\(direction)
 
         mood. checks each file and adds what passes as pending proposals. You only \
         propose: the user keeps, rejects, confirms or corrects everything in mood. Nobody can answer \
         questions during this run: if the study isn't ready, say why and stop without writing any file. \
         Finish with a short plain summary of what you proposed.
         """
+    }
+}
+
+/// The direction a user gives a study run, kept to one short line so it
+/// reads as a nudge inside the agent's prompt.
+public enum StudyAgentNudge {
+    public static let maximumLength = 280
+
+    /// Collapses whitespace and line breaks, trims, drops quotes that would
+    /// close the prompt's quotation, and caps the length. Empty becomes nil.
+    public static func cleaned(_ nudge: String?) -> String? {
+        guard let nudge else { return nil }
+        let words = nudge
+            .replacingOccurrences(of: "\"", with: "'")
+            .split(whereSeparator: { $0.isWhitespace || $0.isNewline })
+        let line = words.joined(separator: " ")
+        guard !line.isEmpty else { return nil }
+        return String(line.prefix(maximumLength))
     }
 }

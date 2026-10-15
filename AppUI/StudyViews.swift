@@ -112,108 +112,48 @@ struct StudyStartForm: View {
 
 // MARK: - Board header
 
-/// The top of the study board: the subject in the person's own words, what
-/// to do next, the agent's controls, and the verdict filters with counts.
+/// The top of the study board, kept to what's needed at a glance: the
+/// subject in the person's own words, the agent's controls, and the verdict
+/// filters with counts.
 struct StudyBoardHeader<Controls: View>: View {
     let study: ProjectStudy
-    let itemCount: Int
     let board: StudyBoard
     @Binding var filter: StudyBoardFilter
     var onEdit: (() -> Void)?
     @ViewBuilder var controls: () -> Controls
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    Text("Visual study")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Spacer(minLength: 0)
-                    if let onEdit {
-                        Button("Edit study", action: onEdit)
-                            .buttonStyle(.borderless)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(study.subject)
+                        .font(StudyBoardType.subject)
+                        .tracking(-0.3)
+                        .lineLimit(2)
+                        .accessibilityAddTraits(.isHeader)
+                    if !study.brief.isEmpty {
+                        Text(study.brief)
                             .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(2)
                     }
                 }
-                Text(study.subject)
-                    .font(StudyBoardType.subject)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .textSelection(.enabled)
-                    .accessibilityAddTraits(.isHeader)
-                if !study.brief.isEmpty {
-                    Text(study.brief)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: 640, alignment: .leading)
+
+                Spacer(minLength: 12)
+
+                if let onEdit {
+                    Button("Edit", action: onEdit)
+                        .buttonStyle(.borderless)
+                        .help("Edit the subject and brief")
                 }
             }
-            .frame(maxWidth: 680, alignment: .leading)
-
-            StudyStageLine(stage: study.stage(itemCount: itemCount), itemCount: itemCount)
 
             controls()
 
             StudyBoardFilterBar(selection: $filter, board: board)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
-
-/// What to do next, in one glance. Stages only guide; nothing is locked.
-struct StudyStageLine: View {
-    let stage: StudyStage
-    let itemCount: Int
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Image(systemName: symbol)
-                .foregroundStyle(.secondary)
-                .frame(width: 18)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.callout.weight(.semibold))
-                Text(detail)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: 680, alignment: .leading)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var symbol: String {
-        switch stage {
-        case .seed: "leaf"
-        case .explore: "binoculars"
-        case .reflect: "text.bubble"
-        case .distill: "checkmark.seal"
-        }
-    }
-
-    private var title: String {
-        switch stage {
-        case .seed: "Seed it with what you love"
-        case .explore: "Judge real sources"
-        case .reflect: "Check the patterns"
-        case .distill: "Ready to distill"
-        }
-    }
-
-    private var detail: String {
-        switch stage {
-        case .seed:
-            let remaining = max(0, ProjectStudy.minimumSeedCount - itemCount)
-            return "Add \(remaining) more piece\(remaining == 1 ? "" : "s") you already love to the moodboard: a still, a screenshot, an object, a typeface. Note what you love about each one."
-        case .explore:
-            return "Keep or reject each find and say why. Rejections count as much as keeps."
-        case .reflect:
-            return "Confirm the patterns that are true to you, and correct the ones that aren't quite right."
-        case .distill:
-            return "Your confirmed patterns and verdicts are ready for mood-distill to turn into a design language."
-        }
     }
 }
 
@@ -269,52 +209,49 @@ struct StudyBoardEmptyState: View {
     let isSearchingText: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             Text(title)
                 .font(.headline)
-            Text(message)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let message {
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: 520, alignment: .leading)
-        .padding(.vertical, 20)
+        .padding(.vertical, 16)
         .accessibilityElement(children: .combine)
     }
 
     private var title: String {
-        if isSearchingText { return "No findings match" }
+        if isSearchingText { return "No matches" }
         if boardIsEmpty { return stage == .seed ? "Seed your study first" : "Nothing found yet" }
         switch filter {
         case .all: return "Nothing found yet"
-        case .toJudge: return "Nothing to judge"
+        case .toJudge: return "All judged"
         case .kept: return "Nothing kept yet"
         case .rejected: return "Nothing rejected yet"
         }
     }
 
-    private var message: String {
-        if isSearchingText { return "Try a title, a creator, or words from a reason." }
+    private var message: String? {
+        if isSearchingText { return "Try a title, a creator, or a reason." }
         if boardIsEmpty {
             return stage == .seed
-                ? "Add at least \(ProjectStudy.minimumSeedCount) things you already love to the moodboard, with a note on each. Then ask for sources: they appear here as they're found."
-                : "Ask for sources, and real, credited work related to your seeds appears here as it's found."
+                ? "Add \(ProjectStudy.minimumSeedCount) things you love to the moodboard, then find sources."
+                : "Find sources to start the board."
         }
-        switch filter {
-        case .all: return "Ask for sources, and real, credited work appears here as it's found."
-        case .toJudge: return "Everything here has your verdict. Ask for more sources when you're ready."
-        case .kept: return "What you keep goes to the moodboard and stays here, marked kept."
-        case .rejected: return "Rejections count as much as keeps: they steer what's found next."
-        }
+        return filter == .toJudge ? "Find more when you're ready." : nil
     }
 }
 
 enum StudyBoardType {
     static var subject: Font {
         #if os(macOS)
-        return .system(size: 30, weight: .semibold, design: .serif)
+        return .system(size: 24, weight: .semibold, design: .serif)
         #else
-        return .system(.title, design: .serif, weight: .bold)
+        return .system(.title2, design: .serif, weight: .semibold)
         #endif
     }
 
@@ -325,34 +262,60 @@ enum StudyBoardType {
         return .system(.title2, design: .serif, weight: .semibold)
         #endif
     }
+
+    /// A pattern given a whole pane in the wide close look.
+    static var patternStatement: Font {
+        #if os(macOS)
+        return .system(size: 34, weight: .medium, design: .serif)
+        #else
+        return .system(.largeTitle, design: .serif, weight: .medium)
+        #endif
+    }
 }
 
 // MARK: - Board cards
 
-/// Density-aware measurements shared by the board's own cards, matching the
-/// moodboard's white mat at the same column count.
+/// Density-aware measurements shared by the board's own cards, the same
+/// values as each platform's moodboard card so they sit side by side.
 enum StudyCardMetrics {
     static func matInset(_ columns: Int) -> CGFloat {
+        #if os(iOS)
         switch columns {
-        case ...1: 10
-        case 2: 8
-        case 3: 6
-        case 4: 5
-        case 5: 4
-        default: 3
+        case ...1: return 10
+        case 2: return 8
+        case 3: return 5
+        default: return 3
         }
+        #else
+        switch columns {
+        case ...1: return 10
+        case 2: return 8
+        case 3: return 6
+        case 4: return 5
+        case 5: return 4
+        default: return 3
+        }
+        #endif
     }
 
     static func cornerRadius(_ columns: Int) -> CGFloat {
+        #if os(iOS)
         switch columns {
-        case ...1: 5
-        case 2...3: 4
-        default: 3
+        case ...1: return 5
+        case 2: return 4
+        default: return 3
         }
+        #else
+        switch columns {
+        case ...1: return 5
+        case 2...3: return 4
+        default: return 3
+        }
+        #endif
     }
 
     static func innerCornerRadius(_ columns: Int) -> CGFloat {
-        max(1, cornerRadius(columns) - 2)
+        max(1.5, cornerRadius(columns) - 2)
     }
 
     static func padding(_ columns: Int) -> CGFloat {
@@ -389,10 +352,13 @@ enum StudyCardMetrics {
     }
 }
 
-/// The permanent white card mat with its hairline and print-like shadow.
+/// The permanent white card mat with its hairline and print-like shadow,
+/// matching the moodboard card's on each platform.
 struct StudyCardMat: ViewModifier {
     let columns: Int
     var isSelected = false
+
+    @Environment(\.colorScheme) private var colorScheme
 
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: StudyCardMetrics.cornerRadius(columns), style: .continuous)
@@ -406,7 +372,31 @@ struct StudyCardMat: ViewModifier {
                     shape.strokeBorder(Color.black, lineWidth: 2)
                 }
             }
-            .shadow(color: .black.opacity(isSelected ? 0 : 0.08), radius: 3, y: 1.5)
+            .shadow(color: .black.opacity(isSelected ? 0 : restShadowOpacity), radius: restShadowRadius, y: restShadowOffset)
+    }
+
+    private var restShadowOpacity: Double {
+        #if os(iOS)
+        return columns >= 3 ? 0.06 : 0.09
+        #else
+        return colorScheme == .dark ? 0.24 : 0.075
+        #endif
+    }
+
+    private var restShadowRadius: CGFloat {
+        #if os(iOS)
+        return columns >= 3 ? 1 : 2
+        #else
+        return 4
+        #endif
+    }
+
+    private var restShadowOffset: CGFloat {
+        #if os(iOS)
+        return 1
+        #else
+        return 2
+        #endif
     }
 }
 
@@ -480,18 +470,47 @@ struct StudyPatternCard: View {
 struct StudyLatentCard: View {
     let columns: Int
     let aspectRatio: CGFloat
+    /// Offsets this tile's breathing from its neighbour's.
+    var phase = 0.0
 
     var body: some View {
         Rectangle()
             .fill(Color(white: 0.9))
             .aspectRatio(aspectRatio, contentMode: .fit)
-            .overlay { DiffusionNoiseField(intensity: 0.55) }
+            .overlay { DiffusionNoiseField(intensity: 0.5, breath: 0.12, phase: phase) }
             .clipShape(
                 RoundedRectangle(cornerRadius: StudyCardMetrics.innerCornerRadius(columns), style: .continuous)
             )
             .modifier(StudyCardMat(columns: columns))
+            .compositingGroup()
             .opacity(0.85)
             .accessibilityHidden(true)
+    }
+}
+
+/// The board's motion, in one place so it can be tuned together.
+enum StudyBoardMotion {
+    /// Cards settling into the masonry: a spring, so a quick change of mind
+    /// retargets from wherever things are.
+    static let settle = Animation.spring(response: 0.32, dampingFraction: 0.86)
+    /// Between cards entering together, top to bottom.
+    static let stagger = 0.025
+    static let maximumStaggeredCards = 12
+    /// Stepping from one entry to the next in the close look.
+    static let step = Animation.easeOut(duration: 0.18)
+    /// Agent status changes in the header.
+    static let status = Animation.spring(response: 0.3, dampingFraction: 0.9)
+
+    /// Cards that appear together, like on a filter change, arrive in a
+    /// short cascade; a find that just arrived appears at once, since it
+    /// develops on its own. Leaving is quick and unstaggered.
+    static func cardTransition(index: Int, arrivedJustNow: Bool, reduceMotion: Bool) -> AnyTransition {
+        guard !reduceMotion else { return .opacity }
+        let delay = arrivedJustNow ? 0 : Double(min(index, maximumStaggeredCards)) * stagger
+        return .asymmetric(
+            insertion: .scale(scale: 0.96).combined(with: .opacity).animation(settle.delay(delay)),
+            removal: .opacity.animation(.easeOut(duration: 0.12))
+        )
     }
 }
 
@@ -522,6 +541,7 @@ private struct StudyBoardVerdictStyle: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .compositingGroup()
             .saturation(verdict == .rejected ? 0 : 1)
             .opacity(verdict == .rejected ? 0.5 : 1)
             .overlay(alignment: .topLeading) {
@@ -579,7 +599,7 @@ struct StudyCloseLookItem: Identifiable {
 
 /// The frame around one board entry seen up close: step through the board
 /// without going back to it (⌘[ and ⌘]), and close.
-struct StudyCloseLookFrame<Content: View>: View {
+struct CloseLookFrame<Content: View>: View {
     let position: Int?
     let count: Int
     let onPrevious: (() -> Void)?
@@ -627,6 +647,7 @@ struct StudyCloseLookFrame<Content: View>: View {
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .padding(.leading, 4)
+                        .contentTransition(.numericText())
                 }
 
                 Spacer(minLength: 0)
@@ -638,17 +659,91 @@ struct StudyCloseLookFrame<Content: View>: View {
                             .frame(width: navigationButtonSide, height: navigationButtonSide)
                             .contentShape(Rectangle())
                     }
-                    .help("Close")
+                    .help("Close (esc)")
+                    #if os(macOS)
+                    .keyboardShortcut(.cancelAction)
+                    #endif
                 }
             }
             .buttonStyle(.borderless)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 8)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
 
-            Divider()
+            Rectangle()
+                .fill(.primary.opacity(0.08))
+                .frame(height: 0.5)
 
             content()
         }
+    }
+}
+
+/// Lays a close look out like a print on a table when there's room: the
+/// image large on the left and the details in a column beside it. When it's
+/// narrow, the image sits above the details in one scroll. Either way the
+/// footer, where the verdict is given, stays put, so judging one thing after
+/// another happens in the same place.
+struct StudyCloseLookSplit<Hero: View, Details: View, Footer: View>: View {
+    @ViewBuilder var hero: (_ isWide: Bool) -> Hero
+    @ViewBuilder var details: () -> Details
+    @ViewBuilder var footer: () -> Footer
+
+    var body: some View {
+        GeometryReader { geometry in
+            if geometry.size.width >= CloseLookMetrics.wideMinimumWidth {
+                HStack(spacing: 0) {
+                    hero(true)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    Rectangle()
+                        .fill(.primary.opacity(0.08))
+                        .frame(width: 0.5)
+
+                    VStack(spacing: 0) {
+                        ScrollView {
+                            details()
+                                .padding(24)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        pinnedFooter(horizontalPadding: 24)
+                    }
+                    .frame(width: CloseLookMetrics.detailsWidth(for: geometry.size.width))
+                }
+            } else {
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 20) {
+                            hero(false)
+                            details()
+                        }
+                        .padding(20)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    pinnedFooter(horizontalPadding: 20)
+                }
+            }
+        }
+    }
+
+    private func pinnedFooter(horizontalPadding: CGFloat) -> some View {
+        VStack(spacing: 0) {
+            Rectangle()
+                .fill(.primary.opacity(0.08))
+                .frame(height: 0.5)
+            footer()
+                .padding(.horizontal, horizontalPadding)
+                .padding(.vertical, 14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+}
+
+enum CloseLookMetrics {
+    /// Below this the image and details stack instead of sitting side by side.
+    static let wideMinimumWidth: CGFloat = 760
+
+    static func detailsWidth(for width: CGFloat) -> CGFloat {
+        min(420, max(340, (width * 0.34).rounded()))
     }
 }
 
@@ -685,17 +780,20 @@ struct StudyFindingCloseLook: View {
     @State private var reason = ""
 
     var body: some View {
-        ScrollView {
+        StudyCloseLookSplit { isWide in
+            StudyCloseLookHero(
+                localURL: savedImageURL,
+                remoteURL: suggestion.imageURL,
+                fallbackTitle: suggestion.title,
+                isFullBleed: isWide
+            )
+        } details: {
             VStack(alignment: .leading, spacing: 20) {
-                StudyCloseLookHero(
-                    localURL: savedImageURL,
-                    remoteURL: suggestion.imageURL,
-                    fallbackTitle: suggestion.title
-                )
-
                 VStack(alignment: .leading, spacing: 6) {
                     Text(suggestion.title)
                         .font(StudyBoardType.closeLookTitle)
+                        .tracking(-0.3)
+                        .lineSpacing(2)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                         .accessibilityAddTraits(.isHeader)
@@ -709,6 +807,7 @@ struct StudyFindingCloseLook: View {
                         Label(linkTitle, systemImage: "arrow.up.right.square")
                     }
                     .font(.callout)
+                    .padding(.top, 2)
                 }
 
                 StudyCloseLookSection("Why it's here") {
@@ -722,11 +821,9 @@ struct StudyFindingCloseLook: View {
                         StudyItemStrip(items: relatedItems)
                     }
                 }
-
-                verdict
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        } footer: {
+            verdict
         }
     }
 
@@ -734,11 +831,16 @@ struct StudyFindingCloseLook: View {
     private var verdict: some View {
         switch suggestion.status {
         case .pending:
-            StudyCloseLookSection("Your verdict") {
-                TextField("Why? Your reason is the taste data", text: $reason, axis: .vertical)
-                    .lineLimit(1...4)
-                    .textFieldStyle(.roundedBorder)
-                HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 10) {
+                TextField(
+                    "Why?",
+                    text: $reason,
+                    prompt: Text("Why? Your reasons steer the next search"),
+                    axis: .vertical
+                )
+                .lineLimit(1...4)
+                .textFieldStyle(.roundedBorder)
+                HStack(spacing: 8) {
                     Button {
                         onDecide(.keep, reason)
                     } label: {
@@ -746,7 +848,7 @@ struct StudyFindingCloseLook: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.return, modifiers: .command)
-                    .help("Keep (⌘↩)")
+                    .help("Keep, and save it to the moodboard (⌘↩)")
 
                     Button {
                         onDecide(.reject, reason)
@@ -755,32 +857,34 @@ struct StudyFindingCloseLook: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                Text("Keeping saves it to your moodboard. Rejections count as much as keeps: they steer what's found next.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         case .kept:
-            StudyCloseLookSection("Your verdict") {
-                Label("Kept. It's on your moodboard.", systemImage: "checkmark.circle.fill")
+            VStack(alignment: .leading, spacing: 4) {
+                Label("Kept · on your moodboard", systemImage: "checkmark.circle")
                 reasonText
             }
         case .rejected:
-            StudyCloseLookSection("Your verdict") {
-                Label("Rejected", systemImage: "xmark.circle")
-                reasonText
-                Button("Keep instead") {
-                    onDecide(.keep, suggestion.reason)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Label("Rejected", systemImage: "xmark.circle")
+                    Spacer(minLength: 8)
+                    Button("Keep instead") {
+                        onDecide(.keep, suggestion.reason)
+                    }
                 }
+                reasonText
             }
         }
     }
 
+    @ViewBuilder
     private var reasonText: some View {
-        Text(suggestion.reason.map { "\u{201C}\($0)\u{201D}" } ?? "No reason given")
-            .font(.callout)
-            .foregroundStyle(.secondary)
-            .fixedSize(horizontal: false, vertical: true)
+        if let reason = suggestion.reason, !reason.isEmpty {
+            Text("\u{201C}\(reason)\u{201D}")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 
     private var attribution: String {
@@ -809,31 +913,10 @@ struct StudyPatternCloseLook: View {
     @State private var correction = ""
 
     var body: some View {
-        ScrollView {
+        StudyCloseLookSplit { isWide in
+            quotation(isWide: isWide)
+        } details: {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Pattern")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.65))
-                    Text("\u{201C}\(reflection.acceptedStatement ?? reflection.statement)\u{201D}")
-                        .font(StudyBoardType.closeLookTitle)
-                        .foregroundStyle(.white)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                    if reflection.status == .corrected {
-                        Text("Proposed as: \(reflection.statement)")
-                            .font(.caption)
-                            .foregroundStyle(.white.opacity(0.65))
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-                .padding(20)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(
-                    StudyBoardPalette.quoteFill(for: reflection.id),
-                    in: RoundedRectangle(cornerRadius: 10, style: .continuous)
-                )
-
                 if !citedItems.isEmpty {
                     StudyCloseLookSection("Seen in") {
                         StudyItemStrip(items: citedItems)
@@ -846,20 +929,49 @@ struct StudyPatternCloseLook: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(suggestion.title)
                                     .font(.callout)
-                                Text(suggestion.reason.map { "\u{201C}\($0)\u{201D}" } ?? "No reason given")
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+                                if let reason = suggestion.reason, !reason.isEmpty {
+                                    Text("\u{201C}\(reason)\u{201D}")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                             .accessibilityElement(children: .combine)
                         }
                     }
                 }
-
-                response
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        } footer: {
+            response
         }
+    }
+
+    private func quotation(isWide: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Pattern")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.6))
+            Text("\u{201C}\(reflection.acceptedStatement ?? reflection.statement)\u{201D}")
+                .font(isWide ? StudyBoardType.patternStatement : StudyBoardType.closeLookTitle)
+                .tracking(-0.3)
+                .lineSpacing(isWide ? 4 : 2)
+                .foregroundStyle(.white)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+            if reflection.status == .corrected {
+                Text("Proposed as: \(reflection.statement)")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(isWide ? 48 : 20)
+        .frame(
+            maxWidth: .infinity,
+            maxHeight: isWide ? .infinity : nil,
+            alignment: isWide ? .bottomLeading : .leading
+        )
+        .background(StudyBoardPalette.quoteFill(for: reflection.id))
+        .clipShape(RoundedRectangle(cornerRadius: isWide ? 0 : 10, style: .continuous))
     }
 
     private var response: some View {
@@ -871,7 +983,7 @@ struct StudyPatternCloseLook: View {
                 TextField("How would you put it?", text: $correction, axis: .vertical)
                     .lineLimit(1...4)
                     .textFieldStyle(.roundedBorder)
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Button("Save correction") {
                         onRespond(.correct(correction))
                         isCorrecting = false
@@ -881,7 +993,7 @@ struct StudyPatternCloseLook: View {
                     Button("Cancel") { isCorrecting = false }
                 }
             } else {
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     Button("That's right") { onRespond(.confirm) }
                         .buttonStyle(.borderedProminent)
                         .disabled(reflection.status == .confirmed)
@@ -899,55 +1011,93 @@ struct StudyPatternCloseLook: View {
     private var answer: (text: String, symbol: String)? {
         switch reflection.status {
         case .pending: nil
-        case .confirmed: ("You confirmed it.", "checkmark.circle.fill")
-        case .corrected: ("You corrected it.", "pencil.circle.fill")
+        case .confirmed: ("You confirmed it.", "checkmark.circle")
+        case .corrected: ("You corrected it.", "pencil.circle")
         case .dismissed: ("Not you.", "xmark.circle")
         }
     }
 }
 
 /// The whole image over a soft wash of itself, so any shape reads well.
+/// Full bleed, it fills its pane; otherwise it's a rounded 4:3 print.
 struct StudyCloseLookHero: View {
     let localURL: URL?
     let remoteURL: URL?
     let fallbackTitle: String
+    var isFullBleed = false
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
 
     var body: some View {
+        Group {
+            if isFullBleed {
+                stage
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                stage
+                    .aspectRatio(4.0 / 3.0, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Image of \(fallbackTitle)")
+        .accessibilityAddTraits(.isImage)
+    }
+
+    private var stage: some View {
         ZStack {
             Rectangle()
                 .fill(Color.secondary.opacity(0.12))
             if localURL != nil || remoteURL != nil {
-                DownsampledPreviewImage(localURL: localURL, remoteURL: remoteURL, contentMode: .fill) {
-                    Color.clear
-                } failure: {
-                    Color.clear
+                if !reduceTransparency {
+                    // Scaled past the edges so the blur has no fringe.
+                    DownsampledPreviewImage(localURL: localURL, remoteURL: remoteURL, contentMode: .fill) {
+                        Color.clear
+                    } failure: {
+                        Color.clear
+                    }
+                    .scaleEffect(1.16)
+                    .blur(radius: 32)
+                    .overlay(wash)
                 }
-                .blur(radius: 28)
-                .opacity(0.5)
+
                 DownsampledPreviewImage(localURL: localURL, remoteURL: remoteURL, contentMode: .fit) {
                     ProgressView()
                         .controlSize(.small)
                 } failure: {
                     fallback
                 }
+                .padding(isFullBleed ? 32 : 0)
+                .closeLookPrintShadow(isEnabled: isFullBleed)
             } else {
                 fallback
             }
         }
-        .aspectRatio(4.0 / 3.0, contentMode: .fit)
-        .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Image of \(fallbackTitle)")
-        .accessibilityAddTraits(.isImage)
+        .clipped()
+    }
+
+    private var wash: Color {
+        colorScheme == .dark ? Color.black.opacity(0.46) : Color.white.opacity(0.34)
     }
 
     private var fallback: some View {
         Text(fallbackTitle)
-            .font(.system(size: 20, weight: .medium, design: .serif))
+            .font(.system(size: isFullBleed ? 28 : 20, weight: .medium, design: .serif))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
-            .padding(24)
+            .padding(32)
+    }
+}
+
+extension View {
+    /// A tight contact shadow under a wide ambient one, for an image resting
+    /// on its own wash in a close look.
+    func closeLookPrintShadow(isEnabled: Bool = true) -> some View {
+        self
+            .shadow(color: .black.opacity(isEnabled ? 0.12 : 0), radius: 2, y: 1)
+            .shadow(color: .black.opacity(isEnabled ? 0.14 : 0), radius: 16, y: 8)
     }
 }
 
@@ -994,12 +1144,16 @@ struct StudyItemStrip: View {
 @MainActor
 enum StudyAgentPromptText {
     /// For an agent mood. doesn't start itself, which uses `mood-agent`.
-    static func make(for project: Project) -> String {
-        "Use the mood-study skill to find inspirations for my mood. study \"\(project.name)\" (project \(project.id.uuidString)). Suggest only real, credited work, tie each one to my seeds and notes, and add them with `mood-agent suggest` so I can keep or reject them in mood."
+    static func make(for project: Project, nudge: String? = nil) -> String {
+        var text = "Use the mood-study skill to find inspirations for my mood. study \"\(project.name)\" (project \(project.id.uuidString)). Suggest only real, credited work, tie each one to my seeds and notes, and add them with `mood-agent suggest` so I can keep or reject them in mood."
+        if let nudge = StudyAgentNudge.cleaned(nudge) {
+            text += " Lean this way: \"\(nudge)\"."
+        }
+        return text
     }
 
-    static func copy(for project: Project) {
-        let text = make(for: project)
+    static func copy(for project: Project, nudge: String? = nil) {
+        let text = make(for: project, nudge: nudge)
         #if os(macOS)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)

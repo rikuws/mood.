@@ -149,16 +149,33 @@ final class StudyAgentRunner {
         let startedAt: Date
         var phase: Phase
         var output: String
+        /// The direction the user gave this run, if any.
+        var nudge: String?
         /// Everything mood. has added from this run so far.
         var result = StudyAgentHandoffResult(foundProposals: false)
+    }
+
+    /// A run waiting for the one it replaces to finish exiting.
+    private struct PendingStart {
+        let task: StudyAgentTask
+        let project: Project
+        let agent: ResolvedStudyAgent
+        let configuration: StudyAgentConfiguration
+        let repository: LibraryRepository
+        let nudge: String?
+        let onProgress: @Sendable @MainActor () async -> Void
+        let onChange: @Sendable @MainActor () async -> Void
     }
 
     static let shared = StudyAgentRunner()
 
     private(set) var runs: [Project.ID: Run] = [:]
+    /// Studies whose agent is stopping so it can start again in a new direction.
+    private(set) var redirecting: Set<Project.ID> = []
 
     @ObservationIgnored private var processes: [Project.ID: Process] = [:]
     @ObservationIgnored private var collectors: [Project.ID: Task<Void, Never>] = [:]
+    @ObservationIgnored private var pendingStarts: [Project.ID: PendingStart] = [:]
     @ObservationIgnored private let logger = Logger(subsystem: "com.rikuwikman.Pinax", category: "study-agent")
     private static let outputLimit = 64_000
     /// How often the scratch folder is checked for new proposals.
@@ -172,6 +189,11 @@ final class StudyAgentRunner {
         runs[projectID]?.phase == .running
     }
 
+    /// Running, or stopping to start again: either way, busy.
+    func isBusy(_ projectID: Project.ID) -> Bool {
+        isRunning(projectID) || redirecting.contains(projectID)
+    }
+
     /// Writes the study into a scratch folder and launches the agent there.
     /// While it runs, each proposal it saves is added and `onProgress` is
     /// called so the board can show it. When it exits, mood. adds whatever
@@ -182,16 +204,19 @@ final class StudyAgentRunner {
         agent: ResolvedStudyAgent,
         configuration: StudyAgentConfiguration,
         repository: LibraryRepository,
+        nudge: String? = nil,
         onProgress: @escaping @Sendable @MainActor () async -> Void = {},
         onChange: @escaping @Sendable @MainActor () async -> Void
     ) async throws {
-        guard !isRunning(project.id) else { return }
+        guard !isBusy(project.id) else { return }
+        let nudge = StudyAgentNudge.cleaned(nudge)
         let invocation = try makeInvocation(
             task: task,
             project: project,
             agent: agent,
             configuration: configuration,
-            storageDirectory: repository.storageDirectory
+            storageDirectory: repository.storageDirectory,
+            nudge: nudge
         )
         let workingDirectory = URL(fileURLWithPath: invocation.workingDirectory, isDirectory: true)
         let api = PinaxAgentAPI(repository: repository)
@@ -207,7 +232,8 @@ final class StudyAgentRunner {
             agentName: agent.displayName,
             startedAt: Date(),
             phase: .running,
-            output: ""
+            output: "",
+            nudge: nudge
         )
         do {
             try await StudyAgentHandoff.prepare(api: api, projectID: projectID, in: workingDirectory)
@@ -286,7 +312,50 @@ final class StudyAgentRunner {
         }
     }
 
+    /// Points a running agent somewhere new. It stops, everything it found
+    /// stays, and once it has exited it starts again with the new nudge. An
+    /// agent can't take new instructions mid-run, so this is how to steer it.
+    func redirect(
+        task: StudyAgentTask,
+        project: Project,
+        agent: ResolvedStudyAgent,
+        configuration: StudyAgentConfiguration,
+        repository: LibraryRepository,
+        nudge: String?,
+        onProgress: @escaping @Sendable @MainActor () async -> Void = {},
+        onChange: @escaping @Sendable @MainActor () async -> Void
+    ) async throws {
+        guard isRunning(project.id), let process = processes[project.id], process.isRunning else {
+            try await start(
+                task: task,
+                project: project,
+                agent: agent,
+                configuration: configuration,
+                repository: repository,
+                nudge: nudge,
+                onProgress: onProgress,
+                onChange: onChange
+            )
+            return
+        }
+        pendingStarts[project.id] = PendingStart(
+            task: task,
+            project: project,
+            agent: agent,
+            configuration: configuration,
+            repository: repository,
+            nudge: nudge,
+            onProgress: onProgress,
+            onChange: onChange
+        )
+        redirecting.insert(project.id)
+        runs[project.id]?.phase = .cancelled
+        process.terminate()
+    }
+
     func cancel(_ projectID: Project.ID) {
+        pendingStarts[projectID] = nil
+        redirecting.remove(projectID)
         guard let process = processes[projectID], process.isRunning else { return }
         runs[projectID]?.phase = .cancelled
         process.terminate()
@@ -302,7 +371,8 @@ final class StudyAgentRunner {
         project: Project,
         agent: ResolvedStudyAgent,
         configuration: StudyAgentConfiguration,
-        storageDirectory: URL
+        storageDirectory: URL,
+        nudge: String?
     ) throws -> StudyAgentInvocation {
         let fileManager = FileManager.default
         let helper = StudyAgentSettings.bundledMoodAgent
@@ -324,7 +394,8 @@ final class StudyAgentRunner {
             moodAgentPath: helper.path,
             skillDirectory: skill.path,
             workingDirectory: workingDirectory.path,
-            storageDirectory: storageDirectory.path
+            storageDirectory: storageDirectory.path,
+            nudge: nudge
         )
         do {
             return try configuration.invocation(
@@ -409,7 +480,35 @@ final class StudyAgentRunner {
             }
         }
         logger.notice("Study agent finished with status \(status)")
+        if let pending = pendingStarts.removeValue(forKey: projectID) {
+            redirecting.remove(projectID)
+            await startRedirected(pending)
+        }
         await onChange()
+    }
+
+    private func startRedirected(_ pending: PendingStart) async {
+        do {
+            try await start(
+                task: pending.task,
+                project: pending.project,
+                agent: pending.agent,
+                configuration: pending.configuration,
+                repository: pending.repository,
+                nudge: pending.nudge,
+                onProgress: pending.onProgress,
+                onChange: pending.onChange
+            )
+        } catch {
+            runs[pending.project.id] = Run(
+                task: pending.task,
+                agentName: pending.agent.displayName,
+                startedAt: Date(),
+                phase: .failed(error.localizedDescription),
+                output: "",
+                nudge: StudyAgentNudge.cleaned(pending.nudge)
+            )
+        }
     }
 }
 

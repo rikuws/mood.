@@ -131,8 +131,8 @@ To find inspirations for a [guided visual study](Documentation/STUDIES.md), inst
 related to your seeds and notes, and adds it as pending suggestions for you to keep or reject
 in mood. It can't keep, reject, or confirm anything itself. On the Mac there's nothing to
 install or connect: if Claude Code or Codex is on your Mac, the study board's **Find sources**
-and **Reflect patterns** start it with the skill bundled in mood.app, and each find appears on
-the board as soon as it's verified. Install the skill yourself
+and **Reflect** start it with the skill bundled in mood.app, and each find appears on the board
+as soon as it's verified. A short nudge steers where it looks. Install the skill yourself
 only to run a study from an agent session of your own:
 
 ```sh

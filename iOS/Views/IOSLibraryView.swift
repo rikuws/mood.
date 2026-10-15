@@ -31,6 +31,7 @@ struct IOSLibraryView: View {
     @State private var studyFilter = StudyBoardFilter.all
     @State private var studyArrivals = StudyBoardArrivals()
     @State private var studyCloseLookEntryID: StudyBoardEntry.ID?
+    @State private var studyNudge = ""
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -346,7 +347,6 @@ struct IOSLibraryView: View {
             VStack(alignment: .leading, spacing: 18) {
                 StudyBoardHeader(
                     study: study,
-                    itemCount: store.studyItems(for: project.id).count,
                     board: board,
                     filter: $studyFilter,
                     onEdit: { sheet = .startStudy(project) }
@@ -369,12 +369,14 @@ struct IOSLibraryView: View {
                         minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
                         maximumColumnCount: maximumCanvasColumnCount
                     ) {
-                        ForEach(entries) { entry in
+                        ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                             studyCard(entry, project: project, columnCount: activeCanvasColumnCount)
                                 .transition(
-                                    reduceMotion
-                                        ? .opacity
-                                        : .scale(scale: 0.96).combined(with: .opacity)
+                                    StudyBoardMotion.cardTransition(
+                                        index: index,
+                                        arrivedJustNow: studyArrivals.fresh.contains(entry.id),
+                                        reduceMotion: reduceMotion
+                                    )
                                 )
                         }
                     }
@@ -388,7 +390,7 @@ struct IOSLibraryView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.top, 16)
             .padding(.bottom, 34)
-            .animation(reduceMotion ? nil : .easeOut(duration: 0.24), value: entries.map(\.id))
+            .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: entries.map(\.id))
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
@@ -402,20 +404,22 @@ struct IOSLibraryView: View {
         }
     }
 
+    /// iOS doesn't start agents itself: it hands over a prompt, with the
+    /// person's nudge, for an agent on another machine.
     private func studyAgentHandoff(for project: Project) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        HStack(spacing: 8) {
+            TextField("Nudge", text: $studyNudge, prompt: Text("Nudge it: warmer light…"))
+                .textFieldStyle(.roundedBorder)
+                .submitLabel(.done)
+                .accessibilityLabel("Nudge the search")
+
             Button {
-                StudyAgentPromptText.copy(for: project)
-                showMessage("Prompt copied")
+                StudyAgentPromptText.copy(for: project, nudge: studyNudge)
+                showMessage("Copied. Paste it into an agent with mood-study")
             } label: {
-                Label("Copy prompt for your agent", systemImage: "doc.on.doc")
+                Label("Copy prompt", systemImage: "doc.on.doc")
             }
             .buttonStyle(.bordered)
-
-            Text("Paste it into Claude Code or another agent with the mood-study skill, or ask for sources from mood. on your Mac. Finds appear here as they're added; pull to refresh.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -525,38 +529,46 @@ struct IOSLibraryView: View {
             let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
             let index = entries.firstIndex(where: { $0.id == entry.id })
 
-            StudyCloseLookFrame(
+            CloseLookFrame(
                 position: index.map { $0 + 1 },
                 count: entries.count,
                 onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries),
                 onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries),
                 onClose: { sheet = nil }
             ) {
-                switch entry {
-                case .finding(let suggestion):
-                    StudyFindingCloseLook(
-                        suggestion: suggestion,
-                        savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
-                        relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
-                        onDecide: { verdict, reason in
-                            decide(suggestion, projectID: projectID, verdict: verdict, reason: reason, advancing: true)
+                // Stacked, so stepping crossfades one entry into the next
+                // while the frame and its counter stay still.
+                ZStack {
+                    Group {
+                        switch entry {
+                        case .finding(let suggestion):
+                            StudyFindingCloseLook(
+                                suggestion: suggestion,
+                                savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                                relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                                onDecide: { verdict, reason in
+                                    decide(suggestion, projectID: projectID, verdict: verdict, reason: reason, advancing: true)
+                                }
+                            )
+                        case .pattern(let reflection):
+                            StudyPatternCloseLook(
+                                reflection: reflection,
+                                citedItems: studyCloseLookItems(reflection.inspirationIDs),
+                                contrasts: reflection.rejectedSuggestionIDs.compactMap { id in
+                                    study.suggestions.first(where: { $0.id == id })
+                                },
+                                onRespond: { response in
+                                    respond(reflection, projectID: projectID, with: response, advancing: true)
+                                }
+                            )
                         }
-                    )
-                case .pattern(let reflection):
-                    StudyPatternCloseLook(
-                        reflection: reflection,
-                        citedItems: studyCloseLookItems(reflection.inspirationIDs),
-                        contrasts: reflection.rejectedSuggestionIDs.compactMap { id in
-                            study.suggestions.first(where: { $0.id == id })
-                        },
-                        onRespond: { response in
-                            respond(reflection, projectID: projectID, with: response, advancing: true)
-                        }
-                    )
+                    }
+                    .id(entry.id)
+                    .transition(.opacity)
                 }
             }
-            .id(entry.id)
             .presentationDragIndicator(.visible)
+            .modifier(PageSizedSheet())
         } else {
             ContentUnavailableView(
                 "Nothing to show",
@@ -574,7 +586,13 @@ struct IOSLibraryView: View {
     private func studyEntrySelector(at index: Int?, in entries: [StudyBoardEntry]) -> (() -> Void)? {
         guard let index, entries.indices.contains(index) else { return nil }
         let id = entries[index].id
-        return { studyCloseLookEntryID = id }
+        return { showStudyCloseLookEntry(id) }
+    }
+
+    private func showStudyCloseLookEntry(_ id: StudyBoardEntry.ID) {
+        withAnimation(reduceMotion ? nil : StudyBoardMotion.step) {
+            studyCloseLookEntryID = id
+        }
     }
 
     /// Finds that arrive while the board is open develop into place; what was
@@ -631,7 +649,7 @@ struct IOSLibraryView: View {
                     reason: reason
                 )
                 if let upcoming, studyCloseLookEntryID == suggestion.id {
-                    studyCloseLookEntryID = upcoming
+                    showStudyCloseLookEntry(upcoming)
                 }
                 requestSync()
             } catch {
@@ -657,7 +675,7 @@ struct IOSLibraryView: View {
                     response: response
                 )
                 if let upcoming, studyCloseLookEntryID == reflection.id {
-                    studyCloseLookEntryID = upcoming
+                    showStudyCloseLookEntry(upcoming)
                 }
                 requestSync()
             } catch {
@@ -1244,6 +1262,18 @@ private struct CollectedCardButtonStyle: ButtonStyle {
                     : .spring(response: 0.22, dampingFraction: 1),
                 value: configuration.isPressed
             )
+    }
+}
+
+/// A close look gets the whole page on iPad, so the image can sit beside
+/// its details; iPhone sheets are full height already.
+private struct PageSizedSheet: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.presentationSizing(.page)
+        } else {
+            content
+        }
     }
 }
 

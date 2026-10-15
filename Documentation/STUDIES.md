@@ -28,15 +28,18 @@ the moodboard: every source an agent found, as the card it would become if kept,
 pattern it reflected back, as a serif quotation. It reads like a taste board the agent fills
 for you, from real, credited work.
 
-- **At a glance.** The subject and brief, what to do next, the agent's controls, and filters
-  with counts: **All**, **To judge**, **Kept**, **Rejected**. Kept cards carry a small badge;
+- **At a glance.** A slim header: the subject and brief, one row of agent controls, and
+  filters with counts: **All**, **To judge**, **Kept**, **Rejected**. Kept cards carry a small badge;
   rejected ones step back in grayscale. Pinch, or ⌘+ and ⌘−, to see more or fewer at once.
   Search filters the board by title, creator, source, reasoning, and your own reasons.
-- **Up close.** Click a card (tap on iOS) for its close look: the whole image, credit and
-  source link, why the agent thinks it relates to your seeds (with those seeds), and your
-  verdict with a reason. ⌘[ and ⌘] step through the board; after a verdict the close look moves
-  on to the next thing to judge. On the Mac, hovering a find offers **Keep** and **Reject**
-  right on the card; context menus have them everywhere.
+- **Up close.** Click a card (tap on iOS) for its close look. On the Mac it opens large over
+  the dimmed board, the same as a moodboard item's: the image fills the left, and a column
+  beside it has the credit and source link, why the agent thinks it relates to your seeds (with
+  those seeds), and, pinned at the bottom, your verdict with a reason. In a narrow window, and
+  on iPhone, the image sits above the details instead; on iPad the close look takes the page.
+  ⌘[ and ⌘] step through the board (and through the moodboard); after a verdict the close look
+  moves on to the next thing to judge. On the Mac, hovering a find offers **Keep** and
+  **Reject** right on the card; context menus have them everywhere.
 - **Live.** While the agent works, its finds appear on the board as soon as their credit
   checks out, so you can judge the first ones while it keeps looking. Grain tiles at the end
   hold the slots it's still filling, and each new find develops into place out of noise, like
@@ -97,21 +100,33 @@ How each one is started:
   placeholders `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without
   `{prompt}`, the prompt goes to the agent's standard input. The same values are also in the
   `MOOD_AGENT`, `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK`,
-  `MOOD_STUDY_PROMPT` and `MOOD_LIBRARY_DIRECTORY` environment variables. Its permissions are
+  `MOOD_STUDY_PROMPT`, `MOOD_STUDY_NUDGE` (when nudged) and `MOOD_LIBRARY_DIRECTORY`
+  environment variables. Its permissions are
   the agent's own to configure.
 
-The study board's **Find sources** (from the `explore` stage) and **Reflect patterns** (after
-the first verdict) buttons start the agent with a prompt that points at the `mood-study` skill
-bundled inside mood.app (`Contents/Resources/Skills/mood-study`), so nothing needs to be
-installed besides the agent. While it runs, the board says how much it has found so far,
-offers its **Output** and **Stop**, and shows each find as it's added. When it finishes, the
-board says what was added and skipped, and the library syncs. Stopping or a failed run keeps
-what was already found. Runs continue if you switch to the moodboard or another project.
-**Copy prompt for another agent** still works for agents mood. doesn't start; those use
-`mood-agent` directly.
+The study board's **Find sources** (**Find more** once it has finds, from the `explore`
+stage) and **Reflect** (after the first verdict) start the agent with a prompt that points at
+the `mood-study` skill bundled inside mood.app (`Contents/Resources/Skills/mood-study`), so
+nothing needs to be installed besides the agent. Whichever moves the study on is the
+prominent one: **Reflect** once enough is judged and nothing waits, **Find** otherwise. A
+search for more is told everything already on the board, so it looks in new directions
+instead of near-copies.
 
-On iOS, the board copies a ready prompt for an agent on another machine, and finds from a Mac
-run appear when the library syncs (pull to refresh).
+**Nudge it** next to the buttons takes an optional direction ("warmer light, fewer posters").
+It goes into the run's prompt (and `MOOD_STUDY_NUDGE` for other commands) as something to
+lean toward while staying true to the seeds and verdicts. While a search runs, the same field
+**Steers** it: an agent can't take new instructions mid-run, so mood. stops it, keeps
+everything it found, and starts it again in the new direction.
+
+While it runs, the board says how much it has found so far and the nudge it's following, and
+offers **Output** and **Stop**. When it finishes, one line says what was added and skipped
+(the full summary is in its tooltip), and the library syncs. Stopping or a failed run keeps
+what was already found. Runs continue if you switch to the moodboard or another project.
+**Copy Prompt for Another Agent**, in the agent menu, still works for agents mood. doesn't
+start; those use `mood-agent` directly.
+
+On iOS, the board copies a ready prompt, with your nudge, for an agent on another machine, and
+finds from a Mac run appear when the library syncs (pull to refresh).
 
 ## What is stored
 

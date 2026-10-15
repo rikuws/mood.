@@ -155,6 +155,41 @@ final class StudyAgentTests: XCTestCase, @unchecked Sendable {
         XCTAssertFalse(reflect.contains("./suggestions/"))
     }
 
+    func testNudgeSteersTheRunAsOneCleanLine() throws {
+        XCTAssertNil(StudyAgentNudge.cleaned("  \n "))
+        XCTAssertNil(StudyAgentNudge.cleaned(nil))
+        XCTAssertEqual(
+            StudyAgentNudge.cleaned("  more \"interiors\",\n\n  less   type "),
+            "more 'interiors', less type"
+        )
+        XCTAssertEqual(
+            StudyAgentNudge.cleaned(String(repeating: "a", count: 400))?.count,
+            StudyAgentNudge.maximumLength
+        )
+
+        var nudged = context
+        nudged.nudge = StudyAgentNudge.cleaned("warmer light, more interiors")
+        let invocation = try StudyAgentConfiguration.automatic.invocation(
+            task: .findSources,
+            context: nudged,
+            agent: .claudeCode,
+            executable: "/Users/me/.local/bin/claude"
+        )
+        XCTAssertTrue(invocation.arguments[1].contains("The user nudged this run: \"warmer light, more interiors\"."))
+        XCTAssertEqual(invocation.environment["MOOD_STUDY_NUDGE"], "warmer light, more interiors")
+
+        let plain = StudyAgentPrompt.make(task: .findSources, context: context)
+        XCTAssertFalse(plain.contains("nudged"))
+        XCTAssertTrue(plain.contains("not near-copies of those"))
+        let unnudged = try StudyAgentConfiguration.automatic.invocation(
+            task: .findSources,
+            context: context,
+            agent: .claudeCode,
+            executable: "/Users/me/.local/bin/claude"
+        )
+        XCTAssertNil(unnudged.environment["MOOD_STUDY_NUDGE"])
+    }
+
     func testHandoffWritesTheStudyAndAddsOnlyWhatPassesTheChecks() async throws {
         let library = try makeDirectory("library")
         let scratch = try makeDirectory("scratch")

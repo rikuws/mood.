@@ -241,7 +241,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 ### Navigation
 
 - **iOS / iPadOS:** `NavigationStack`, inline mood. title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
-- **macOS:** the canvas occupies the window. A quiet editorial space heading (All inspiration, General, or the current project) opens a lightweight project switcher; Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Item editing appears as an overlay inspector only after selection. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no permanent sidebar or toolbar.
+- **macOS:** the canvas occupies the window. A quiet editorial space heading (All inspiration, General, or the current project) opens a lightweight project switcher; Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Selecting an item opens its close look over the dimmed canvas, large enough to look properly: the image on the left, details and actions in a column beside it (stacked when the window is narrow). Item editing starts from there. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no permanent sidebar or toolbar.
 - **Iconography:** SF Symbols only, using semantic weights and platform alignment.
 
 ### Stepped Caption Cutout

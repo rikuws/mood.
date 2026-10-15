@@ -189,20 +189,31 @@ struct DiffusionDevelopingView<Content: View>: View {
 /// Moving grain that stands in for an image still being found or loaded.
 struct DiffusionNoiseField: View {
     var intensity = 0.85
+    /// How much the grain's density swells and settles, on a sine wave.
+    var breath = 0.0
+    /// Where in the wave this field starts, so neighbours don't breathe in step.
+    var phase = 0.0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var frame = 0
 
+    /// One frame of grain every 120 ms; a breath takes about 2.4 s.
+    private static let frameInterval = Duration.milliseconds(120)
+    private static let radiansPerFrame = 2 * Double.pi / 20
+
     var body: some View {
         DiffusionGrainImage(frame: frame)
-            .opacity(intensity)
+            .opacity(max(0, min(1, intensity + breath * sin(Double(frame) * Self.radiansPerFrame + phase))))
             .allowsHitTesting(false)
             .accessibilityHidden(true)
             .task {
                 guard !reduceMotion else { return }
                 while !Task.isCancelled {
-                    try? await Task.sleep(for: .milliseconds(120))
-                    frame &+= 1
+                    try? await Task.sleep(for: Self.frameInterval)
+                    // The tile swaps on the frame; the breath glides between frames.
+                    withAnimation(.linear(duration: 0.12)) {
+                        frame &+= 1
+                    }
                 }
             }
     }
