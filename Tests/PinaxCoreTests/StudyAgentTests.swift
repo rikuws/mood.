@@ -260,4 +260,29 @@ final class StudyAgentTests: XCTestCase, @unchecked Sendable {
             "storage_error"
         )
     }
+
+    func testAgentRefusesAnEmptyFallbackWhileTheSharedLibraryExists() throws {
+        let shared = try makeDirectory("shared")
+        let fallback = try makeDirectory("fallback")
+        try Data("{}".utf8).write(to: shared.appendingPathComponent(PinaxStorage.libraryFilename))
+
+        XCTAssertThrowsError(
+            try PinaxAgentLibraryLocation.refuseFallback(from: fallback, whileSharedLibraryIsAt: shared)
+        ) { XCTAssertEqual($0 as? PinaxAgentLibraryLocationError, .sharedLibraryUnreachable(shared.path)) }
+        XCTAssertEqual(
+            PinaxAgentErrorResponse(error: PinaxAgentLibraryLocationError.sharedLibraryUnreachable(shared.path)).error.code,
+            "storage_error"
+        )
+
+        // The shared folder itself, a fallback that has its own library (an
+        // unsigned development build), and a Mac without a shared library
+        // all open normally.
+        XCTAssertNoThrow(try PinaxAgentLibraryLocation.refuseFallback(from: shared, whileSharedLibraryIsAt: shared))
+        try Data("{}".utf8).write(to: fallback.appendingPathComponent(PinaxStorage.libraryFilename))
+        XCTAssertNoThrow(try PinaxAgentLibraryLocation.refuseFallback(from: fallback, whileSharedLibraryIsAt: shared))
+        let empty = try makeDirectory("empty")
+        let noShared = try makeDirectory("no-shared")
+        XCTAssertNoThrow(try PinaxAgentLibraryLocation.refuseFallback(from: empty, whileSharedLibraryIsAt: noShared))
+        XCTAssertNoThrow(try PinaxAgentLibraryLocation.refuseFallback(from: empty, whileSharedLibraryIsAt: nil))
+    }
 }

@@ -21,7 +21,9 @@ to `~/Library/Application Support/Pinax`; `PINAX_STORAGE_DIRECTORY` can override
 in Debug builds. `MOOD_LIBRARY_DIRECTORY`, in any build, names the library folder outright (mood. sets it for
 custom study agents). A path that isn't an existing folder is an error rather than a new empty
 library. The helper's coordinated file access doesn't work inside some agent sandboxes (Codex's
-`workspace-write`), which is why agents mood. starts get the study as a file instead.
+`workspace-write`), which is why agents mood. starts get the study as a file instead. When the
+App Group can't be reached and the fallback folder has no library while the shared folder does,
+the helper returns a `storage_error` instead of answering with an empty library.
 
 All machine responses use API version `1`, write JSON to stdout, and terminate with a
 newline. Successful calls exit `0`. Invalid input, missing records, invalid essence files,
