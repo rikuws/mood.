@@ -292,25 +292,30 @@ public enum StudyAgentPrompt {
         let skill = (context.skillDirectory as NSString).appendingPathComponent("SKILL.md")
         let study = StudyAgentHandoff.studyFilename
         let images = StudyAgentHandoff.imagesDirectoryName
-        let output = StudyAgentHandoff.proposalsFilename(for: task)
+        let folder = StudyAgentHandoff.proposalsDirectoryName(for: task)
 
         let job: String = switch task {
         case .findSources:
             """
             Your task: find 6 to 10 real, credited sources for this study, following the skill's \
-            "Find sources" section. Write them to ./\(output) in the `suggest --file` format \
-            ({"suggestions": [...]}). Don't propose patterns in this run.
+            "Find sources" section. Save each source the moment you have confirmed its credit, as its \
+            own file: ./\(folder)/01.json, ./\(folder)/02.json, and so on, each holding one object \
+            with the fields of a `suggest --file` entry. Don't hold them back for the end: mood. adds \
+            each file as it appears, so the user starts judging while you keep looking. Never rewrite \
+            a file you've saved. Don't propose patterns in this run.
             """
         case .reflect:
             """
             Your task: reflect 2 to 4 patterns in the user's keeps and rejects, following the skill's \
-            "Reflect patterns back" section. Write them to ./\(output) in the `reflect --file` format \
-            ({"reflections": [...]}). Don't suggest new sources in this run.
+            "Reflect patterns back" section. Save each pattern as soon as you've checked it against the \
+            images, as its own file: ./\(folder)/01.json, ./\(folder)/02.json, and so on, each holding \
+            one object with the fields of a `reflect --file` entry. mood. adds each file as it \
+            appears. Never rewrite a file you've saved. Don't suggest new sources in this run.
             """
         }
 
         return """
-        mood. started you from its study panel to help with the visual study "\(context.projectName)", \
+        mood. started you from its study board to help with the visual study "\(context.projectName)", \
         subject: "\(context.subject)".
 
         Read the mood-study skill at \(skill) and its references/agent-api.md, and follow its hard rules: \
@@ -321,13 +326,13 @@ public enum StudyAgentPrompt {
         (lowercase id). Look at every one of those images, and read every note, verdict, suggestion \
         and reason. If an item has no image there, go by its title, text and note; don't search the \
         computer for it. Write files only in the current working directory, \
-        and leave your output file there: mood. cleans up the folder.
+        and leave your files there: mood. cleans up the folder.
 
         \(job)
 
-        When you finish, mood. checks your file and adds what passes as pending proposals. You only \
+        mood. checks each file and adds what passes as pending proposals. You only \
         propose: the user keeps, rejects, confirms or corrects everything in mood. Nobody can answer \
-        questions during this run: if the study isn't ready, say why and stop without writing the file. \
+        questions during this run: if the study isn't ready, say why and stop without writing any file. \
         Finish with a short plain summary of what you proposed.
         """
     }

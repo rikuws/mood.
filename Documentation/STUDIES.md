@@ -16,10 +16,34 @@ agent API and `mood-distill` keep working on it unchanged, and any existing proj
 a study, with its items as the seeds.
 
 - **Mac:** **More → New Visual Study…** in the sidebar, or **Start a Study…** in a project's
-  context menu. When a study is open, the **Study** button above the moodboard opens the study
-  panel.
+  context menu (**Open Study** once it is one). When a study is open, **Moodboard | Study
+  board** at the top of the canvas switches between its moodboard and its study board.
 - **iOS:** **+ → New visual study**, or **Start a study on …** for the selected project. The
-  **Study** button in the toolbar opens the panel.
+  same **Moodboard | Study board** switch sits under the project bar.
+
+## The study board
+
+The study board shows everything the study turned up at once, on the same masonry canvas as
+the moodboard: every source an agent found, as the card it would become if kept, and every
+pattern it reflected back, as a serif quotation. It reads like a taste board the agent fills
+for you, from real, credited work.
+
+- **At a glance.** The subject and brief, what to do next, the agent's controls, and filters
+  with counts: **All**, **To judge**, **Kept**, **Rejected**. Kept cards carry a small badge;
+  rejected ones step back in grayscale. Pinch, or ⌘+ and ⌘−, to see more or fewer at once.
+  Search filters the board by title, creator, source, reasoning, and your own reasons.
+- **Up close.** Click a card (tap on iOS) for its close look: the whole image, credit and
+  source link, why the agent thinks it relates to your seeds (with those seeds), and your
+  verdict with a reason. ⌘[ and ⌘] step through the board; after a verdict the close look moves
+  on to the next thing to judge. On the Mac, hovering a find offers **Keep** and **Reject**
+  right on the card; context menus have them everywhere.
+- **Live.** While the agent works, its finds appear on the board as soon as their credit
+  checks out, so you can judge the first ones while it keeps looking. Grain tiles at the end
+  hold the slots it's still filling, and each new find develops into place out of noise, like
+  a diffusion model resolving an image (a plain fade with Reduce Motion).
+
+The board is ordered by arrival, so new finds land at the end and nothing you're looking at
+moves. Judging changes how a card looks, not where it sits.
 
 ## Flow
 
@@ -30,30 +54,36 @@ a study, with its items as the seeds.
 | `reflect` | 6+ verdicts, or patterns proposed | Confirm, correct, or dismiss the patterns reflected back. |
 | `distill` | a pattern confirmed or corrected | Run `mood-distill` on the study. |
 
-Stages only guide the panel's prompt. Nothing is locked behind one.
+Stages only guide the board's prompt. Nothing is locked behind one.
 
 Finding sources and reflecting patterns run in a coding agent the person connects. The agent
 follows the [`mood-study`](../skills/mood-study) skill: it reads the study with
 `mood-agent study`, searches for real work, and adds it with `mood-agent suggest` (or proposes
-patterns with `mood-agent reflect`). The app shows each suggestion with its thumbnail, credit,
-source, and the agent's reason, and the person keeps or rejects it.
+patterns with `mood-agent reflect`). The study board shows each suggestion with its image,
+credit, source, and the agent's reason, and the person keeps or rejects it.
 
 ### Connecting an agent (Mac)
 
 There is nothing to set up if Claude Code or Codex is installed and signed in: mood. finds it
 and uses it. Commands are looked up on the login shell's `PATH` plus common install folders
-(`~/.local/bin`, `/opt/homebrew/bin`, …). Without an agent, the study panel offers
+(`~/.local/bin`, `/opt/homebrew/bin`, …). Without an agent, the study board offers
 **Get Claude Code** and **Check Again**. When both are installed, Claude Code is used; the
-panel's **Using …** menu switches between installed agents.
+board's **Using …** menu switches between installed agents.
 
 No agent gets access to the library. Before a run, mood. writes the study into a fresh scratch
 folder as `study.json` (the same JSON `mood-agent study` prints), and copies each item's image
 into `images/<item id>.<ext>`: the stored file, or a download of its image URL, since sandboxed
-agents often have no network for commands. The agent follows the bundled
-`mood-study` skill and writes its batch to `suggestions.json` or `reflections.json` in the
-`suggest --file`/`reflect --file` formats. When it exits, mood. adds that file through the same
-checks as `mood-agent` (credit, rationale, generator hosts, past rejects) and shows what it
-added and skipped. So sandboxed agents work, and only mood. writes the library.
+agents often have no network for commands. The agent follows the bundled `mood-study` skill
+and saves each proposal the moment it's ready as its own file, `suggestions/01.json`,
+`suggestions/02.json`, … (or `reflections/…`), each holding one entry in the
+`suggest --file`/`reflect --file` format. mood. checks the folder every second and a half and
+adds each new file through the same checks as `mood-agent` (credit, rationale, generator
+hosts, past rejects), so finds reach the board while the agent keeps looking. A file that
+isn't complete JSON yet is read again on the next pass; one that still isn't when the agent
+exits, or that doesn't hold a proposal, is reported and the rest still count. A single
+`suggestions.json` or `reflections.json` batch also works, from agents that write one at the
+end. A run adds at most 50 proposals. So sandboxed agents work, and only mood. writes the
+library.
 
 How each one is started:
 
@@ -70,15 +100,18 @@ How each one is started:
   `MOOD_STUDY_PROMPT` and `MOOD_LIBRARY_DIRECTORY` environment variables. Its permissions are
   the agent's own to configure.
 
-The study panel's **Find sources** (from the `explore` stage) and **Reflect patterns** (after the
-first verdict) buttons start the agent with a prompt that points at the `mood-study` skill
+The study board's **Find sources** (from the `explore` stage) and **Reflect patterns** (after
+the first verdict) buttons start the agent with a prompt that points at the `mood-study` skill
 bundled inside mood.app (`Contents/Resources/Skills/mood-study`), so nothing needs to be
-installed besides the agent. While it runs, the panel shows its output and offers **Stop**. When
-it finishes, the panel says what was added and skipped, and the library syncs. Runs continue
-if the panel is closed. **Copy prompt for another agent** still works for agents mood. doesn't
-start; those use `mood-agent` directly.
+installed besides the agent. While it runs, the board says how much it has found so far,
+offers its **Output** and **Stop**, and shows each find as it's added. When it finishes, the
+board says what was added and skipped, and the library syncs. Stopping or a failed run keeps
+what was already found. Runs continue if you switch to the moodboard or another project.
+**Copy prompt for another agent** still works for agents mood. doesn't start; those use
+`mood-agent` directly.
 
-On iOS, the panel copies a ready prompt for an agent on another machine.
+On iOS, the board copies a ready prompt for an agent on another machine, and finds from a Mac
+run appear when the library syncs (pull to refresh).
 
 ## What is stored
 

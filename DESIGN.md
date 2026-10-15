@@ -254,7 +254,7 @@ Text-only X captures become serif quotation cards chosen deterministically from 
 
 ### Motion and Density
 
-Pinch zoom interpolates the whole canvas continuously between adjacent column counts, then settles with a short interactive spring. Most state changes use 160–220ms ease-out timing; loading images crossfade in 200ms. Pressed cards scale only to 0.985, while macOS hover lifts by 2pt and scales imagery to 1.018. Reduce Motion removes the spring, lift, and scale while preserving state legibility through opacity or immediate layout changes.
+Pinch zoom interpolates the whole canvas continuously between adjacent column counts, then settles with a short interactive spring. On the study board, a find that arrives while the board is open develops into place: its image resolves out of monochrome grain in sixteen visible steps over about 1.7s, coarse shape and color first and detail last, like a diffusion sampler; grain tiles at the end of the board hold the slots a running agent is still filling. The grain stays gray so color still belongs to the imagery, and Reduce Motion replaces it with the usual fade. Most state changes use 160–220ms ease-out timing; loading images crossfade in 200ms. Pressed cards scale only to 0.985, while macOS hover lifts by 2pt and scales imagery to 1.018. Reduce Motion removes the spring, lift, and scale while preserving state legibility through opacity or immediate layout changes.
 
 **The Natural Shelf Rule.** Every column begins at the same top edge. Never add decorative per-column offsets; varying card heights already create the collected rhythm.
 

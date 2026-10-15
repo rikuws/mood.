@@ -1,3 +1,4 @@
+import CoreGraphics
 import PinaxCore
 import SwiftUI
 
@@ -11,8 +12,11 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
     @ViewBuilder var failure: () -> Failure
 
     @Environment(\.displayScale) private var displayScale
+    @Environment(\.previewImageReveal) private var reveal
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var image: CGImage?
     @State private var didFail = false
+    @State private var developsImage = false
     @State private var loadState = PreviewImageLoadState()
 
     var body: some View {
@@ -25,15 +29,22 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
 
             ZStack {
                 if let image {
-                    Image(decorative: image, scale: displayScale)
+                    let picture = Image(decorative: image, scale: displayScale)
                         .resizable()
                         .interpolation(.high)
                         .antialiased(true)
                         .aspectRatio(contentMode: contentMode)
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                        .transition(.opacity)
+                    if developsImage {
+                        DiffusionDevelopingView { picture }
+                    } else {
+                        picture.transition(.opacity)
+                    }
                 } else if didFail {
                     failure()
+                } else if developsOnArrival {
+                    placeholder()
+                        .overlay { DiffusionNoiseField() }
                 } else {
                     placeholder()
                 }
@@ -53,11 +64,16 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
         return PreviewImageDecoder.thumbnailPixelSize(forLongestSide: longestSide)
     }
 
+    private var developsOnArrival: Bool {
+        reveal == .develop && !reduceMotion
+    }
+
     private func load(_ request: PreviewImageRequest) async {
         let source = request.sourceIdentity
         if loadState.activate(source) {
             image = nil
             didFail = false
+            developsImage = false
         }
 
         guard request.maxPixelSize > 0 else { return }
@@ -70,13 +86,179 @@ struct DownsampledPreviewImage<Placeholder: View, Failure: View>: View {
         guard !Task.isCancelled, loadState.isCurrent(source) else { return }
 
         if let loaded {
-            withAnimation(.easeOut(duration: 0.2)) {
+            // Only a source's first image develops; a sharper re-decode for
+            // a new size replaces it in place.
+            if image == nil, developsOnArrival {
+                developsImage = true
                 image = loaded
                 didFail = false
+            } else {
+                withAnimation(.easeOut(duration: 0.2)) {
+                    image = loaded
+                    didFail = false
+                }
             }
         } else if image == nil {
             didFail = true
         }
+    }
+}
+
+/// How a preview appears once its image has loaded.
+enum PreviewImageReveal: Hashable, Sendable {
+    /// A short crossfade.
+    case fade
+    /// Develops out of grain, the way a diffusion model resolves an image:
+    /// while loading the preview is moving noise, then the image takes shape,
+    /// color, and finally detail out of it in visible steps. For things that
+    /// were just found, so they pop into the study board as they arrive.
+    case develop
+}
+
+private struct PreviewImageRevealKey: EnvironmentKey {
+    static let defaultValue = PreviewImageReveal.fade
+}
+
+extension EnvironmentValues {
+    var previewImageReveal: PreviewImageReveal {
+        get { self[PreviewImageRevealKey.self] }
+        set { self[PreviewImageRevealKey.self] = newValue }
+    }
+}
+
+/// The schedule a developing preview follows: a fixed number of steps, eased
+/// so most of the change lands mid-way, like a diffusion sampler's.
+enum DiffusionDevelop {
+    static let stepCount = 16
+    static let stepDuration = Duration.milliseconds(105)
+
+    static func progress(step: Int) -> Double {
+        let t = min(1, max(0, Double(step) / Double(stepCount)))
+        return t * t * (3 - 2 * t)
+    }
+
+    /// Coarse shapes first, fine detail last.
+    static func blurRadius(at progress: Double) -> CGFloat {
+        CGFloat(18 * pow(1 - progress, 1.6))
+    }
+
+    static func grainOpacity(at progress: Double) -> Double {
+        0.9 * (1 - progress)
+    }
+
+    static func imageOpacity(at progress: Double) -> Double {
+        min(1, 0.3 + progress * 1.4)
+    }
+}
+
+/// Resolves its content out of grain in discrete steps. Each step re-rolls
+/// the grain and sharpens the image a little, so it reads as an image being
+/// developed rather than a fade.
+struct DiffusionDevelopingView<Content: View>: View {
+    @ViewBuilder var content: () -> Content
+
+    @State private var step = 0
+
+    var body: some View {
+        let progress = DiffusionDevelop.progress(step: step)
+        content()
+            .blur(radius: DiffusionDevelop.blurRadius(at: progress), opaque: true)
+            .saturation(progress)
+            .opacity(DiffusionDevelop.imageOpacity(at: progress))
+            .overlay {
+                if step < DiffusionDevelop.stepCount {
+                    DiffusionGrainImage(frame: step)
+                        .opacity(DiffusionDevelop.grainOpacity(at: progress))
+                        .allowsHitTesting(false)
+                }
+            }
+            .clipped()
+            .task {
+                // Resumes where it left off if the view was away mid-way.
+                while step < DiffusionDevelop.stepCount {
+                    try? await Task.sleep(for: DiffusionDevelop.stepDuration)
+                    guard !Task.isCancelled else { return }
+                    withAnimation(.linear(duration: 0.09)) {
+                        step += 1
+                    }
+                }
+            }
+    }
+}
+
+/// Moving grain that stands in for an image still being found or loaded.
+struct DiffusionNoiseField: View {
+    var intensity = 0.85
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var frame = 0
+
+    var body: some View {
+        DiffusionGrainImage(frame: frame)
+            .opacity(intensity)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .task {
+                guard !reduceMotion else { return }
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(120))
+                    frame &+= 1
+                }
+            }
+    }
+}
+
+struct DiffusionGrainImage: View {
+    let frame: Int
+
+    var body: some View {
+        if let tile = DiffusionGrain.tile(for: frame) {
+            Image(decorative: tile, scale: 1)
+                .resizable(resizingMode: .tile)
+                .interpolation(.none)
+        } else {
+            Color.gray
+        }
+    }
+}
+
+/// A few tiles of monochrome grain, generated once. Color belongs to the
+/// collected imagery, so the noise stays gray.
+@MainActor
+enum DiffusionGrain {
+    private static let tiles: [CGImage] = (1...4).compactMap { makeTile(seed: UInt64($0)) }
+
+    static func tile(for frame: Int) -> CGImage? {
+        guard !tiles.isEmpty else { return nil }
+        let count = tiles.count
+        return tiles[((frame % count) + count) % count]
+    }
+
+    private nonisolated static func makeTile(seed: UInt64) -> CGImage? {
+        let side = 96
+        var state = (seed &* 0x9E37_79B9_7F4A_7C15) | 1
+        var pixels = [UInt8](repeating: 0, count: side * side)
+        for index in pixels.indices {
+            // xorshift64*
+            state ^= state >> 12
+            state ^= state << 25
+            state ^= state >> 27
+            pixels[index] = UInt8(truncatingIfNeeded: (state &* 0x2545_F491_4F6C_DD1D) >> 56)
+        }
+        guard let provider = CGDataProvider(data: Data(pixels) as CFData) else { return nil }
+        return CGImage(
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bitsPerPixel: 8,
+            bytesPerRow: side,
+            space: CGColorSpaceCreateDeviceGray(),
+            bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.none.rawValue),
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: false,
+            intent: .defaultIntent
+        )
     }
 }
 

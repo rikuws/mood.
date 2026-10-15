@@ -9,7 +9,7 @@ Capture surfaces are included for:
 - X's own Bookmark action (Remove bookmark is ignored);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
-See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. [Guided visual studies](Documentation/STUDIES.md) let you seed a subject with work you love, judge real sources an agent finds with the [`mood-study`](skills/mood-study) skill, and confirm the patterns it reflects back. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
+See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. [Guided visual studies](Documentation/STUDIES.md) let you seed a subject with work you love, judge the real sources an agent finds with the [`mood-study`](skills/mood-study) skill on a study board that fills in as it finds them, and confirm the patterns it reflects back. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
 
 ## Requirements
 
@@ -130,8 +130,9 @@ To find inspirations for a [guided visual study](Documentation/STUDIES.md), inst
 [`mood-study`](skills/mood-study) skill. It reads the study, searches for real, credited work
 related to your seeds and notes, and adds it as pending suggestions for you to keep or reject
 in mood. It can't keep, reject, or confirm anything itself. On the Mac there's nothing to
-install or connect: if Claude Code or Codex is on your Mac, the study panel's **Find sources**
-and **Reflect patterns** start it with the skill bundled in mood.app. Install the skill yourself
+install or connect: if Claude Code or Codex is on your Mac, the study board's **Find sources**
+and **Reflect patterns** start it with the skill bundled in mood.app, and each find appears on
+the board as soon as it's verified. Install the skill yourself
 only to run a study from an agent session of your own:
 
 ```sh

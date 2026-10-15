@@ -129,16 +129,16 @@ struct ResolvedStudyAgent: Equatable, Sendable {
 }
 
 /// Runs the connected agent for a study and keeps its progress observable.
-/// The agent writes back only through `mood-agent suggest`/`reflect`, which
-/// add pending proposals, so the library reloads while it runs and the user
-/// judges every proposal in the study panel.
+/// The agent saves each proposal as its own file in a scratch folder; mood.
+/// adds every file as it appears, through the same checks as `mood-agent`,
+/// so findings reach the study board while the agent keeps looking and the
+/// user judges every one of them.
 @MainActor
 @Observable
 final class StudyAgentRunner {
     enum Phase: Equatable {
         case running
-        /// The agent finished; the summary says what mood. added.
-        case finished(String)
+        case finished
         case failed(String)
         case cancelled
     }
@@ -149,6 +149,8 @@ final class StudyAgentRunner {
         let startedAt: Date
         var phase: Phase
         var output: String
+        /// Everything mood. has added from this run so far.
+        var result = StudyAgentHandoffResult(foundProposals: false)
     }
 
     static let shared = StudyAgentRunner()
@@ -156,8 +158,11 @@ final class StudyAgentRunner {
     private(set) var runs: [Project.ID: Run] = [:]
 
     @ObservationIgnored private var processes: [Project.ID: Process] = [:]
+    @ObservationIgnored private var collectors: [Project.ID: Task<Void, Never>] = [:]
     @ObservationIgnored private let logger = Logger(subsystem: "com.rikuwikman.Pinax", category: "study-agent")
     private static let outputLimit = 64_000
+    /// How often the scratch folder is checked for new proposals.
+    private static let collectInterval = Duration.milliseconds(1_500)
 
     func run(for projectID: Project.ID) -> Run? {
         runs[projectID]
@@ -168,14 +173,16 @@ final class StudyAgentRunner {
     }
 
     /// Writes the study into a scratch folder and launches the agent there.
-    /// When it exits, mood. adds the proposals it wrote (see
-    /// `StudyAgentHandoff`) and calls `onChange` so the library reloads.
+    /// While it runs, each proposal it saves is added and `onProgress` is
+    /// called so the board can show it. When it exits, mood. adds whatever
+    /// remains and calls `onChange` so the library reloads and syncs.
     func start(
         task: StudyAgentTask,
         project: Project,
         agent: ResolvedStudyAgent,
         configuration: StudyAgentConfiguration,
         repository: LibraryRepository,
+        onProgress: @escaping @Sendable @MainActor () async -> Void = {},
         onChange: @escaping @Sendable @MainActor () async -> Void
     ) async throws {
         guard !isRunning(project.id) else { return }
@@ -189,6 +196,12 @@ final class StudyAgentRunner {
         let workingDirectory = URL(fileURLWithPath: invocation.workingDirectory, isDirectory: true)
         let api = PinaxAgentAPI(repository: repository)
         let projectID = project.id
+        let collector = StudyAgentProposalCollector(
+            api: api,
+            projectID: projectID,
+            task: task,
+            directory: workingDirectory
+        )
         runs[projectID] = Run(
             task: task,
             agentName: agent.displayName,
@@ -242,11 +255,10 @@ final class StudyAgentRunner {
             Task { @MainActor in
                 await self?.finish(
                     projectID,
-                    task: task,
                     status: status,
                     reason: reason,
                     workingDirectory: workingDirectory,
-                    api: api,
+                    collector: collector,
                     onChange: onChange
                 )
             }
@@ -260,6 +272,9 @@ final class StudyAgentRunner {
             throw error
         }
         processes[projectID] = process
+        collectors[projectID] = Task { [weak self] in
+            await self?.collectWhileRunning(projectID, collector: collector, onProgress: onProgress)
+        }
         logger.notice("Started study agent \(executable.path, privacy: .public) for \(task.rawValue, privacy: .public)")
 
         if let input, let text = invocation.standardInput {
@@ -333,32 +348,58 @@ final class StudyAgentRunner {
         runs[projectID] = run
     }
 
+    /// Adds proposals as the agent saves them, until `finish` cancels it.
+    /// A pass that fails, such as while the library is briefly busy, is
+    /// retried on the next one; the final pass reports a lasting failure.
+    private func collectWhileRunning(
+        _ projectID: Project.ID,
+        collector: StudyAgentProposalCollector,
+        onProgress: @MainActor () async -> Void
+    ) async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: Self.collectInterval)
+            guard !Task.isCancelled,
+                  let pass = try? await collector.collect() else { continue }
+            if pass.foundProposals {
+                runs[projectID]?.result = await collector.total
+            }
+            if pass.addedCount > 0 {
+                await onProgress()
+            }
+        }
+    }
+
     private func finish(
         _ projectID: Project.ID,
-        task: StudyAgentTask,
         status: Int32,
         reason: Process.TerminationReason,
         workingDirectory: URL,
-        api: PinaxAgentAPI,
+        collector: StudyAgentProposalCollector,
         onChange: @MainActor () async -> Void
     ) async {
         processes[projectID] = nil
+        let collecting = collectors.removeValue(forKey: projectID)
+        collecting?.cancel()
+        await collecting?.value
         defer { try? FileManager.default.removeItem(at: workingDirectory) }
+
+        // Whatever the agent saved before it stopped is added, even when it
+        // was stopped or failed: each file is a complete, checked proposal.
+        var collectError: (any Error)?
+        do {
+            try await collector.collect(final: true)
+        } catch {
+            collectError = error
+        }
+        runs[projectID]?.result = await collector.total
+
         if runs[projectID]?.phase == .running {
-            if reason == .exit, status == 0 {
-                do {
-                    let result = try await StudyAgentHandoff.collect(
-                        api: api,
-                        projectID: projectID,
-                        task: task,
-                        from: workingDirectory
-                    )
-                    runs[projectID]?.phase = .finished(result.summary)
-                } catch {
-                    runs[projectID]?.phase = .failed(
-                        "mood. couldn't add what the agent proposed: \(error.localizedDescription)"
-                    )
-                }
+            if let collectError {
+                runs[projectID]?.phase = .failed(
+                    "mood. couldn't add what the agent proposed: \(collectError.localizedDescription)"
+                )
+            } else if reason == .exit, status == 0 {
+                runs[projectID]?.phase = .finished
             } else {
                 runs[projectID]?.phase = .failed(
                     reason == .uncaughtSignal

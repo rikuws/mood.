@@ -80,19 +80,23 @@ struct StudyAgentSettingsView: View {
     private var footer: String {
         switch configuration.preset {
         case .automatic, .claudeCode, .codex:
-            "mood. starts the agent with its bundled mood-study skill and a copy of your study. When it finishes, mood. checks what it proposed and adds what passes for you to judge. The agent never touches your library, and you keep or reject everything."
+            "mood. starts the agent with its bundled mood-study skill and a copy of your study. Each time it saves a find, mood. checks it and adds it to the study board if it passes, so you can judge while it keeps looking. The agent never touches your library, and you keep or reject everything."
         case .custom:
-            "mood. starts this command in a scratch folder holding study.json. The prompt points it at the bundled mood-study skill and asks it to write suggestions.json or reflections.json there. When it exits, mood. checks that file and adds what passes for you to judge. The agent needs no access to your library."
+            "mood. starts this command in a scratch folder holding study.json. The prompt points it at the bundled mood-study skill and asks it to save each proposal as its own file in suggestions/ or reflections/ there; one suggestions.json or reflections.json at the end also works. mood. checks each file as it appears and adds what passes for you to judge. The agent needs no access to your library."
         }
     }
 }
 
-/// The study panel's agent controls on the Mac. With an agent installed this
-/// is one button; without one, it says what to install.
+/// The study board's agent controls on the Mac. With an agent installed this
+/// is one button; while it runs, a live count of what it has found so far.
+/// Without an agent, it says what to install.
 struct StudyAgentSection: View {
     let store: LibraryStore
     let project: Project
     let study: ProjectStudy
+    /// Called each time the running agent's finds are added.
+    var onProgress: @Sendable @MainActor () async -> Void = {}
+    /// Called once the agent has exited and everything it proposed is in.
     var onChange: @Sendable @MainActor () async -> Void = {}
 
     @Environment(\.openSettings) private var openSettings
@@ -103,32 +107,31 @@ struct StudyAgentSection: View {
     @State private var isDetecting = true
     @State private var errorMessage: String?
     @State private var showsOutput = false
+    @State private var didCopyPrompt = false
 
     private static let installURL = URL(string: "https://code.claude.com/docs/en/setup")!
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("An agent on this Mac looks for real, credited work related to your seeds and notes, and later reflects the patterns in your verdicts. It adds proposals here for you to judge. It never generates images, and it won't suggest anything you've rejected.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            if let run = runner.run(for: project.id) {
-                runStatus(run)
-            }
-
-            if isDetecting {
+        VStack(alignment: .leading, spacing: 8) {
+            if let run = runner.run(for: project.id), run.phase == .running {
+                runningStatus(run)
+            } else if isDetecting {
                 ProgressView().controlSize(.small)
-            } else if agent == nil, !runner.isRunning(project.id) {
+            } else if agent == nil {
                 missingAgent
             } else {
                 controls
+            }
+
+            if let run = runner.run(for: project.id), run.phase != .running {
+                lastRun(run)
             }
 
             if let errorMessage {
                 Text(errorMessage).font(.caption).foregroundStyle(.red)
             }
         }
+        .frame(maxWidth: 680, alignment: .leading)
         .task { await detect() }
         // Pick up a choice made in Settings or an agent installed meanwhile.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
@@ -145,27 +148,134 @@ struct StudyAgentSection: View {
     private var controls: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
-                if runner.isRunning(project.id) {
-                    Button("Stop") { runner.cancel(project.id) }
-                } else {
-                    Button("Find sources") { start(.findSources) }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(stage == .seed)
-                    Button("Reflect patterns") { start(.reflect) }
-                        .disabled(study.decidedSuggestions.isEmpty)
-                        .help("Available once you've kept or rejected a source.")
+                Button {
+                    start(.findSources)
+                } label: {
+                    Label("Find sources", systemImage: "binoculars")
                 }
-                Spacer()
+                .buttonStyle(.borderedProminent)
+                .disabled(stage == .seed)
+
+                Button {
+                    start(.reflect)
+                } label: {
+                    Label("Reflect patterns", systemImage: "text.bubble")
+                }
+                .disabled(study.decidedSuggestions.isEmpty)
+                .help("Available once you've kept or rejected a find.")
+
                 if let agent {
                     agentMenu(current: agent)
                 }
+
+                Button(didCopyPrompt ? "Copied" : "Copy prompt for another agent") {
+                    StudyAgentPromptText.copy(for: project)
+                    didCopyPrompt = true
+                }
+                .buttonStyle(.borderless)
+                .font(.caption)
+                .foregroundStyle(.secondary)
             }
 
-            if stage == .seed, !runner.isRunning(project.id) {
-                Text("Add at least \(ProjectStudy.minimumSeedCount) seeds before asking for sources, so the agent has your taste to go on.")
+            if stage == .seed {
+                Text("Add at least \(ProjectStudy.minimumSeedCount) seeds to the moodboard before asking for sources, so the agent has your taste to go on.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+        }
+    }
+
+    private func runningStatus(_ run: StudyAgentRunner.Run) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            ProgressView()
+                .controlSize(.small)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(run.agentName) is \(run.task == .findSources ? "looking for sources" : "reflecting patterns") · \(progressCount(run))")
+                    .font(.callout.weight(.medium))
+                    .contentTransition(.numericText())
+                Text(run.task == .findSources
+                     ? "Each find appears on the board as soon as its credit checks out. Judge them while it keeps looking."
+                     : "Each pattern appears on the board as soon as it's checked against your images.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 8)
+            outputButton(run)
+            Button("Stop") { runner.cancel(project.id) }
+        }
+        .accessibilityElement(children: .contain)
+    }
+
+    private func progressCount(_ run: StudyAgentRunner.Run) -> String {
+        switch run.task {
+        case .findSources:
+            let count = run.result.addedSuggestions
+            return count == 0 ? "nothing yet" : "\(count) found so far"
+        case .reflect:
+            let count = run.result.addedReflections
+            return count == 0 ? "nothing yet" : "\(count) pattern\(count == 1 ? "" : "s") so far"
+        }
+    }
+
+    @ViewBuilder
+    private func lastRun(_ run: StudyAgentRunner.Run) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            switch run.phase {
+            case .running:
+                EmptyView()
+            case .finished:
+                Image(systemName: "checkmark.circle").foregroundStyle(.secondary)
+                Text("\(run.agentName) finished. \(run.result.summary)")
+            case .failed(let message):
+                Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
+                Text(failureText(message, run: run))
+            case .cancelled:
+                Image(systemName: "stop.circle").foregroundStyle(.secondary)
+                Text(run.result.addedCount > 0
+                     ? "Stopped. What it found so far stays on the board for you to judge."
+                     : "Stopped before it found anything.")
+            }
+            Spacer(minLength: 8)
+            outputButton(run)
+            Button {
+                runner.clear(project.id)
+            } label: {
+                Label("Dismiss", systemImage: "xmark")
+                    .labelStyle(.iconOnly)
+            }
+            .buttonStyle(.borderless)
+            .help("Dismiss")
+        }
+        .font(.callout)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func failureText(_ message: String, run: StudyAgentRunner.Run) -> String {
+        var text = "\(message) If \(run.agentName) isn't signed in yet, open it in Terminal once to sign in."
+        if run.result.addedCount > 0 {
+            text += " What it found before it stopped is on the board."
+        }
+        return text
+    }
+
+    @ViewBuilder
+    private func outputButton(_ run: StudyAgentRunner.Run) -> some View {
+        if !run.output.isEmpty {
+            Button("Output") { showsOutput.toggle() }
+                .buttonStyle(.borderless)
+                .font(.caption)
+                .popover(isPresented: $showsOutput, arrowEdge: .bottom) {
+                    ScrollView {
+                        Text(run.output)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(12)
+                    }
+                    .frame(width: 480, height: 300)
+                }
         }
     }
 
@@ -212,59 +322,18 @@ struct StudyAgentSection: View {
                 Button("Check Again") { Task { await detect() } }
                 Button("Other Agent…") { openSettings() }
                     .buttonStyle(.borderless)
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-    }
-
-    private var items: [Inspiration] {
-        store.studyItems(for: project.id)
-    }
-
-    private var stage: StudyStage {
-        study.stage(itemCount: items.count)
-    }
-
-    @ViewBuilder
-    private func runStatus(_ run: StudyAgentRunner.Run) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                switch run.phase {
-                case .running:
-                    ProgressView().controlSize(.small)
-                    Text("\(run.agentName) is working: \(run.task.displayName.lowercased()). This can take several minutes. What it proposes appears below when it's done.")
-                case .finished(let summary):
-                    Image(systemName: "checkmark.circle").foregroundStyle(.secondary)
-                    Text("\(run.agentName) finished. \(summary)")
-                case .failed(let message):
-                    Image(systemName: "exclamationmark.triangle").foregroundStyle(.orange)
-                    Text("\(message) If \(run.agentName) isn't signed in yet, open it in Terminal once to sign in.")
-                case .cancelled:
-                    Image(systemName: "stop.circle").foregroundStyle(.secondary)
-                    Text("Stopped. Nothing was added.")
+                Button(didCopyPrompt ? "Copied" : "Copy prompt for another agent") {
+                    StudyAgentPromptText.copy(for: project)
+                    didCopyPrompt = true
                 }
-            }
-            .font(.callout)
-            .fixedSize(horizontal: false, vertical: true)
-
-            if !run.output.isEmpty {
-                DisclosureGroup("Agent output", isExpanded: $showsOutput) {
-                    ScrollView {
-                        Text(run.output)
-                            .font(.system(.caption, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .frame(maxHeight: 180)
-                }
+                .buttonStyle(.borderless)
                 .font(.caption)
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.secondary.opacity(0.07), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    private var stage: StudyStage {
+        study.stage(itemCount: store.studyItems(for: project.id).count)
     }
 
     private func choose(_ newConfiguration: StudyAgentConfiguration) {
@@ -294,6 +363,7 @@ struct StudyAgentSection: View {
                     agent: agent,
                     configuration: configuration,
                     repository: store.repository,
+                    onProgress: onProgress,
                     onChange: onChange
                 )
             } catch {

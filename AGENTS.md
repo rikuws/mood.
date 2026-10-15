@@ -4,10 +4,10 @@ mood. is a local-first native macOS and iOS visual moodboard for collecting imag
 
 ## Architecture
 
-- `Mac/`: macOS lifecycle, SwiftUI library UI, resources, Chromium native-messaging installer (`Mac/BrowserIntegration`), and the study agent runner that finds an installed coding agent (Claude Code, then Codex, or a command set in Settings › Study Agent) and starts it with the bundled `mood-study` skill, handing the study over as `study.json` and adding the `suggestions.json`/`reflections.json` it writes; built by `PinaxMac` as `mood.app`.
+- `Mac/`: macOS lifecycle, SwiftUI library UI, resources, Chromium native-messaging installer (`Mac/BrowserIntegration`), and the study agent runner that finds an installed coding agent (Claude Code, then Codex, or a command set in Settings › Study Agent) and starts it with the bundled `mood-study` skill, handing the study over as `study.json` and adding each proposal it saves in `suggestions/`/`reflections/` as it appears (or a `suggestions.json`/`reflections.json` batch); built by `PinaxMac` as `mood.app`.
 - `iOS/`: iOS/iPadOS lifecycle, views, support, and resources; built by `PinaxiOS`, which embeds the share extension.
 - `Shared/`: `PinaxCore` package target—models, URL canonicalization, `LibraryRepository` actor, observable store, previews, product identity, and agent API contract.
-- `AppUI/`: platform-shared SwiftUI image-loading UI included directly in both application targets.
+- `AppUI/`: platform-shared SwiftUI included directly in both application targets: image loading (with the develop-from-noise reveal for new study finds) and the study board's header, cards, and close look.
 - `Sync/`: `PinaxCloudSync` target—CloudKit backend, merge/tombstone logic, coordinator, and colocated tests.
 - `ShareExtension/`: UIKit/SwiftUI share composer that writes to the App Group before a bounded best-effort sync.
 - `BrowserExtension/`: source-only Manifest V3 Chromium extension, Node tests/build script, and ignored generated `dist/`.

@@ -121,10 +121,19 @@ public extension PinaxAgentAPI {
             filePath: filePath,
             currentDirectory: currentDirectory
         )
-        guard !input.suggestions.isEmpty else {
+        return try await suggest(project: reference, drafts: input.suggestions)
+    }
+
+    /// Adds already decoded suggestions, such as the ones a study agent
+    /// started by mood. writes one file at a time.
+    func suggest(
+        project reference: String,
+        drafts: [StudySuggestionDraft]
+    ) async throws -> PinaxAgentSuggestResponse {
+        guard !drafts.isEmpty else {
             throw PinaxAgentAPIError.invalidStudyInput("`suggestions` is empty.")
         }
-        guard input.suggestions.count <= Self.maximumBatchCount else {
+        guard drafts.count <= Self.maximumBatchCount else {
             throw PinaxAgentAPIError.invalidStudyInput(
                 "Propose at most \(Self.maximumBatchCount) suggestions at a time."
             )
@@ -134,7 +143,7 @@ public extension PinaxAgentAPI {
         let result = try await performStudyWrite {
             try await repository.addStudySuggestions(
                 projectID: project.id,
-                drafts: input.suggestions
+                drafts: drafts
             )
         }
         return PinaxAgentSuggestResponse(
@@ -155,10 +164,19 @@ public extension PinaxAgentAPI {
             filePath: filePath,
             currentDirectory: currentDirectory
         )
-        guard !input.reflections.isEmpty else {
+        return try await reflect(project: reference, drafts: input.reflections)
+    }
+
+    /// Adds already decoded patterns, such as the ones a study agent started
+    /// by mood. writes one file at a time.
+    func reflect(
+        project reference: String,
+        drafts: [StudyReflectionDraft]
+    ) async throws -> PinaxAgentReflectResponse {
+        guard !drafts.isEmpty else {
             throw PinaxAgentAPIError.invalidStudyInput("`reflections` is empty.")
         }
-        guard input.reflections.count <= Self.maximumBatchCount else {
+        guard drafts.count <= Self.maximumBatchCount else {
             throw PinaxAgentAPIError.invalidStudyInput(
                 "Propose at most \(Self.maximumBatchCount) patterns at a time."
             )
@@ -168,7 +186,7 @@ public extension PinaxAgentAPI {
         let added = try await performStudyWrite {
             try await repository.addStudyReflections(
                 projectID: project.id,
-                drafts: input.reflections
+                drafts: drafts
             )
         }
         return PinaxAgentReflectResponse(

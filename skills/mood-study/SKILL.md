@@ -41,12 +41,13 @@ The user is the source of taste. You never decide what belongs in the study.
 
 ## Prepare the helper
 
-When mood. starts you from its study panel, you don't use the helper at all: the study is
-already in `./study.json` (the same JSON `study` prints), each item's image is in
-`./images/<item id>.<ext>`, and you write your batch to
-`./suggestions.json` or `./reflections.json` in the formats below. mood. checks the file and
-adds what passes when you finish. Skip the rest of this section and the `suggest`/`reflect`
-commands in that case.
+When mood. starts you from its study board, you don't use the helper at all: the study is
+already in `./study.json` (the same JSON `study` prints), and each item's image is in
+`./images/<item id>.<ext>`. Save each proposal the moment it's ready as its own file in
+`./suggestions/` or `./reflections/` (`01.json`, `02.json`, …), holding one entry in the format
+below. mood. checks each file as it appears and adds it to the board if it passes, so the user
+starts judging your first finds while you keep looking. Never rewrite a file you've saved.
+Skip the rest of this section and the `suggest`/`reflect` commands in that case.
 
 Read [references/agent-api.md](references/agent-api.md), then run the finder once from this
 skill directory and keep the result:
@@ -120,9 +121,12 @@ Then add it:
 "$MOOD_AGENT" suggest --project <uuid> --file <temporary-json-path> --pretty
 ```
 
+When mood. started you, don't batch: as soon as you've confirmed a source's credit, save that
+one entry (the object inside the list) as the next file in `./suggestions/`, then keep looking.
+
 Report `added` and every `skipped` entry with its reason. Fix and resubmit a skipped item only
 when the fix is honest (a missing credit you can actually verify); never reword a refusal
-away. Tell the user the sources are waiting in the study panel in mood.
+away. Tell the user the sources are waiting on the study board in mood.
 
 ## Reflect patterns back
 
@@ -152,6 +156,9 @@ their reasons, look at the kept images again, and propose 2 to 4 patterns:
 "$MOOD_AGENT" reflect --project <uuid> --file <temporary-json-path> --pretty
 ```
 
+When mood. started you, save each pattern as its own file in `./reflections/` once you've
+checked it against the images, the same way.
+
 Tell the user the patterns are waiting for them to confirm, correct, or dismiss in mood. A
 pattern counts only once the user confirms or corrects it.
 
@@ -161,5 +168,5 @@ When the study has confirmed patterns (stage `distill`), suggest running `mood-d
 study project. Confirmed and corrected patterns, keeps and rejects, and the user's reasons are
 the evidence a design language should cite.
 
-Clean up the temporary JSON files you wrote, except `suggestions.json` or `reflections.json`
-when mood. started you: mood. reads those after you finish and removes the folder itself.
+Clean up the temporary JSON files you wrote, except the files in `suggestions/` or
+`reflections/` when mood. started you: mood. reads them and removes the folder itself.
