@@ -12,6 +12,7 @@
 		0E29AAD2B2549CDE2488181F /* ShareComposerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */; };
 		14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */; };
 		179BD1592565EC4828C0533D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5ACF2847F8BBF82E223584 /* main.swift */; };
+		1AA51E4EE73D8B4DFBAB5BB1 /* StudyAgentRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BB3923EE9E2D228E9053826 /* StudyAgentRunner.swift */; };
 		26DD92D9C7A0156714888AE0 /* PinaxCloudSync in Frameworks */ = {isa = PBXBuildFile; productRef = 6F2F74B7336DDC96773E3FB3 /* PinaxCloudSync */; };
 		2725AA4A876495101629B69C /* BrowserIntegrationConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5414C354714BAA860E2A8775 /* BrowserIntegrationConfiguration.swift */; };
 		2996C4CE5D6B0BB94C19C742 /* PinaxShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9034FF366C8E265E756471AC /* PinaxShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -51,6 +52,7 @@
 		9F808341195D5464403ECE33 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2DE16D20D12390630B19973E /* InfoPlist.strings */; };
 		A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D31782EDBB792389D4E078 /* InspirationDetailView.swift */; };
 		AA3AA7434D18E11432B6F55B /* NativeMessagingHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */; };
+		BFC374D985C049BE31C1C01A /* StudyAgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80042702775E6D0552C597 /* StudyAgentSettingsView.swift */; };
 		BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */; };
 		C2101F612D9D9B0B3E47B2B1 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
 		C3218466F0C3E53D077F8381 /* NativeMessageFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */; };
@@ -121,8 +123,10 @@
 		170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLibraryView.swift; sourceTree = "<group>"; };
 		17C1D1168232960E08F0EF78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxMacApp.swift; sourceTree = "<group>"; };
+		1BB3923EE9E2D228E9053826 /* StudyAgentRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyAgentRunner.swift; sourceTree = "<group>"; };
 		1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareComposerModel.swift; sourceTree = "<group>"; };
 		1E408A9C49BD6A50F5BCF15A /* mood. */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mood.; path = .; sourceTree = SOURCE_ROOT; };
+		1F80042702775E6D0552C597 /* StudyAgentSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyAgentSettingsView.swift; sourceTree = "<group>"; };
 		20E065F91541EA756088B649 /* InspirationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationCard.swift; sourceTree = "<group>"; };
 		263D8443E92573DF427FC129 /* PinaxiOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PinaxiOS.entitlements; sourceTree = "<group>"; };
 		26A6BB955B165ECDBD094F80 /* PinaxNativeHost */ = {isa = PBXFileReference; includeInIndex = 0; path = PinaxNativeHost; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -312,6 +316,7 @@
 				170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */,
 				D1F2755380398FEEBEFB5A60 /* MacSpaceChrome.swift */,
 				A1AA5E7CFC59C03308728E50 /* ProjectEditorSheet.swift */,
+				1F80042702775E6D0552C597 /* StudyAgentSettingsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -390,6 +395,7 @@
 			children = (
 				099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */,
 				18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */,
+				1BB3923EE9E2D228E9053826 /* StudyAgentRunner.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -407,8 +413,8 @@
 			children = (
 				7913E82468644892D4F1181A /* Assets.xcassets */,
 				BDA09240C82D4486947662C8 /* Info.plist */,
-				2DE16D20D12390630B19973E /* InfoPlist.strings */,
 				263D8443E92573DF427FC129 /* PinaxiOS.entitlements */,
+				2DE16D20D12390630B19973E /* InfoPlist.strings */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -626,7 +632,6 @@
 				};
 			};
 			buildConfigurationList = 14AF2AB886FD57DC31A93F93 /* Build configuration list for PBXProject "Pinax" */;
-			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -639,13 +644,14 @@
 				17981DD54B317B800DBEE57F /* XCLocalSwiftPackageReference "." */,
 			);
 			preferredProjectObjectVersion = 77;
+			productRefGroup = CD837CA6AC567DC065268C59 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+				5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */,
+				4886257118D25DED667B7ABD /* PinaxNativeHost */,
 				79B8175317766BE52357EBC0 /* PinaxAgent */,
 				B71ADB24B6050892C06047BA /* PinaxMac */,
-				4886257118D25DED667B7ABD /* PinaxNativeHost */,
-				5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */,
 				C964D12D73179AD5AA2FEA32 /* PinaxShareExtension */,
 				5F8C5ADE6300043D98005E05 /* PinaxiOS */,
 			);
@@ -709,7 +715,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\nhelpers_dir=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers\"\nresources_dir=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nmkdir -p \"$helpers_dir\" \"$resources_dir\"\nditto \"$BUILT_PRODUCTS_DIR/PinaxNativeHost\" \"$helpers_dir/PinaxNativeHost\"\nchmod 755 \"$helpers_dir/PinaxNativeHost\"\nditto \"$BUILT_PRODUCTS_DIR/mood-agent\" \"$helpers_dir/mood-agent\"\nchmod 755 \"$helpers_dir/mood-agent\"\nif [ -d \"$SRCROOT/BrowserExtension/dist\" ]; then\n  rm -rf \"$resources_dir/BrowserExtension\"\n  ditto \"$SRCROOT/BrowserExtension/dist\" \"$resources_dir/BrowserExtension\"\nfi\n";
+			shellScript = "set -eu\nhelpers_dir=\"$TARGET_BUILD_DIR/$CONTENTS_FOLDER_PATH/Helpers\"\nresources_dir=\"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\nmkdir -p \"$helpers_dir\" \"$resources_dir\"\nditto \"$BUILT_PRODUCTS_DIR/PinaxNativeHost\" \"$helpers_dir/PinaxNativeHost\"\nchmod 755 \"$helpers_dir/PinaxNativeHost\"\nditto \"$BUILT_PRODUCTS_DIR/mood-agent\" \"$helpers_dir/mood-agent\"\nchmod 755 \"$helpers_dir/mood-agent\"\nrm -rf \"$resources_dir/Skills/mood-study\"\nmkdir -p \"$resources_dir/Skills\"\nditto \"$SRCROOT/skills/mood-study\" \"$resources_dir/Skills/mood-study\"\nrm -rf \"$resources_dir/Skills/mood-study/tests\"\nif [ -d \"$SRCROOT/BrowserExtension/dist\" ]; then\n  rm -rf \"$resources_dir/BrowserExtension\"\n  ditto \"$SRCROOT/BrowserExtension/dist\" \"$resources_dir/BrowserExtension\"\nfi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -743,6 +749,8 @@
 				2ED9C8D4CAF2AA22B4C96B1C /* MacSpaceChrome.swift in Sources */,
 				14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */,
 				4E68DD164B4C0D335A1611B7 /* ProjectEditorSheet.swift in Sources */,
+				1AA51E4EE73D8B4DFBAB5BB1 /* StudyAgentRunner.swift in Sources */,
+				BFC374D985C049BE31C1C01A /* StudyAgentSettingsView.swift in Sources */,
 				63D387E033C4FCF9B56F4B03 /* StudyViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

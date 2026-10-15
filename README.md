@@ -129,7 +129,10 @@ npx skills add https://github.com/rikuws/mood. --skill mood-pack -g
 To find inspirations for a [guided visual study](Documentation/STUDIES.md), install the
 [`mood-study`](skills/mood-study) skill. It reads the study, searches for real, credited work
 related to your seeds and notes, and adds it as pending suggestions for you to keep or reject
-in mood. It can't keep, reject, or confirm anything itself.
+in mood. It can't keep, reject, or confirm anything itself. On the Mac there's nothing to
+install or connect: if Claude Code or Codex is on your Mac, the study panel's **Find sources**
+and **Reflect patterns** start it with the skill bundled in mood.app. Install the skill yourself
+only to run a study from an agent session of your own:
 
 ```sh
 npx skills add https://github.com/rikuws/mood. --skill mood-study -g

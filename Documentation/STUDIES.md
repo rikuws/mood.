@@ -32,11 +32,53 @@ a study, with its items as the seeds.
 
 Stages only guide the panel's prompt. Nothing is locked behind one.
 
-Finding sources runs in the person's coding agent with the
-[`mood-study`](../skills/mood-study) skill: the study panel copies a ready prompt. The agent
-reads the study with `mood-agent study`, searches for real work, and adds it with
-`mood-agent suggest`. The app shows each suggestion with its thumbnail, credit, source, and the
-agent's reason, and the person keeps or rejects it.
+Finding sources and reflecting patterns run in a coding agent the person connects. The agent
+follows the [`mood-study`](../skills/mood-study) skill: it reads the study with
+`mood-agent study`, searches for real work, and adds it with `mood-agent suggest` (or proposes
+patterns with `mood-agent reflect`). The app shows each suggestion with its thumbnail, credit,
+source, and the agent's reason, and the person keeps or rejects it.
+
+### Connecting an agent (Mac)
+
+There is nothing to set up if Claude Code or Codex is installed and signed in: mood. finds it
+and uses it. Commands are looked up on the login shell's `PATH` plus common install folders
+(`~/.local/bin`, `/opt/homebrew/bin`, …). Without an agent, the study panel offers
+**Get Claude Code** and **Check Again**. When both are installed, Claude Code is used; the
+panel's **Using …** menu switches between installed agents.
+
+No agent gets access to the library. Before a run, mood. writes the study into a fresh scratch
+folder as `study.json` (the same JSON `mood-agent study` prints), and copies each item's image
+into `images/<item id>.<ext>`: the stored file, or a download of its image URL, since sandboxed
+agents often have no network for commands. The agent follows the bundled
+`mood-study` skill and writes its batch to `suggestions.json` or `reflections.json` in the
+`suggest --file`/`reflect --file` formats. When it exits, mood. adds that file through the same
+checks as `mood-agent` (credit, rationale, generator hosts, past rejects) and shows what it
+added and skipped. So sandboxed agents work, and only mood. writes the library.
+
+How each one is started:
+
+- **Claude Code:** `claude -p` with `--permission-mode acceptEdits` and
+  `--allowedTools Read,Glob,Grep,WebSearch,WebFetch`. It can read the study and its images,
+  search and open web pages, and write in its scratch folder. It can't run other programs or
+  write anywhere else; those need an approval nobody can give in this unattended run.
+- **Codex:** `codex exec --sandbox workspace-write` with live web search. Its sandbox has no
+  network for commands and only lets it write to the scratch folder.
+- **Other command** (Settings → Study Agent): any executable plus an argument line with the
+  placeholders `{prompt}`, `{moodAgent}`, `{skill}`, `{project}` and `{workdir}`. Without
+  `{prompt}`, the prompt goes to the agent's standard input. The same values are also in the
+  `MOOD_AGENT`, `MOOD_STUDY_SKILL`, `MOOD_STUDY_PROJECT`, `MOOD_STUDY_TASK`,
+  `MOOD_STUDY_PROMPT` and `MOOD_LIBRARY_DIRECTORY` environment variables. Its permissions are
+  the agent's own to configure.
+
+The study panel's **Find sources** (from the `explore` stage) and **Reflect patterns** (after the
+first verdict) buttons start the agent with a prompt that points at the `mood-study` skill
+bundled inside mood.app (`Contents/Resources/Skills/mood-study`), so nothing needs to be
+installed besides the agent. While it runs, the panel shows its output and offers **Stop**. When
+it finishes, the panel says what was added and skipped, and the library syncs. Runs continue
+if the panel is closed. **Copy prompt for another agent** still works for agents mood. doesn't
+start; those use `mood-agent` directly.
+
+On iOS, the panel copies a ready prompt for an agent on another machine.
 
 ## What is stored
 

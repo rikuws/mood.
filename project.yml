@@ -138,6 +138,10 @@ targets:
           chmod 755 "$helpers_dir/PinaxNativeHost"
           ditto "$BUILT_PRODUCTS_DIR/mood-agent" "$helpers_dir/mood-agent"
           chmod 755 "$helpers_dir/mood-agent"
+          rm -rf "$resources_dir/Skills/mood-study"
+          mkdir -p "$resources_dir/Skills"
+          ditto "$SRCROOT/skills/mood-study" "$resources_dir/Skills/mood-study"
+          rm -rf "$resources_dir/Skills/mood-study/tests"
           if [ -d "$SRCROOT/BrowserExtension/dist" ]; then
             rm -rf "$resources_dir/BrowserExtension"
             ditto "$SRCROOT/BrowserExtension/dist" "$resources_dir/BrowserExtension"

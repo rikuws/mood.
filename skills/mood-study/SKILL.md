@@ -41,6 +41,13 @@ The user is the source of taste. You never decide what belongs in the study.
 
 ## Prepare the helper
 
+When mood. starts you from its study panel, you don't use the helper at all: the study is
+already in `./study.json` (the same JSON `study` prints), each item's image is in
+`./images/<item id>.<ext>`, and you write your batch to
+`./suggestions.json` or `./reflections.json` in the formats below. mood. checks the file and
+adds what passes when you finish. Skip the rest of this section and the `suggest`/`reflect`
+commands in that case.
+
 Read [references/agent-api.md](references/agent-api.md), then run the finder once from this
 skill directory and keep the result:
 
@@ -154,4 +161,5 @@ When the study has confirmed patterns (stage `distill`), suggest running `mood-d
 study project. Confirmed and corrected patterns, keeps and rejects, and the user's reasons are
 the evidence a design language should cite.
 
-Clean up the temporary JSON files you wrote.
+Clean up the temporary JSON files you wrote, except `suggestions.json` or `reflections.json`
+when mood. started you: mood. reads those after you finish and removes the folder itself.

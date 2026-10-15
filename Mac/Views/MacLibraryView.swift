@@ -508,6 +508,16 @@ struct MacLibraryView: View {
                     if let studyProject = project(with: projectID) {
                         sheet = .startStudy(studyProject)
                     }
+                },
+                agentControls: { [store, syncCoordinator] project, study in
+                    AnyView(
+                        StudyAgentSection(store: store, project: project, study: study) {
+                            await store.reload()
+                            guard let syncCoordinator else { return }
+                            _ = await syncCoordinator.sync()
+                            await store.reload()
+                        }
+                    )
                 }
             )
         }

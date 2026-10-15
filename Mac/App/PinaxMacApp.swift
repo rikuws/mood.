@@ -33,7 +33,12 @@ struct PinaxMacApp: App {
 
     var body: some Scene {
         Settings {
-            BrowserSetupView()
+            TabView {
+                BrowserSetupView()
+                    .tabItem { Label("Browser", systemImage: "puzzlepiece.extension") }
+                StudyAgentSettingsView()
+                    .tabItem { Label("Study Agent", systemImage: "eye") }
+            }
         }
         .commands {
             PinaxCommands()
