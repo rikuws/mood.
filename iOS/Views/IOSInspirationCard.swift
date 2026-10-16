@@ -13,7 +13,7 @@ struct IOSInspirationCard: View {
         VStack(alignment: .leading, spacing: 0) {
             preview
                 .overlay(alignment: .bottomLeading) {
-                    if inspiration.source != .x {
+                    if showsCaption {
                         imageInsetCaption
                     }
                 }
@@ -24,7 +24,7 @@ struct IOSInspirationCard: View {
                     )
                 )
                 .overlay(alignment: .bottomLeading) {
-                    if inspiration.source != .x {
+                    if showsCaption {
                         Rectangle()
                             .fill(Color.white)
                             .frame(
@@ -75,22 +75,24 @@ struct IOSInspirationCard: View {
                     .lineLimit(1)
             }
 
-            Text(displayTitle)
-                .font(
-                    .system(
-                        size: effectiveTitleFontSize,
-                        weight: .semibold,
-                        design: .serif
+            if let captionTitle {
+                Text(captionTitle)
+                    .font(
+                        .system(
+                            size: effectiveTitleFontSize,
+                            weight: .semibold,
+                            design: .serif
+                        )
                     )
-                )
-                .foregroundStyle(.black.opacity(0.9))
-                .lineLimit(titleLineLimit)
-                .multilineTextAlignment(.leading)
+                    .foregroundStyle(.black.opacity(0.9))
+                    .lineLimit(titleLineLimit)
+                    .multilineTextAlignment(.leading)
+            }
         }
         .padding(captionInsets)
         .fixedSize(horizontal: false, vertical: true)
         .background {
-            SteppedCaptionInsetShape(compact: !showsSourceLabel)
+            SteppedCaptionInsetShape(compact: !showsSourceLabel || captionTitle == nil)
                 .fill(Color.white)
         }
     }
@@ -226,9 +228,21 @@ struct IOSInspirationCard: View {
         if inspiration.source == .x {
             return inspiration.xUsernameLabel ?? "X"
         }
-        if !inspiration.title.isEmpty { return inspiration.title }
-        if !inspiration.text.isEmpty { return inspiration.text }
-        return inspiration.url.host() ?? "Untitled item"
+        return captionTitle ?? inspiration.url.host() ?? "Untitled item"
+    }
+
+    /// What the caption names the item, or nil when it's an image with
+    /// nothing to add: a file name like "IMG_2041.jpeg" says less than the
+    /// picture, so the caption keeps to the source.
+    private var captionTitle: String? {
+        if let title = inspiration.meaningfulTitle { return title }
+        let text = inspiration.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty { return text }
+        return hasImagePreview ? nil : (inspiration.url.host() ?? "Untitled item")
+    }
+
+    private var showsCaption: Bool {
+        inspiration.source != .x && (showsSourceLabel || captionTitle != nil)
     }
 
     private var previewSourceLabel: String {

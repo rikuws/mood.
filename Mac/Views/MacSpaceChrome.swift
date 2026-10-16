@@ -43,6 +43,68 @@ extension View {
     }
 }
 
+/// Moodboard or study board, in the same floating glass capsule as search.
+/// The current side is a pill concentric with the capsule, so the switch
+/// reads as one rounded object instead of square segments in a round frame.
+struct MacCanvasModeSwitch: View {
+    @Binding var showsStudyBoard: Bool
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var selection
+
+    private let height: CGFloat = 34
+    private let inset: CGFloat = 3
+
+    var body: some View {
+        HStack(spacing: 0) {
+            segment("Moodboard", showsStudyBoard: false)
+            segment("Study board", showsStudyBoard: true)
+        }
+        .padding(inset)
+        .frame(height: height)
+        .macFloatingGlassCapsule()
+        .overlay {
+            Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+        }
+        .animation(reduceMotion ? nil : MacChromeMotion.quick, value: showsStudyBoard)
+        .accessibilityRepresentation {
+            Picker("Show", selection: $showsStudyBoard) {
+                Text("Moodboard").tag(false)
+                Text("Study board").tag(true)
+            }
+            .pickerStyle(.segmented)
+        }
+    }
+
+    private func segment(_ title: String, showsStudyBoard value: Bool) -> some View {
+        let isSelected = showsStudyBoard == value
+        return Button {
+            showsStudyBoard = value
+        } label: {
+            Text(title)
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                .padding(.horizontal, 12)
+                .frame(maxHeight: .infinity)
+                .background {
+                    if isSelected {
+                        Capsule()
+                            .fill(selectionFill)
+                            .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 1.5, y: 0.5)
+                            .matchedGeometryEffect(id: "selection", in: selection)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var selectionFill: Color {
+        colorScheme == .dark ? .white.opacity(0.18) : .white
+    }
+}
+
 struct MacCanvasSearchControl: View {
     @Binding var text: String
     let isExpanded: Bool
@@ -307,8 +369,14 @@ struct MacProjectSidebarItem: Identifiable {
     let title: String
     let count: Int
     let colorHex: String?
-    let landscapeAssetName: String
+    /// The project's own picture, so each project is told apart at a glance.
+    let cover: MacProjectSidebarCover?
     let project: Project?
+}
+
+struct MacProjectSidebarCover: Equatable {
+    let localURL: URL?
+    let remoteURL: URL?
 }
 
 struct MacProjectSidebar: View {
@@ -478,20 +546,22 @@ struct MacProjectSidebar: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
+    /// A project shows its own picture; until it has one, or while it
+    /// loads, its initial on its color.
     @ViewBuilder
     private func sidebarArtwork(for item: MacProjectSidebarItem) -> some View {
-        if item.project != nil,
-           let artwork = NSImage(named: NSImage.Name(item.landscapeAssetName)) {
-            Image(nsImage: artwork)
-                .resizable()
-                .interpolation(.medium)
-                .scaledToFill()
-                .frame(width: 26, height: 26)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
-                }
+        if item.project != nil, let cover = item.cover {
+            DownsampledPreviewImage(localURL: cover.localURL, remoteURL: cover.remoteURL) {
+                sidebarArtworkFallback(for: item)
+            } failure: {
+                sidebarArtworkFallback(for: item)
+            }
+            .frame(width: 26, height: 26)
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(.white.opacity(0.2), lineWidth: 0.5)
+            }
         } else {
             sidebarArtworkFallback(for: item)
         }
@@ -521,6 +591,11 @@ struct MacProjectSidebar: View {
     private func fallbackFill(for item: MacProjectSidebarItem) -> Color {
         if let colorHex = item.colorHex {
             return Color(hex: colorHex).opacity(0.72)
+        }
+        // A project without a color, like a new study, still gets its own.
+        if let project = item.project {
+            let seed = project.id.uuidString.unicodeScalars.reduce(0) { $0 + Int($1.value) }
+            return Color(hex: ProjectEditorSheet.colors[seed % ProjectEditorSheet.colors.count]).opacity(0.72)
         }
         return .white.opacity(item.scope == .all ? 0.16 : 0.1)
     }

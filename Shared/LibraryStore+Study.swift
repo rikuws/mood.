@@ -67,6 +67,13 @@ public extension LibraryStore {
     }
 
     @discardableResult
+    func rejectPendingStudySuggestions(projectID: Project.ID) async throws -> [StudySuggestion] {
+        try await performStudyChange {
+            try await self.repository.rejectPendingStudySuggestions(projectID: projectID)
+        }
+    }
+
+    @discardableResult
     func respondToStudyReflection(
         projectID: Project.ID,
         reflectionID: StudyReflection.ID,

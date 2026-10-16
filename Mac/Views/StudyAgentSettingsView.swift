@@ -98,6 +98,9 @@ struct StudyAgentSection: View {
     var onProgress: @Sendable @MainActor () async -> Void = {}
     /// Called once the agent has exited and everything it proposed is in.
     var onChange: @Sendable @MainActor () async -> Void = {}
+    /// Called when the finds still to judge are rejected to make way for a
+    /// fresh search.
+    var onRefresh: () -> Void = {}
 
     @Environment(\.openSettings) private var openSettings
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -182,6 +185,9 @@ struct StudyAgentSection: View {
             } else {
                 findButton
                     .buttonStyle(.borderedProminent)
+                if !study.pendingSuggestions.isEmpty {
+                    refreshButton
+                }
                 reflectButton
                     .buttonStyle(.bordered)
             }
@@ -197,6 +203,23 @@ struct StudyAgentSection: View {
             start(.findSources)
         }
         .disabled(stage == .seed)
+    }
+
+    /// For when nothing still to judge is right: rejecting them one by one
+    /// is busywork, so this rejects them all and looks again.
+    private var refreshButton: some View {
+        let count = study.pendingSuggestions.count
+        let summary = "Reject the \(count) still to judge and find new ones"
+        return Button {
+            refresh()
+        } label: {
+            Label("Refresh", systemImage: "arrow.clockwise")
+                .labelStyle(.iconOnly)
+        }
+        .buttonStyle(.bordered)
+        .disabled(stage == .seed)
+        .help(summary)
+        .accessibilityLabel(summary)
     }
 
     private var reflectButton: some View {
@@ -503,6 +526,22 @@ struct StudyAgentSection: View {
                     onProgress: onProgress,
                     onChange: onChange
                 )
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
+    /// Rejects the finds still to judge, so the search knows not to bring
+    /// them back, then looks again with whatever nudge is typed.
+    private func refresh() {
+        guard agent != nil, stage != .seed else { return }
+        errorMessage = nil
+        Task {
+            do {
+                try await store.rejectPendingStudySuggestions(projectID: project.id)
+                onRefresh()
+                start(.findSources)
             } catch {
                 errorMessage = error.localizedDescription
             }

@@ -338,20 +338,9 @@ struct MacLibraryView: View {
     private var canvasChrome: some View {
         HStack(spacing: 8) {
             if currentStudyProjectID != nil {
-                Picker("Show", selection: studyCanvasSelection) {
-                    Text("Moodboard").tag(false)
-                    Text("Study board").tag(true)
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-                .padding(.horizontal, 4)
-                .frame(height: 34)
-                .macFloatingGlassCapsule()
-                .overlay {
-                    Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
-                }
-                .help("Switch between the study's moodboard and the board of everything it found")
+                MacCanvasModeSwitch(showsStudyBoard: studyCanvasSelection)
+                    .fixedSize()
+                    .help("Switch between the study's moodboard and the board of everything it found")
             }
 
             MacCanvasSearchControl(
@@ -569,6 +558,13 @@ struct MacLibraryView: View {
                     guard let syncCoordinator else { return }
                     _ = await syncCoordinator.sync()
                     await store.reload()
+                },
+                onRefresh: {
+                    // The rejected finds step aside so the new ones arrive
+                    // on a clear board.
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
+                        studyFilter = .toJudge
+                    }
                 }
             )
         }
@@ -1013,52 +1009,44 @@ struct MacLibraryView: View {
     }
 
     private var sidebarItems: [MacProjectSidebarItem] {
+        let counts = store.counts
+        let covers = store.snapshot.projectCovers()
         var items = [
-            sidebarItem(
+            MacProjectSidebarItem(
                 scope: .all,
                 title: "All inspiration",
-                count: store.counts.total,
+                count: counts.total,
                 colorHex: nil,
+                cover: nil,
                 project: nil
             ),
-            sidebarItem(
+            MacProjectSidebarItem(
                 scope: .general,
                 title: "General",
-                count: store.counts.general,
+                count: counts.general,
                 colorHex: nil,
+                cover: nil,
                 project: nil
             ),
         ]
         items.append(
             contentsOf: projects.map { project in
-                sidebarItem(
+                MacProjectSidebarItem(
                     scope: .project(project.id),
                     title: project.name,
-                    count: store.counts[project.id],
+                    count: counts[project.id],
                     colorHex: project.colorHex,
+                    cover: covers[project.id].map { cover in
+                        MacProjectSidebarCover(
+                            localURL: store.localImageURL(for: cover),
+                            remoteURL: cover.imageURL
+                        )
+                    },
                     project: project
                 )
             }
         )
         return items
-    }
-
-    private func sidebarItem(
-        scope: LibraryScope,
-        title: String,
-        count: Int,
-        colorHex: String?,
-        project: Project?
-    ) -> MacProjectSidebarItem {
-        let landscape = MoodboardLandscapeSelection.landscape(for: scope)
-        return MacProjectSidebarItem(
-            scope: scope,
-            title: title,
-            count: count,
-            colorHex: colorHex,
-            landscapeAssetName: landscape.rawValue,
-            project: project
-        )
     }
 
     private var selectedInspiration: Inspiration? {
@@ -1765,7 +1753,9 @@ private struct MacStudyQuickVerdict: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onHover { isHovering = $0 }
+            // The buttons sit over the card and take the pointer from it,
+            // so the card stays lifted while they're the ones hovered.
+            .environment(\.holdsCardHover, isAvailable && isHovering)
             .overlay(alignment: .topTrailing) {
                 if isAvailable, isHovering {
                     HStack(spacing: 5) {
@@ -1781,6 +1771,10 @@ private struct MacStudyQuickVerdict: ViewModifier {
                     )
                 }
             }
+            // Tracked over the card and its buttons together: watching the
+            // card alone ends the hover as the pointer reaches a button,
+            // which hid the buttons before they could be clicked.
+            .onHover { isHovering = $0 }
             .animation(
                 reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.82),
                 value: isHovering

@@ -232,6 +232,34 @@ public extension LibraryRepository {
         }
     }
 
+    /// Rejects every find still waiting for a verdict, for when none of them
+    /// is right and a fresh search should replace them. Like any reject, each
+    /// stays in the study as contrast, is never proposed again, and can still
+    /// be kept later.
+    @discardableResult
+    func rejectPendingStudySuggestions(projectID: Project.ID) throws -> [StudySuggestion] {
+        try mutate { snapshot, now in
+            let projectIndex = try Self.studyProjectIndex(projectID, in: snapshot)
+            guard var study = snapshot.projects[projectIndex].study else {
+                throw LibraryStudyError.notAStudy(projectID)
+            }
+
+            var rejected: [StudySuggestion] = []
+            for index in study.suggestions.indices where study.suggestions[index].status == .pending {
+                study.suggestions[index].status = .rejected
+                study.suggestions[index].reason = nil
+                study.suggestions[index].decidedAt = now
+                rejected.append(study.suggestions[index])
+            }
+
+            if !rejected.isEmpty {
+                snapshot.projects[projectIndex].study = study
+                snapshot.projects[projectIndex].updatedAt = now
+            }
+            return rejected
+        }
+    }
+
     /// Adds agent-noticed patterns for the user to confirm or correct. Every
     /// pattern must cite at least one study item or rejected suggestion.
     @discardableResult
