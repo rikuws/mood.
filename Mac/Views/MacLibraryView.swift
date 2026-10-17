@@ -337,6 +337,10 @@ struct MacLibraryView: View {
 
     private var canvasChrome: some View {
         HStack(spacing: 8) {
+            if showsStudyBoard, let project = currentStudyProject, let study = project.study {
+                studyAgentControl(project: project, study: study)
+            }
+
             if currentStudyProjectID != nil {
                 MacCanvasModeSwitch(showsStudyBoard: studyCanvasSelection)
                     .fixedSize()
@@ -351,7 +355,9 @@ struct MacLibraryView: View {
                 onDismiss: dismissSearch
             )
         }
-        .padding(.trailing, 16)
+        // On the canvas's own edge, so the chrome and the board's right
+        // edge share one line.
+        .padding(.trailing, canvasHorizontalPadding)
         .padding(.top, 15)
         .accessibilitySortPriority(1)
     }
@@ -502,8 +508,13 @@ struct MacLibraryView: View {
         let isSearchingText = !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         return zoomableCanvas {
-            VStack(alignment: .leading, spacing: 18) {
-                studyBoardHeader(project: project, study: study, board: board)
+            VStack(alignment: .leading, spacing: canvasSpacing) {
+                StudyBoardHeader(
+                    study: study,
+                    board: board,
+                    filter: $studyFilter,
+                    onEdit: { sheet = .startStudy(project) }
+                )
 
                 if entries.isEmpty, !isLooking {
                     StudyBoardEmptyState(
@@ -516,7 +527,7 @@ struct MacLibraryView: View {
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
-            .padding(.bottom, 18)
+            .padding(.bottom, canvasSpacing)
         } cards: { activeColumnCount in
             ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                 studyBoardCard(entry, project: project, columnCount: activeColumnCount)
@@ -539,43 +550,32 @@ struct MacLibraryView: View {
         .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: isLooking)
     }
 
-    private func studyBoardHeader(project: Project, study: ProjectStudy, board: StudyBoard) -> some View {
-        StudyBoardHeader(
+    /// The study's agent, in the canvas chrome beside the board switch.
+    private func studyAgentControl(project: Project, study: ProjectStudy) -> some View {
+        StudyAgentControl(
+            store: store,
+            project: project,
             study: study,
-            board: board,
-            filter: $studyFilter,
-            onEdit: { sheet = .startStudy(project) }
-        ) {
-            StudyAgentSection(
-                store: store,
-                project: project,
-                study: study,
-                onProgress: { [store] in
-                    await store.reload()
-                },
-                onChange: { [store, syncCoordinator] in
-                    await store.reload()
-                    guard let syncCoordinator else { return }
-                    _ = await syncCoordinator.sync()
-                    await store.reload()
-                },
-                onRefresh: {
-                    // The rejected finds step aside so the new ones arrive
-                    // on a clear board.
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
-                        studyFilter = .toJudge
-                    }
+            onProgress: { [store] in
+                await store.reload()
+            },
+            onChange: { [store, syncCoordinator] in
+                await store.reload()
+                guard let syncCoordinator else { return }
+                _ = await syncCoordinator.sync()
+                await store.reload()
+            },
+            onRefresh: {
+                // The rejected finds step aside so the new ones arrive
+                // on a clear board.
+                withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
+                    studyFilter = .toJudge
                 }
-            )
-        }
-        .padding(.horizontal, 18)
-        .padding(.top, 14)
-        .padding(.bottom, 4)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
-        }
+            }
+        )
+        // A study's nudge and open card stay with it.
+        .id(project.id)
+        .transition(.opacity)
     }
 
     @ViewBuilder
