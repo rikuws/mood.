@@ -32,6 +32,32 @@ public struct LibrarySnapshot: Codable, Equatable, Sendable {
         inspirations.first { $0.id == id }
     }
 
+    /// The picture each project goes by: the item chosen as its background,
+    /// otherwise the first image saved to it, so the picture stays put as the
+    /// project grows. Projects without an image are left out.
+    public func projectCovers() -> [Project.ID: Inspiration] {
+        var covers: [Project.ID: Inspiration] = [:]
+        for inspiration in inspirations {
+            guard let projectID = inspiration.projectID,
+                  inspiration.hasPreviewImage,
+                  inspiration.verdict != .reject else { continue }
+            if let current = covers[projectID],
+               (current.createdAt, current.id.uuidString) <= (inspiration.createdAt, inspiration.id.uuidString) {
+                continue
+            }
+            covers[projectID] = inspiration
+        }
+
+        for project in projects {
+            guard let backgroundID = project.backgroundInspirationID,
+                  let background = inspirations.first(where: {
+                      $0.id == backgroundID && $0.projectID == project.id && $0.hasPreviewImage
+                  }) else { continue }
+            covers[project.id] = background
+        }
+        return covers
+    }
+
     private enum CodingKeys: String, CodingKey {
         case schemaVersion
         case projects

@@ -229,7 +229,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 - **Corner Style:** gently squared continuous corners respond to density: 5pt spacious, 4pt standard, and 3pt dense. The white mat uses 10/8/5/3pt insets on iOS and 10/8/6/5/4/3pt on macOS.
 - **Background:** every collectible card uses permanent white Folio Paper around the preview, including in Dark Mode. Preview content adapts independently.
 - **Shadow Strategy:** use the Print vocabulary above and a 0.5pt Card Stroke. Selection is an outline, not a heavier shadow.
-- **Internal Padding:** caption padding contracts with density from roughly 6pt to 2.5pt. iOS captions add 2pt of trailing breathing room so the title never crowds the cutout edge.
+- **Internal Padding:** caption padding contracts with density from roughly 6pt to 2.5pt. The caption is the mat's white, so on the left and below its text margin runs on to the card edge; on macOS the trailing padding adds the mat inset so the text sits as far from the image as from the edge. iOS captions add 2pt of trailing breathing room so the title never crowds the cutout edge.
 - **Layout:** iOS uses 16pt horizontal canvas padding, 8–12pt horizontal card gaps, and 10–18pt vertical gaps. macOS uses 20pt canvas padding and 16pt gaps. Columns start at the same top edge; different content heights create the rhythm naturally.
 
 ### Inputs / Fields
@@ -246,7 +246,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 ### Stepped Caption Cutout
 
-The signature collected-card caption grows from the preview's lower-left corner as white paper. At low density it uses two rounded shelves before the final edge; at high density it collapses to one compact rounded edge. The cutout must fully mask the image beneath it, including the lower-left inner corner, and its right edge must always retain visible breathing room after the last glyph.
+The signature collected-card caption grows from the preview's lower-left corner as white paper. At low density on macOS the source sits on a rounded shelf above the title, each as wide as its own text, so the step follows the words and never cuts across a line; on iOS it uses two rounded shelves before the final edge. At high density it collapses to one compact rounded edge. A title that is only the image's file name ("IMG_2041.jpeg", a browser's "name (1200×800)") is left off, so an image-only save carries just its source. The cutout must fully mask the image beneath it, including the lower-left inner corner, and its right edge must always retain visible breathing room after the last glyph.
 
 ### Image-less Reference Preview
 

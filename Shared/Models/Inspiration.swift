@@ -139,6 +139,56 @@ public extension Inspiration {
         return nil
     }
 
+    /// Whether there's a stored or remote image to show.
+    var hasPreviewImage: Bool {
+        localImageFilename != nil || imageURL != nil
+    }
+
+    /// The saved title worth printing on a card, or nil when it says nothing
+    /// the picture doesn't: an empty title, the site's address, or the name
+    /// of the image file, which is all a browser calls an image opened on its
+    /// own ("IMG_2041.jpeg", "GxYz12 (1200×800)").
+    var meaningfulTitle: String? {
+        let title = self.title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty,
+              !Self.isAddressTitle(title, for: url),
+              !Self.isImageFileTitle(title, sources: [url, imageURL].compactMap { $0 }) else {
+            return nil
+        }
+        return title
+    }
+
+    private static func isAddressTitle(_ title: String, for url: URL) -> Bool {
+        let title = title.lowercased()
+        let host = url.host()?.lowercased() ?? ""
+        return title == host
+            || (host.hasPrefix("www.") && title == String(host.dropFirst(4)))
+            || title == url.absoluteString.lowercased()
+            || title == "saved link"
+    }
+
+    private static func isImageFileTitle(_ title: String, sources: [URL]) -> Bool {
+        // Chrome titles an image tab "name (1200×800)", Safari "name 1200×800
+        // pixels", Firefox "name (JPEG Image, 1200 × 800 pixels)".
+        let pixelSuffix = #"\s*(\(\s*\d+\s*[×xX]\s*\d+\s*\)|\(?[^()]*?[\d,]+\s*[×xX]\s*[\d,]+\s*pixels\)?)$"#
+        if title.range(of: pixelSuffix, options: .regularExpression) != nil {
+            return true
+        }
+
+        let imageExtension = #"\.(jpe?g|png|gif|webp|avif|heic|heif|tiff?|bmp|svg)$"#
+        if title.range(of: imageExtension, options: [.regularExpression, .caseInsensitive]) != nil {
+            return true
+        }
+
+        let name = title.lowercased()
+        return sources.contains { source in
+            let file = source.lastPathComponent.lowercased()
+            guard !file.isEmpty, file != "/" else { return false }
+            return name == file
+                || name == source.deletingPathExtension().lastPathComponent.lowercased()
+        }
+    }
+
     private static func cleanedXHandle(_ value: String?) -> String? {
         guard let handle = value?
             .trimmingCharacters(in: .whitespacesAndNewlines)

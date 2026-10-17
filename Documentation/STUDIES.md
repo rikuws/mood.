@@ -110,7 +110,9 @@ the `mood-study` skill bundled inside mood.app (`Contents/Resources/Skills/mood-
 nothing needs to be installed besides the agent. Whichever moves the study on is the
 prominent one: **Reflect** once enough is judged and nothing waits, **Find** otherwise. A
 search for more is told everything already on the board, so it looks in new directions
-instead of near-copies.
+instead of near-copies. When none of the finds still to judge is right, the refresh button
+beside **Find more** rejects them all at once (no reasons, but they're never proposed again
+and each can still be kept later), switches the board to **To judge**, and looks again.
 
 **Nudge it** next to the buttons takes an optional direction ("warmer light, fewer posters").
 It goes into the run's prompt (and `MOOD_STUDY_NUDGE` for other commands) as something to

@@ -406,6 +406,42 @@ final class StudyTests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    func testRejectingThePendingFindsLeavesDecidedOnesAlone() async throws {
+        let repository = try makeRepository()
+        let study = try await repository.createStudy(subject: "2001")
+        let batch = try await repository.addStudySuggestions(
+            projectID: study.id,
+            drafts: [
+                draft("https://example.com/kept"),
+                draft("https://example.com/rejected"),
+                draft("https://example.com/pending-a"),
+                draft("https://example.com/pending-b"),
+            ]
+        )
+        _ = try await repository.decideStudySuggestion(
+            projectID: study.id, suggestionID: batch.added[0].id, verdict: .keep, reason: "the floor"
+        )
+        _ = try await repository.decideStudySuggestion(
+            projectID: study.id, suggestionID: batch.added[1].id, verdict: .reject, reason: "too warm"
+        )
+
+        let passed = try await repository.rejectPendingStudySuggestions(projectID: study.id)
+        let suggestions = try await repository.load().project(id: study.id)?.study?.suggestions ?? []
+
+        XCTAssertEqual(passed.map(\.id), [batch.added[2].id, batch.added[3].id])
+        XCTAssertEqual(suggestions.map(\.status), [.kept, .rejected, .rejected, .rejected])
+        XCTAssertEqual(suggestions.map(\.reason), ["the floor", "too warm", nil, nil])
+        XCTAssertEqual(suggestions[2].decidedAt, fixedDate)
+        let again = try await repository.rejectPendingStudySuggestions(projectID: study.id)
+        XCTAssertTrue(again.isEmpty)
+
+        let retry = try await repository.addStudySuggestions(
+            projectID: study.id,
+            drafts: [draft("https://example.com/pending-a")]
+        )
+        XCTAssertEqual(retry.skipped.map(\.reason), [.previouslyRejected])
+    }
+
     func testSuggestionsRequireAStudy() async throws {
         let repository = try makeRepository()
         let project = try await repository.createProject(name: "Plain")

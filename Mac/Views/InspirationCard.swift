@@ -10,6 +10,7 @@ struct InspirationCard: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.holdsCardHover) private var holdsCardHover
     @State private var isHovering = false
 
     var body: some View {
@@ -30,11 +31,11 @@ struct InspirationCard: View {
                 }
                 .shadow(
                     color: .black.opacity(shadowOpacity),
-                    radius: isSelected ? 0 : (isHovering ? 8 : 4),
-                    y: isSelected ? 0 : (isHovering ? 5 : 2)
+                    radius: isSelected ? 0 : (isLifted ? 8 : 4),
+                    y: isSelected ? 0 : (isLifted ? 5 : 2)
                 )
-                .offset(y: isHovering && !isSelected && !reduceMotion ? -2 : 0)
-                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isHovering)
+                .offset(y: isLifted && !isSelected && !reduceMotion ? -2 : 0)
+                .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: isLifted)
                 .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: isSelected)
         }
         .buttonStyle(.plain)
@@ -50,17 +51,20 @@ struct InspirationCard: View {
 
     private func cardArtwork(for density: Int) -> some View {
         preview(for: density)
-            .overlay(alignment: .bottomLeading) {
-                if inspiration.source != .x {
-                    insetCaption(for: density)
-                }
-            }
             .clipShape(
                 RoundedRectangle(
                     cornerRadius: innerCornerRadius(for: density),
                     style: .continuous
                 )
             )
+            // Over the clipped image rather than clipped with it: the caption
+            // is the mat's white, so its square corner vanishes into the mat
+            // and covers the image's rounded corner completely.
+            .overlay(alignment: .bottomLeading) {
+                if inspiration.source != .x {
+                    insetCaption(for: density)
+                }
+            }
     }
 
     private func preview(for density: Int) -> some View {
@@ -80,10 +84,10 @@ struct InspirationCard: View {
                         } failure: {
                             fallbackPreview(for: density)
                         }
-                        .scaleEffect(isHovering && !reduceMotion ? 1.018 : 1)
+                        .scaleEffect(isLifted && !reduceMotion ? 1.018 : 1)
                         .animation(
                             reduceMotion ? nil : .easeOut(duration: 0.2),
-                            value: isHovering
+                            value: isLifted
                         )
                     } else {
                         fallbackPreview(for: density)
@@ -168,41 +172,21 @@ struct InspirationCard: View {
         .background(PinaxCatalogPalette.webSurface(for: colorScheme))
     }
 
+    @ViewBuilder
     private func insetCaption(for density: Int) -> some View {
-        VStack(alignment: .leading, spacing: captionSpacing(for: density)) {
-            if showsSourceLabel(for: density) {
-                Text(previewSourceLabel)
-                    .font(
-                        .system(
-                            size: sourceFontSize(for: density),
-                            weight: .semibold
-                        )
-                    )
-                    .foregroundStyle(.black.opacity(0.78))
-                    .lineLimit(1)
-            }
-
-            Text(compactDisplayTitle(for: density))
-                .font(
-                    .system(
-                        size: titleFontSize(for: density),
-                        weight: .semibold,
-                        design: .serif
-                    )
-                )
-                .foregroundStyle(.black.opacity(0.9))
-                .lineLimit(titleLineLimit(for: density))
-                .multilineTextAlignment(.leading)
-                .offset(
-                    x: inspiration.source == .x ? -0.75 : 0,
-                    y: inspiration.source == .x ? 0.5 : 0
-                )
-        }
-        .padding(captionInsets(for: density))
-        .fixedSize(horizontal: false, vertical: true)
-        .background {
-            SteppedCaptionInsetShape(compact: !showsSourceLabel(for: density))
-                .fill(Color.white)
+        let label = showsSourceLabel(for: density) ? previewSourceLabel : nil
+        let title = captionTitle.map { compactTitle($0, for: density) }
+        if label != nil || title != nil {
+            InspirationCardCaption(
+                label: label,
+                title: title,
+                labelFontSize: sourceFontSize(for: density),
+                titleFontSize: titleFontSize(for: density),
+                titleLineLimit: titleLineLimit(for: density),
+                spacing: captionSpacing(for: density),
+                insets: captionInsets(for: density),
+                cornerRadius: label == nil ? 4 : 10
+            )
         }
     }
 
@@ -258,27 +242,42 @@ struct InspirationCard: View {
         return path[0]
     }
 
+    /// What the caption names the item, or nil when it's an image with
+    /// nothing to add: a file name like "IMG_2041.jpeg" says less than the
+    /// picture, so the caption keeps to the source.
+    private var captionTitle: String? {
+        if let title = inspiration.meaningfulTitle { return title }
+        if !previewText.isEmpty { return previewText }
+        if let xHandle { return "Post by @\(xHandle)" }
+        return hasPreviewImage ? nil : (inspiration.url.host() ?? "Untitled item")
+    }
+
     private var displayTitle: String {
         if inspiration.source == .x {
             return inspiration.xUsernameLabel ?? "X"
         }
-        let title = inspiration.title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let host = inspiration.url.host()?.lowercased()
-        if !title.isEmpty, title.lowercased() != (host ?? "") { return title }
-        if !previewText.isEmpty { return previewText }
-        if let xHandle { return "Post by @\(xHandle)" }
-        if !title.isEmpty { return title }
-        return inspiration.url.host() ?? "Untitled item"
+        return captionTitle ?? inspiration.url.host() ?? "Untitled item"
+    }
+
+    private var hasPreviewImage: Bool {
+        localImageURL != nil || inspiration.imageURL != nil
+    }
+
+    /// Under the pointer, or under something laid over the card that the
+    /// pointer is on.
+    private var isLifted: Bool {
+        isHovering || holdsCardHover
     }
 
     private var shadowOpacity: Double {
-        if colorScheme == .dark { return isHovering ? 0.36 : 0.24 }
-        return isHovering ? 0.14 : 0.075
+        if colorScheme == .dark { return isLifted ? 0.36 : 0.24 }
+        return isLifted ? 0.14 : 0.075
     }
 
     private var accessibilityLabel: String {
         if inspiration.source == .x { return displayTitle }
-        return "\(displayTitle), from \(previewSourceLabel)"
+        guard let captionTitle else { return "Image from \(previewSourceLabel)" }
+        return "\(captionTitle), from \(previewSourceLabel)"
     }
 
     private var previewAspectRatio: CGFloat {
@@ -304,13 +303,13 @@ struct InspirationCard: View {
         PinaxCatalogPalette.quoteFill(seed: layoutSeed)
     }
 
-    private func compactDisplayTitle(for density: Int) -> String {
-        guard density >= 5 else { return displayTitle }
-        return displayTitle
+    private func compactTitle(_ title: String, for density: Int) -> String {
+        guard density >= 5 else { return title }
+        return title
             .split(whereSeparator: { $0.isNewline })
             .first
             .map(String.init)?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? displayTitle
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? title
     }
 
     private func matInset(for density: Int) -> CGFloat {
@@ -388,13 +387,17 @@ struct InspirationCard: View {
         }
     }
 
+    /// The caption is the same white as the mat it grows out of, so on the
+    /// left and below, the text's margin runs on to the card's edge. The
+    /// right edge meets the picture instead, so it gets the mat's width too
+    /// and the text sits as far from the picture as from the edge.
     private func captionInsets(for density: Int) -> EdgeInsets {
         let inset = captionPadding(for: density)
         return EdgeInsets(
             top: inset,
             leading: inset,
             bottom: inset,
-            trailing: inset
+            trailing: inset + matInset(for: density)
         )
     }
 
@@ -453,66 +456,106 @@ struct InspirationCard: View {
     }
 }
 
-private struct SteppedCaptionInsetShape: Shape {
-    let compact: Bool
+/// The white caption in a card's lower-left corner: the source on a shelf
+/// above the title, each as wide as its own text, so the step follows the
+/// words instead of cutting across them.
+private struct InspirationCardCaption: View {
+    let label: String?
+    let title: String?
+    let labelFontSize: CGFloat
+    let titleFontSize: CGFloat
+    let titleLineLimit: Int
+    let spacing: CGFloat
+    let insets: EdgeInsets
+    let cornerRadius: CGFloat
 
-    private let preferredCornerRadius: CGFloat = 10
-    private let compactCornerRadius: CGFloat = 4
+    @State private var labelFrame: CGRect?
+
+    private static let space = "InspirationCardCaption"
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: spacing) {
+            if let label {
+                Text(label)
+                    .font(.system(size: labelFontSize, weight: .semibold))
+                    .foregroundStyle(.black.opacity(0.78))
+                    .lineLimit(1)
+                    .onGeometryChange(for: CGRect.self) { proxy in
+                        proxy.frame(in: .named(Self.space))
+                    } action: { frame in
+                        labelFrame = frame
+                    }
+            }
+
+            if let title {
+                Text(title)
+                    .font(.system(size: titleFontSize, weight: .semibold, design: .serif))
+                    .foregroundStyle(.black.opacity(0.9))
+                    .lineLimit(titleLineLimit)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .padding(insets)
+        .fixedSize(horizontal: false, vertical: true)
+        .coordinateSpace(.named(Self.space))
+        .background {
+            SteppedCaptionInsetShape(shelf: shelf, cornerRadius: cornerRadius)
+                .fill(Color.white)
+        }
+    }
+
+    /// The source's own width and height, ending halfway to the title.
+    private var shelf: CGSize? {
+        guard label != nil, title != nil, let labelFrame else { return nil }
+        return CGSize(
+            width: labelFrame.maxX + insets.trailing,
+            height: labelFrame.maxY + (spacing / 2)
+        )
+    }
+}
+
+private struct SteppedCaptionInsetShape: Shape {
+    /// The source's shelf, measured from the caption's top-leading corner.
+    /// Without one, or when the title is barely wider, it's a single block.
+    var shelf: CGSize?
+    let cornerRadius: CGFloat
 
     func path(in rect: CGRect) -> Path {
-        if compact {
-            let finalEdge = rect.maxX
-            let radius = min(compactCornerRadius, rect.height / 2)
-
-            var path = Path()
-            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-            addOuterCorner(
-                to: &path,
-                edgeX: finalEdge,
-                fromY: rect.minY,
-                radius: radius
-            )
-            path.addLine(to: CGPoint(x: finalEdge, y: rect.maxY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-            path.closeSubpath()
-            return path
-        }
-
-        let firstStepX = rect.minX + (rect.width * 0.56)
-        let secondStepX = rect.minX + (rect.width * 0.8)
-        let finalEdge = rect.maxX
-        let firstShelfY = rect.minY + (rect.height * 0.32)
-        let secondShelfY = rect.minY + (rect.height * 0.64)
-        let radius = min(
-            preferredCornerRadius,
-            (firstShelfY - rect.minY) / 2,
-            (secondShelfY - firstShelfY) / 2,
-            (finalEdge - secondStepX) / 2
-        )
-
         var path = Path()
         path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        addRoundedStep(
-            to: &path,
-            stepX: firstStepX,
-            fromY: rect.minY,
-            toY: firstShelfY,
-            radius: radius
-        )
-        addRoundedStep(
-            to: &path,
-            stepX: secondStepX,
-            fromY: firstShelfY,
-            toY: secondShelfY,
-            radius: radius
-        )
-        addOuterCorner(
-            to: &path,
-            edgeX: finalEdge,
-            fromY: secondShelfY,
-            radius: radius
-        )
-        path.addLine(to: CGPoint(x: finalEdge, y: rect.maxY))
+
+        if let shelf, rect.maxX - (rect.minX + shelf.width) >= cornerRadius {
+            let stepX = rect.minX + shelf.width
+            let shelfY = rect.minY + shelf.height
+            let radius = min(
+                cornerRadius,
+                shelf.height / 2,
+                (rect.maxX - stepX) / 2,
+                rect.maxY - shelfY
+            )
+            addRoundedStep(
+                to: &path,
+                stepX: stepX,
+                fromY: rect.minY,
+                toY: shelfY,
+                radius: radius
+            )
+            addOuterCorner(
+                to: &path,
+                edgeX: rect.maxX,
+                fromY: shelfY,
+                radius: radius
+            )
+        } else {
+            addOuterCorner(
+                to: &path,
+                edgeX: rect.maxX,
+                fromY: rect.minY,
+                radius: min(cornerRadius, rect.height / 2)
+            )
+        }
+
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
         path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
         path.closeSubpath()
         return path
@@ -555,6 +598,20 @@ private struct SteppedCaptionInsetShape: Shape {
             control1: CGPoint(x: edgeX - radius + curve, y: fromY),
             control2: CGPoint(x: edgeX, y: fromY + radius - curve)
         )
+    }
+}
+
+private struct HoldsCardHoverKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// Set by controls laid over a card, such as a find's keep and reject
+    /// buttons, so the card stays lifted while the pointer is on them rather
+    /// than on the card itself.
+    var holdsCardHover: Bool {
+        get { self[HoldsCardHoverKey.self] }
+        set { self[HoldsCardHoverKey.self] = newValue }
     }
 }
 

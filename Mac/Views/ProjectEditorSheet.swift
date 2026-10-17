@@ -12,7 +12,7 @@ struct ProjectEditorSheet: View {
     @State private var errorMessage: String?
     @FocusState private var isNameFocused: Bool
 
-    private let colors = ["#5E5CE6", "#007AFF", "#30B0C7", "#34C759", "#FF9F0A", "#FF375F", "#AF52DE"]
+    static let colors = ["#5E5CE6", "#007AFF", "#30B0C7", "#34C759", "#FF9F0A", "#FF375F", "#AF52DE"]
 
     init(existingProject: Project? = nil, onSave: @escaping (String, String?) async throws -> Void) {
         self.existingProject = existingProject
@@ -33,7 +33,7 @@ struct ProjectEditorSheet: View {
             VStack(alignment: .leading, spacing: 9) {
                 Text("Color").font(.caption).foregroundStyle(.secondary)
                 HStack(spacing: 10) {
-                    ForEach(colors, id: \.self) { hex in
+                    ForEach(Self.colors, id: \.self) { hex in
                         Button {
                             selectedColor = hex
                         } label: {
