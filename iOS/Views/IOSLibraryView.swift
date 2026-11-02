@@ -32,6 +32,7 @@ struct IOSLibraryView: View {
     @State private var studyArrivals = StudyBoardArrivals()
     @State private var studyCloseLookEntryID: StudyBoardEntry.ID?
     @State private var studyNudge = ""
+    @State private var showsStudyAgent = false
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -297,6 +298,21 @@ struct IOSLibraryView: View {
                 .accessibilityLabel(Text(ProductIdentity.spokenName))
         }
 
+        if showsStudyBoard, let project = selectedProject {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showsStudyAgent = true
+                } label: {
+                    Image(systemName: "sparkles")
+                }
+                .accessibilityLabel("Study agent")
+                .popover(isPresented: $showsStudyAgent) {
+                    studyAgentHandoff(for: project)
+                        .presentationCompactAdaptation(.popover)
+                }
+            }
+        }
+
         ToolbarItem(placement: .topBarTrailing) {
             Menu {
                 Button {
@@ -350,9 +366,7 @@ struct IOSLibraryView: View {
                     board: board,
                     filter: $studyFilter,
                     onEdit: { sheet = .startStudy(project) }
-                ) {
-                    studyAgentHandoff(for: project)
-                }
+                )
 
                 if entries.isEmpty {
                     StudyBoardEmptyState(
@@ -404,23 +418,29 @@ struct IOSLibraryView: View {
         }
     }
 
-    /// iOS doesn't start agents itself: it hands over a prompt, with the
-    /// person's nudge, for an agent on another machine.
+    /// iOS doesn't start agents itself: the toolbar's agent card hands over
+    /// a prompt, with the person's nudge, for an agent on another machine.
     private func studyAgentHandoff(for project: Project) -> some View {
-        HStack(spacing: 8) {
-            TextField("Nudge", text: $studyNudge, prompt: Text("Nudge it: warmer light…"))
-                .textFieldStyle(.roundedBorder)
-                .submitLabel(.done)
-                .accessibilityLabel("Nudge the search")
-
-            Button {
-                StudyAgentPromptText.copy(for: project, nudge: studyNudge)
-                showMessage("Copied. Paste it into an agent with mood-study")
-            } label: {
-                Label("Copy prompt", systemImage: "doc.on.doc")
+        VStack(alignment: .leading, spacing: 14) {
+            StudyAgentCardHeading(
+                title: "Look for more",
+                message: "Agents run on a computer. Paste this prompt into one with the mood-study skill."
+            )
+            StudyNudgeWell(text: $studyNudge, prompt: "Nudge it: warmer light…") {
+                copyStudyPrompt(for: project)
             }
-            .buttonStyle(.bordered)
+            StudyAgentPrimaryButton("Copy prompt") {
+                copyStudyPrompt(for: project)
+            }
         }
+        .padding(16)
+        .frame(idealWidth: 320)
+    }
+
+    private func copyStudyPrompt(for project: Project) {
+        StudyAgentPromptText.copy(for: project, nudge: studyNudge)
+        showsStudyAgent = false
+        showMessage("Copied. Paste it into an agent with mood-study")
     }
 
     @ViewBuilder

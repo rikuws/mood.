@@ -112,92 +112,358 @@ struct StudyStartForm: View {
 
 // MARK: - Board header
 
-/// The top of the study board, kept to what's needed at a glance: the
-/// subject in the person's own words, the agent's controls, and the verdict
-/// filters with counts.
-struct StudyBoardHeader<Controls: View>: View {
+/// The top of the study board on one line, so the board starts right under
+/// it: the subject in serif with the brief beside it, and the verdict
+/// filters at the far edge. When the line can't hold both, the filters drop
+/// below. The agent isn't here; it lives in the canvas chrome.
+struct StudyBoardHeader: View {
     let study: ProjectStudy
     let board: StudyBoard
     @Binding var filter: StudyBoardFilter
     var onEdit: (() -> Void)?
-    @ViewBuilder var controls: () -> Controls
+
+    /// The least of the brief worth showing beside the subject before the
+    /// filters move to their own line.
+    private let minimumBriefWidth: CGFloat = 160
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline, spacing: 12) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(study.subject)
-                        .font(StudyBoardType.subject)
-                        .tracking(-0.3)
-                        .lineLimit(2)
-                        .accessibilityAddTraits(.isHeader)
-                    if !study.brief.isEmpty {
-                        Text(study.brief)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(2)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 0) {
+                StudyBoardTitleButton(study: study, onEdit: onEdit) {
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        subject
+                            .fixedSize()
+                        if !study.brief.isEmpty {
+                            brief
+                                .lineLimit(1)
+                                .frame(minWidth: 0, idealWidth: minimumBriefWidth, alignment: .leading)
+                        }
                     }
                 }
-                .frame(maxWidth: 640, alignment: .leading)
-
-                Spacer(minLength: 12)
-
-                if let onEdit {
-                    Button("Edit", action: onEdit)
-                        .buttonStyle(.borderless)
-                        .help("Edit the subject and brief")
-                }
+                Spacer(minLength: 20)
+                StudyBoardFilterBar(selection: $filter, board: board)
+                    .fixedSize()
             }
 
-            controls()
+            VStack(alignment: .leading, spacing: 14) {
+                StudyBoardTitleButton(study: study, onEdit: onEdit) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        subject
+                            .lineLimit(2)
+                        if !study.brief.isEmpty {
+                            brief
+                                .lineLimit(2)
+                        }
+                    }
+                }
+                StudyBoardFilterBar(selection: $filter, board: board)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
 
-            StudyBoardFilterBar(selection: $filter, board: board)
+    private var subject: some View {
+        Text(study.subject)
+            .font(StudyBoardType.subject)
+            .tracking(-0.3)
+            .accessibilityAddTraits(.isHeader)
+    }
+
+    private var brief: some View {
+        Text(study.brief)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .truncationMode(.tail)
+    }
+}
+
+/// The subject and brief, which open the study's editor like a window title
+/// that renames: a soft highlight on hover says it can be clicked, and it
+/// sits outside the text so the words stay on the board's left edge.
+private struct StudyBoardTitleButton<Label: View>: View {
+    let study: ProjectStudy
+    let onEdit: (() -> Void)?
+    @ViewBuilder var label: () -> Label
+
+    @State private var isHovered = false
+
+    private let highlightInset = CGSize(width: 6, height: 3)
+
+    var body: some View {
+        if let onEdit {
+            Button(action: onEdit) {
+                label()
+                    .padding(.horizontal, highlightInset.width)
+                    .padding(.vertical, highlightInset.height)
+                    .background {
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(.primary.opacity(isHovered ? 0.07 : 0))
+                    }
+                    .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .padding(.horizontal, -highlightInset.width)
+                    .padding(.vertical, -highlightInset.height)
+            }
+            .buttonStyle(.plain)
+            .onHover { hovering in
+                withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
+            }
+            .help(study.brief.isEmpty ? "Edit the subject and brief" : study.brief)
+            .contextMenu {
+                Button("Edit Study…", action: onEdit)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isHeader)
+            .accessibilityHint("Edits the subject and brief")
+        } else {
+            label()
+        }
+    }
+}
+
+/// The verdict filters with their counts, in the same glass capsule as the
+/// canvas controls.
+struct StudyBoardFilterBar: View {
+    @Binding var selection: StudyBoardFilter
+    let board: StudyBoard
+
+    var body: some View {
+        #if os(iOS)
+        // Large text can outgrow a phone's width; then the capsule scrolls.
+        ViewThatFits(in: .horizontal) {
+            control
+            ScrollView(.horizontal, showsIndicators: false) {
+                control
+            }
+        }
+        #else
+        control
+        #endif
+    }
+
+    private var control: some View {
+        GlassSegmentedControl(
+            selection: $selection,
+            values: StudyBoardFilter.allCases,
+            accessibilityLabel: { "\($0.title), \(board.count(for: $0))" }
+        ) { filter, isSelected in
+            HStack(spacing: 5) {
+                Text(filter.title)
+                Text("\(board.count(for: filter))")
+                    .font(GlassSegmentMetrics.detailFont)
+                    .monospacedDigit()
+                    .foregroundStyle(isSelected ? .secondary : .tertiary)
+                    .contentTransition(.numericText())
+            }
+        }
+    }
+}
+
+// MARK: - Glass controls
+
+/// The floating glass capsule the canvas controls share: Liquid Glass where
+/// there is some, a thin material before it, and an opaque fill when the
+/// person reduces transparency.
+struct FloatingGlassCapsule: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content.background(Self.opaqueFill, in: Capsule())
+        } else if #available(macOS 26.0, iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            content.background(.thinMaterial, in: Capsule())
+        }
+    }
+
+    private static var opaqueFill: Color {
+        #if os(macOS)
+        Color(nsColor: .controlBackgroundColor)
+        #else
+        Color(uiColor: .secondarySystemBackground)
+        #endif
+    }
+}
+
+extension View {
+    /// The floating glass capsule the canvas controls share, with its
+    /// half-point hairline.
+    func floatingGlassCapsule() -> some View {
+        modifier(FloatingGlassCapsule())
+            .overlay {
+                Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
+            }
+    }
+}
+
+enum GlassSegmentMetrics {
+    #if os(iOS)
+    static let height: CGFloat = 44
+    static let inset: CGFloat = 4
+    static let horizontalPadding: CGFloat = 11
+    static let font = Font.footnote.weight(.medium)
+    static let detailFont = Font.caption
+    #else
+    static let height: CGFloat = 34
+    static let inset: CGFloat = 3
+    static let horizontalPadding: CGFloat = 12
+    static let font = Font.system(size: 12.5, weight: .medium)
+    static let detailFont = Font.system(size: 11.5)
+    #endif
+
+    /// Moving between segments: quick, barely springy.
+    static let selection = Animation.spring(response: 0.19, dampingFraction: 0.8, blendDuration: 0.03)
+}
+
+/// Text segments in a floating glass capsule. The current one sits on a
+/// pill concentric with the capsule that slides between segments, so the
+/// control reads as one rounded object instead of square cells in a round
+/// frame.
+struct GlassSegmentedControl<Value: Hashable, SegmentLabel: View>: View {
+    @Binding var selection: Value
+    let values: [Value]
+    let accessibilityLabel: (Value) -> String
+    @ViewBuilder var label: (_ value: Value, _ isSelected: Bool) -> SegmentLabel
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var pill
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(values, id: \.self) { value in
+                segment(value)
+            }
+        }
+        .padding(GlassSegmentMetrics.inset)
+        .frame(height: GlassSegmentMetrics.height)
+        .floatingGlassCapsule()
+        .animation(reduceMotion ? nil : GlassSegmentMetrics.selection, value: selection)
+    }
+
+    private func segment(_ value: Value) -> some View {
+        let isSelected = selection == value
+        return Button {
+            selection = value
+        } label: {
+            label(value, isSelected)
+                .font(GlassSegmentMetrics.font)
+                .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+                .lineLimit(1)
+                .padding(.horizontal, GlassSegmentMetrics.horizontalPadding)
+                .frame(maxHeight: .infinity)
+                .background {
+                    if isSelected {
+                        Capsule()
+                            .fill(selectionFill)
+                            .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 1.5, y: 0.5)
+                            .matchedGeometryEffect(id: "selection", in: pill)
+                    }
+                }
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel(value))
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var selectionFill: Color {
+        colorScheme == .dark ? .white.opacity(0.18) : .white
+    }
+}
+
+// MARK: - Agent card
+
+/// The top of an agent card: what the agent is doing or can do next, and a
+/// line on what that means.
+struct StudyAgentCardHeading: View {
+    let title: String
+    var message: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+            if let message {
+                Text(message)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// Text-first verdict filters: the current one is semibold with an ink
-/// underline, counts are quiet monospaced digits.
-struct StudyBoardFilterBar: View {
-    @Binding var selection: StudyBoardFilter
-    let board: StudyBoard
+/// The nudge as a soft well, like a composer rather than a form field:
+/// where to lean, with room for an action at its trailing edge.
+struct StudyNudgeWell<Accessory: View>: View {
+    @Binding var text: String
+    let prompt: String
+    var onSubmit: () -> Void = {}
+    @ViewBuilder var accessory: () -> Accessory
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @FocusState private var isFocused: Bool
+
+    private var minimumHeight: CGFloat {
+        #if os(iOS)
+        return 44
+        #else
+        return 34
+        #endif
+    }
 
     var body: some View {
-        HStack(spacing: 18) {
-            ForEach(StudyBoardFilter.allCases, id: \.self) { filter in
-                let count = board.count(for: filter)
-                let isSelected = selection == filter
-                Button {
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) {
-                        selection = filter
-                    }
-                } label: {
-                    VStack(spacing: 5) {
-                        HStack(spacing: 5) {
-                            Text(filter.title)
-                            Text("\(count)")
-                                .font(.caption2.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                        }
-                        Capsule()
-                            .fill(isSelected ? Color.primary : Color.clear)
-                            .frame(height: 2)
-                    }
-                    .font(.subheadline.weight(isSelected ? .semibold : .regular))
-                    .foregroundStyle(.primary)
-                    #if os(iOS)
-                    .frame(minHeight: 44)
-                    #endif
-                    .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("\(filter.title), \(count)")
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
-            }
+        let shape = RoundedRectangle(cornerRadius: 9, style: .continuous)
+        HStack(spacing: 6) {
+            TextField("Nudge", text: $text, prompt: Text(prompt))
+                .textFieldStyle(.plain)
+                .focused($isFocused)
+                .onSubmit(onSubmit)
+                #if os(iOS)
+                .submitLabel(.go)
+                #endif
+                .help("Optional. Say where to look, and the agent leans that way while staying true to your seeds and verdicts.")
+                .accessibilityLabel("Nudge the search")
+            accessory()
         }
+        .padding(.leading, 10)
+        .padding(.trailing, 4)
+        .frame(minHeight: minimumHeight)
+        .background(.primary.opacity(0.05), in: shape)
+        .overlay {
+            shape.strokeBorder(.primary.opacity(isFocused ? 0.24 : 0.08), lineWidth: isFocused ? 1 : 0.5)
+        }
+        .contentShape(shape)
+        .onTapGesture { isFocused = true }
+    }
+}
+
+extension StudyNudgeWell where Accessory == EmptyView {
+    init(text: Binding<String>, prompt: String, onSubmit: @escaping () -> Void = {}) {
+        self.init(text: text, prompt: prompt, onSubmit: onSubmit) { EmptyView() }
+    }
+}
+
+/// An agent card's one primary action, across the card's whole width.
+struct StudyAgentPrimaryButton: View {
+    let title: String
+    let action: () -> Void
+
+    init(_ title: String, action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.borderedProminent)
+        .controlSize(.large)
     }
 }
 

@@ -87,10 +87,13 @@ struct StudyAgentSettingsView: View {
     }
 }
 
-/// The study board's agent controls on the Mac: one row. Idle, a nudge field
-/// with Find and Reflect; running, a live count with Steer and Stop. Without
-/// an agent, what to install.
-struct StudyAgentSection: View {
+
+/// The study's agent on the Mac: a glass capsule in the canvas chrome, beside
+/// the board switch, that says what the agent is doing or what it can do
+/// next. Clicking it opens a card to nudge and start it, steer or stop it
+/// while it looks, and choose which agent searches. Without an agent, the
+/// card says what to install.
+struct StudyAgentControl: View {
     let store: LibraryStore
     let project: Project
     let study: ProjectStudy
@@ -111,50 +114,28 @@ struct StudyAgentSection: View {
     @State private var isDetecting = true
     @State private var errorMessage: String?
     @State private var showsOutput = false
+    @State private var isPresented = false
     @State private var nudge = ""
 
     private static let installURL = URL(string: "https://code.claude.com/docs/en/setup")!
+    private static let cardWidth: CGFloat = 304
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Stacked, so one state crossfades into the next in place.
-            ZStack(alignment: .leading) {
-                if runner.redirecting.contains(project.id) {
-                    redirectingRow
-                        .transition(.opacity)
-                } else if let run = runner.run(for: project.id), run.phase == .running {
-                    runningRow(run)
-                        .transition(.opacity)
-                } else if isDetecting {
-                    ProgressView().controlSize(.small)
-                        .transition(.opacity)
-                } else if let agent {
-                    idleRow(agent: agent)
-                        .transition(.opacity)
-                } else {
-                    missingAgentRow
-                        .transition(.opacity)
-                }
-            }
-            .frame(minHeight: 28)
-            .animation(reduceMotion ? nil : StudyBoardMotion.status, value: rowState)
-
-            if let run = runner.run(for: project.id),
-               run.phase != .running,
-               !runner.redirecting.contains(project.id) {
-                lastRunRow(run)
-            } else if let note = seedNote, !runner.isBusy(project.id) {
-                Text(note)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.caption)
-                    .foregroundStyle(.red)
-            }
+        Button {
+            isPresented.toggle()
+        } label: {
+            capsuleLabel
         }
+        .buttonStyle(.plain)
+        .floatingGlassCapsule()
+        .contentShape(Capsule())
+        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
+            card
+        }
+        .help(capsuleHelp)
+        .accessibilityLabel(capsuleTitle)
+        .accessibilityHint("Shows the study agent")
+        .animation(reduceMotion ? nil : StudyBoardMotion.status, value: capsuleTitle)
         .task { await detect() }
         // Pick up a choice made in Settings or an agent installed meanwhile.
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
@@ -168,144 +149,197 @@ struct StudyAgentSection: View {
         }
     }
 
-    // MARK: Rows
+    // MARK: Capsule
 
-    private func idleRow(agent: ResolvedStudyAgent) -> some View {
-        HStack(spacing: 8) {
-            nudgeField(prompt: "Nudge it: warmer light, fewer posters…") {
-                start(.findSources)
-            }
-
-            // One primary action: whichever moves the study on next.
-            if reflectsNext {
-                findButton
-                    .buttonStyle(.bordered)
-                reflectButton
-                    .buttonStyle(.borderedProminent)
-            } else {
-                findButton
-                    .buttonStyle(.borderedProminent)
-                if !study.pendingSuggestions.isEmpty {
-                    refreshButton
-                }
-                reflectButton
-                    .buttonStyle(.bordered)
-            }
-
-            Spacer(minLength: 8)
-
-            agentMenu(current: agent)
-        }
-    }
-
-    private var findButton: some View {
-        Button(study.suggestions.isEmpty ? "Find sources" : "Find more") {
-            start(.findSources)
-        }
-        .disabled(stage == .seed)
-    }
-
-    /// For when nothing still to judge is right: rejecting them one by one
-    /// is busywork, so this rejects them all and looks again.
-    private var refreshButton: some View {
-        let count = study.pendingSuggestions.count
-        let summary = "Reject the \(count) still to judge and find new ones"
-        return Button {
-            refresh()
-        } label: {
-            Label("Refresh", systemImage: "arrow.clockwise")
-                .labelStyle(.iconOnly)
-        }
-        .buttonStyle(.bordered)
-        .disabled(stage == .seed)
-        .help(summary)
-        .accessibilityLabel(summary)
-    }
-
-    private var reflectButton: some View {
-        Button("Reflect") {
-            start(.reflect)
-        }
-        .disabled(study.decidedSuggestions.isEmpty)
-        .help("Reflect patterns in what you kept and rejected")
-    }
-
-    /// Enough verdicts to say something, and nothing waiting to be judged:
-    /// reflecting moves the study on more than another search.
-    private var reflectsNext: Bool {
-        study.decidedSuggestions.count >= ProjectStudy.decisionsBeforeReflection
-            && study.pendingSuggestions.isEmpty
-            && study.pendingReflections.isEmpty
-    }
-
-    private func runningRow(_ run: StudyAgentRunner.Run) -> some View {
-        HStack(spacing: 8) {
-            ProgressView()
-                .controlSize(.small)
-            runningStatus(run)
+    private var capsuleLabel: some View {
+        HStack(spacing: 6) {
+            capsuleGlyph
+                .frame(width: 14, height: 14)
+            Text(capsuleTitle)
                 .lineLimit(1)
-                .truncationMode(.tail)
-                .layoutPriority(1)
                 // The count ticks over like an odometer as finds land.
                 .contentTransition(.numericText())
-                .animation(reduceMotion ? nil : StudyBoardMotion.status, value: run.result.addedCount)
-
-            Spacer(minLength: 8)
-
-            if run.task == .findSources, let agent {
-                nudgeField(prompt: "Steer it somewhere else…") {
-                    steer(agent: agent)
-                }
-                Button("Steer") { steer(agent: agent) }
-                    .disabled(StudyAgentNudge.cleaned(nudge) == nil)
-                    .help("Start the search again in this direction, keeping what it found")
-            }
-
-            outputButton(run)
-            Button("Stop") { runner.cancel(project.id) }
         }
+        .font(GlassSegmentMetrics.font)
+        .foregroundStyle(.primary)
+        // The glyph's side reads tighter than the text's, so it gets less.
+        .padding(.leading, 11)
+        .padding(.trailing, 13)
+        .frame(height: GlassSegmentMetrics.height)
+        .contentShape(Capsule())
     }
 
-    private var redirectingRow: some View {
-        HStack(spacing: 8) {
+    @ViewBuilder
+    private var capsuleGlyph: some View {
+        if runner.isBusy(project.id) {
             ProgressView()
-                .controlSize(.small)
-            Text("Changing direction…")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 8)
-            Button("Stop") { runner.cancel(project.id) }
+                .controlSize(.mini)
+        } else if let run = finishedRun, isFailure(run) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+        } else {
+            Image(systemName: "sparkles")
         }
     }
 
-    private var missingAgentRow: some View {
-        HStack(spacing: 8) {
-            Text(missingAgentText)
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-            Spacer(minLength: 8)
-            if configuration.preset == .automatic {
-                Link("Get Claude Code", destination: Self.installURL)
-                    .buttonStyle(.borderedProminent)
-            } else {
-                Button("Use Automatic") { choose(.automatic) }
-                    .buttonStyle(.borderedProminent)
+    /// What the agent is doing, or what it would do next.
+    private var capsuleTitle: String {
+        if runner.redirecting.contains(project.id) { return "Changing direction…" }
+        if let run = runningRun {
+            switch run.task {
+            case .findSources:
+                let count = run.result.addedSuggestions
+                return count == 0 ? "\(run.agentName) is looking" : "\(run.agentName) · \(count) found"
+            case .reflect:
+                return "\(run.agentName) is reflecting"
             }
-            Button("Check Again") { Task { await detect() } }
-            Menu {
-                Button("Other Agent…") { openSettings() }
-                copyPromptButton
-            } label: {
-                Image(systemName: "ellipsis")
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .help("More")
-            .accessibilityLabel("More")
         }
+        if let run = finishedRun {
+            let added = run.result.addedSuggestions + run.result.addedReflections
+            switch run.phase {
+            case .running, .finished:
+                return added == 0 ? "\(run.agentName) · nothing new" : "\(run.agentName) · \(added) new"
+            case .cancelled:
+                return added == 0 ? "Stopped" : "Stopped · \(added) new"
+            case .failed:
+                return "\(run.agentName) stopped"
+            }
+        }
+        if !isDetecting, agent == nil { return "Set up an agent" }
+        return nextActionTitle
+    }
+
+    private var capsuleHelp: String {
+        if let run = finishedRun { return lastRunHelp(run) }
+        return "The agent that finds sources and reflects patterns for this study"
+    }
+
+    // MARK: Card
+
+    private var card: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            if isDetecting {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+            } else if runner.redirecting.contains(project.id) {
+                StudyAgentCardHeading(title: "Changing direction…", message: "It keeps what it found so far.")
+                stopButton
+            } else if let run = runningRun {
+                runningCard(run)
+            } else if let agent {
+                idleCard(agent: agent)
+            } else {
+                missingAgentCard
+            }
+
+            if let errorMessage {
+                Text(errorMessage)
+                    .font(.caption)
+                    .foregroundStyle(.red)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if !isDetecting {
+                Divider()
+                footer
+            }
+        }
+        .padding(16)
+        .frame(width: Self.cardWidth)
+        .animation(reduceMotion ? nil : StudyBoardMotion.status, value: rowState)
+    }
+
+    @ViewBuilder
+    private func idleCard(agent: ResolvedStudyAgent) -> some View {
+        StudyAgentCardHeading(title: idleTitle, message: idleMessage(agent: agent))
+
+        if let run = finishedRun {
+            lastRunRow(run)
+        }
+
+        StudyNudgeWell(text: $nudge, prompt: "Nudge it: warmer light, fewer posters…") {
+            start(reflectsNext ? .reflect : .findSources)
+        }
+        .disabled(stage == .seed)
+
+        // One primary action: whichever moves the study on next.
+        StudyAgentPrimaryButton(nextActionTitle) {
+            start(reflectsNext ? .reflect : .findSources)
+        }
+        .disabled(reflectsNext ? study.decidedSuggestions.isEmpty : stage == .seed)
+
+        let secondary = secondaryActions
+        if !secondary.isEmpty {
+            HStack(spacing: 16) {
+                ForEach(secondary, id: \.title) { action in
+                    Button(action.title, action: action.perform)
+                        .help(action.help)
+                }
+            }
+            .buttonStyle(.borderless)
+            .font(.callout)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private func runningCard(_ run: StudyAgentRunner.Run) -> some View {
+        StudyAgentCardHeading(
+            title: run.task == .findSources ? "\(run.agentName) is looking" : "\(run.agentName) is reflecting",
+            message: runningMessage(run)
+        )
+        .contentTransition(.numericText())
+        .animation(reduceMotion ? nil : StudyBoardMotion.status, value: run.result.addedCount)
+
+        if run.task == .findSources, let agent {
+            StudyNudgeWell(text: $nudge, prompt: "Steer it somewhere else…") {
+                steer(agent: agent)
+            } accessory: {
+                if StudyAgentNudge.cleaned(nudge) != nil {
+                    Button("Steer") { steer(agent: agent) }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .help("Start the search again in this direction, keeping what it found")
+                        .transition(.opacity)
+                }
+            }
+        }
+
+        stopButton
+    }
+
+    private var stopButton: some View {
+        Button {
+            runner.cancel(project.id)
+        } label: {
+            Text("Stop")
+                .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.bordered)
+        .controlSize(.large)
+    }
+
+    @ViewBuilder
+    private var missingAgentCard: some View {
+        StudyAgentCardHeading(title: "Set up an agent", message: missingAgentText)
+
+        if configuration.preset == .automatic {
+            Link(destination: Self.installURL) {
+                Text("Get Claude Code")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+        } else {
+            StudyAgentPrimaryButton("Use Automatic") { choose(.automatic) }
+        }
+
+        Button("Check Again") { Task { await detect() } }
+            .buttonStyle(.borderless)
+            .font(.callout)
+            .frame(maxWidth: .infinity)
     }
 
     private func lastRunRow(_ run: StudyAgentRunner.Run) -> some View {
@@ -314,10 +348,9 @@ struct StudyAgentSection: View {
                 .foregroundStyle(isFailure(run) ? AnyShapeStyle(Color.orange) : AnyShapeStyle(HierarchicalShapeStyle.secondary))
                 .imageScale(.small)
             Text(lastRunText(run))
-                .lineLimit(1)
-                .truncationMode(.tail)
+                .fixedSize(horizontal: false, vertical: true)
                 .help(lastRunHelp(run))
-            outputButton(run)
+            Spacer(minLength: 4)
             Button {
                 runner.clear(project.id)
             } label: {
@@ -330,46 +363,149 @@ struct StudyAgentSection: View {
         }
         .font(.caption)
         .foregroundStyle(.secondary)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
     }
 
-    // MARK: Pieces
+    /// The agent in use and where else to send the study.
+    private var footer: some View {
+        HStack(spacing: 8) {
+            Menu {
+                ForEach(installed, id: \.preset) { option in
+                    Button {
+                        choose(StudyAgentConfiguration(preset: option.preset))
+                    } label: {
+                        if option.preset == agent?.preset {
+                            Label(option.displayName, systemImage: "checkmark")
+                        } else {
+                            Text(option.displayName)
+                        }
+                    }
+                }
+                if !installed.isEmpty {
+                    Divider()
+                }
+                Button("Other Agent…") { openSettings() }
+                Button("Copy Prompt for Another Agent") {
+                    StudyAgentPromptText.copy(for: project, nudge: nudge)
+                }
+            } label: {
+                Text(agent?.displayName ?? "Agent")
+            }
+            .menuStyle(.button)
+            .buttonStyle(.borderless)
+            .fixedSize()
+            .help("The agent that searches. Choose another, or copy a prompt for one mood. doesn't start.")
 
-    private func nudgeField(prompt: String, onSubmit: @escaping () -> Void) -> some View {
-        TextField("Nudge", text: $nudge, prompt: Text(prompt))
-            .textFieldStyle(.roundedBorder)
-            .frame(minWidth: 150, idealWidth: 300, maxWidth: 340)
-            .onSubmit(onSubmit)
-            .help("Optional. Say where to look, and the agent leans that way while staying true to your seeds and verdicts.")
-            .accessibilityLabel("Nudge the search")
-    }
+            Spacer(minLength: 8)
 
-    private func runningStatus(_ run: StudyAgentRunner.Run) -> Text {
-        let action = run.task == .findSources ? "is looking" : "is reflecting"
-        var status = "\(run.agentName) \(action) · \(progressCount(run))"
-        if let nudge = run.nudge {
-            status += " · \u{201C}\(nudge)\u{201D}"
+            if let run = runner.run(for: project.id), !run.output.isEmpty {
+                Button("Output") { showsOutput.toggle() }
+                    .buttonStyle(.borderless)
+                    .popover(isPresented: $showsOutput, arrowEdge: .bottom) {
+                        ScrollView {
+                            Text(run.output)
+                                .font(.system(.caption, design: .monospaced))
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(12)
+                        }
+                        .frame(width: 480, height: 300)
+                    }
+            }
         }
-        return Text(status)
-            .font(.callout.monospacedDigit())
+        .font(.caption)
+        .foregroundStyle(.secondary)
     }
 
-    /// Which row shows, so changing state animates but typing doesn't.
-    private var rowState: String {
-        if runner.redirecting.contains(project.id) { return "redirecting" }
-        if runner.run(for: project.id)?.phase == .running { return "running" }
-        if isDetecting { return "detecting" }
-        return agent == nil ? "missing" : "idle"
+    // MARK: Words
+
+    private var nextActionTitle: String {
+        if reflectsNext { return "Reflect" }
+        return study.suggestions.isEmpty ? "Find sources" : "Find more"
     }
 
-    private func progressCount(_ run: StudyAgentRunner.Run) -> String {
+    private var idleTitle: String {
+        if reflectsNext { return "Reflect on your verdicts" }
+        return study.suggestions.isEmpty ? "Find sources" : "Look for more"
+    }
+
+    private func idleMessage(agent: ResolvedStudyAgent) -> String {
+        if let seedNote { return seedNote }
+        if reflectsNext {
+            return "Everything's judged. \(agent.displayName) can say what your \(study.decidedSuggestions.count) verdicts have in common."
+        }
+        if study.suggestions.isEmpty {
+            return "\(agent.displayName) looks for real, credited work that fits your seeds. You keep or reject each find."
+        }
+        let decided = study.decidedSuggestions.count
+        let pending = study.pendingSuggestions.count
+        let steer = decided == 0
+            ? "Keep or reject finds to steer the next search."
+            : "Your \(decided) verdict\(decided == 1 ? "" : "s") steer the next search."
+        return pending == 0 ? steer : "\(pending) still to judge. \(steer)"
+    }
+
+    private func runningMessage(_ run: StudyAgentRunner.Run) -> String {
+        var message: String
         switch run.task {
         case .findSources:
             let count = run.result.addedSuggestions
-            return count == 0 ? "nothing yet" : "\(count) found"
+            message = count == 0 ? "Nothing yet. Finds appear on the board as they land." : "\(count) found so far."
         case .reflect:
             let count = run.result.addedReflections
-            return count == 0 ? "nothing yet" : "\(count) pattern\(count == 1 ? "" : "s")"
+            message = count == 0
+                ? "Looking for patterns in what you kept and rejected."
+                : "\(count) pattern\(count == 1 ? "" : "s") so far."
         }
+        if let nudge = run.nudge {
+            message += " Leaning \u{201C}\(nudge)\u{201D}."
+        }
+        return message
+    }
+
+    /// The other things worth doing from here, kept quiet.
+    private var secondaryActions: [SecondaryAction] {
+        var actions: [SecondaryAction] = []
+        if reflectsNext {
+            actions.append(SecondaryAction(title: "Find more", help: "Look for more sources") {
+                start(.findSources)
+            })
+        } else if !study.decidedSuggestions.isEmpty {
+            actions.append(SecondaryAction(title: "Reflect", help: "Reflect patterns in what you kept and rejected") {
+                start(.reflect)
+            })
+        }
+        let pending = study.pendingSuggestions.count
+        if pending > 0, stage != .seed {
+            actions.append(SecondaryAction(
+                title: "Reject \(pending) and look again",
+                help: "Reject the \(pending) still to judge and find new ones",
+                perform: refresh
+            ))
+        }
+        return actions
+    }
+
+    private struct SecondaryAction {
+        let title: String
+        let help: String
+        let perform: () -> Void
+    }
+
+    private var missingAgentText: String {
+        switch configuration.preset {
+        case .automatic: "Finding sources needs Claude Code or Codex on this Mac."
+        case .custom: "The agent command wasn't found."
+        case .claudeCode, .codex: "\(configuration.preset.displayName) isn't installed."
+        }
+    }
+
+    private var seedNote: String? {
+        guard stage == .seed else { return nil }
+        let remaining = max(1, ProjectStudy.minimumSeedCount - store.studyItems(for: project.id).count)
+        return "Add \(remaining) more seed\(remaining == 1 ? "" : "s") to the moodboard first."
     }
 
     private func lastRunSymbol(_ run: StudyAgentRunner.Run) -> String {
@@ -378,11 +514,6 @@ struct StudyAgentSection: View {
         case .failed: "exclamationmark.triangle"
         case .cancelled: "stop.circle"
         }
-    }
-
-    private func isFailure(_ run: StudyAgentRunner.Run) -> Bool {
-        if case .failed = run.phase { return true }
-        return false
     }
 
     private func lastRunText(_ run: StudyAgentRunner.Run) -> String {
@@ -421,74 +552,44 @@ struct StudyAgentSection: View {
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
-    @ViewBuilder
-    private func outputButton(_ run: StudyAgentRunner.Run) -> some View {
-        if !run.output.isEmpty {
-            Button("Output") { showsOutput.toggle() }
-                .buttonStyle(.borderless)
-                .font(.caption)
-                .popover(isPresented: $showsOutput, arrowEdge: .bottom) {
-                    ScrollView {
-                        Text(run.output)
-                            .font(.system(.caption, design: .monospaced))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(12)
-                    }
-                    .frame(width: 480, height: 300)
-                }
-        }
+    // MARK: State
+
+    private var runningRun: StudyAgentRunner.Run? {
+        guard let run = runner.run(for: project.id), run.phase == .running else { return nil }
+        return run
     }
 
-    private func agentMenu(current: ResolvedStudyAgent) -> some View {
-        Menu {
-            ForEach(installed, id: \.preset) { option in
-                Button {
-                    choose(StudyAgentConfiguration(preset: option.preset))
-                } label: {
-                    if option.preset == current.preset {
-                        Label(option.displayName, systemImage: "checkmark")
-                    } else {
-                        Text(option.displayName)
-                    }
-                }
-            }
-            Divider()
-            Button("Other Agent…") { openSettings() }
-            copyPromptButton
-        } label: {
-            Text(current.displayName)
-        }
-        .menuStyle(.button)
-        .buttonStyle(.borderless)
-        .fixedSize()
-        .font(.caption)
-        .foregroundStyle(.secondary)
-        .help("The agent that searches. Choose another, or copy a prompt for one mood. doesn't start.")
+    /// The last run, once it has ended, until it's dismissed.
+    private var finishedRun: StudyAgentRunner.Run? {
+        guard let run = runner.run(for: project.id),
+              run.phase != .running,
+              !runner.redirecting.contains(project.id) else { return nil }
+        return run
     }
 
-    private var copyPromptButton: some View {
-        Button("Copy Prompt for Another Agent") {
-            StudyAgentPromptText.copy(for: project, nudge: nudge)
-        }
+    private func isFailure(_ run: StudyAgentRunner.Run) -> Bool {
+        if case .failed = run.phase { return true }
+        return false
     }
 
-    private var missingAgentText: String {
-        switch configuration.preset {
-        case .automatic: "Finding sources needs Claude Code or Codex on this Mac."
-        case .custom: "The agent command wasn't found."
-        case .claudeCode, .codex: "\(configuration.preset.displayName) isn't installed."
-        }
+    /// Enough verdicts to say something, and nothing waiting to be judged:
+    /// reflecting moves the study on more than another search.
+    private var reflectsNext: Bool {
+        study.decidedSuggestions.count >= ProjectStudy.decisionsBeforeReflection
+            && study.pendingSuggestions.isEmpty
+            && study.pendingReflections.isEmpty
+    }
+
+    /// Which card shows, so changing state animates but typing doesn't.
+    private var rowState: String {
+        if runner.redirecting.contains(project.id) { return "redirecting" }
+        if runningRun != nil { return "running" }
+        if isDetecting { return "detecting" }
+        return agent == nil ? "missing" : "idle"
     }
 
     private var stage: StudyStage {
         study.stage(itemCount: store.studyItems(for: project.id).count)
-    }
-
-    private var seedNote: String? {
-        guard stage == .seed, agent != nil else { return nil }
-        let remaining = max(1, ProjectStudy.minimumSeedCount - store.studyItems(for: project.id).count)
-        return "Add \(remaining) more seed\(remaining == 1 ? "" : "s") to the moodboard first."
     }
 
     // MARK: Actions
@@ -509,11 +610,14 @@ struct StudyAgentSection: View {
         isDetecting = false
     }
 
+    /// Starts the agent and closes the card, so what it finds can be seen
+    /// developing on the board.
     private func start(_ task: StudyAgentTask) {
         guard let agent, !(task == .findSources && stage == .seed) else { return }
         errorMessage = nil
         let direction = nudge
         nudge = ""
+        isPresented = false
         Task {
             do {
                 try await runner.start(
@@ -528,6 +632,7 @@ struct StudyAgentSection: View {
                 )
             } catch {
                 errorMessage = error.localizedDescription
+                isPresented = true
             }
         }
     }
@@ -553,6 +658,7 @@ struct StudyAgentSection: View {
         errorMessage = nil
         let direction = nudge
         nudge = ""
+        isPresented = false
         Task {
             do {
                 try await runner.redirect(
@@ -567,6 +673,7 @@ struct StudyAgentSection: View {
                 )
             } catch {
                 errorMessage = error.localizedDescription
+                isPresented = true
             }
         }
     }

@@ -21,53 +21,19 @@ enum MacChromeMotion {
     static let fade = Animation.easeOut(duration: 0.14)
 }
 
-struct MacFloatingGlassCapsuleModifier: ViewModifier {
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if reduceTransparency {
-            content.background(Color(nsColor: .controlBackgroundColor), in: Capsule())
-        } else if #available(macOS 26.0, *) {
-            content.glassEffect(.regular.interactive(), in: Capsule())
-        } else {
-            content.background(.thinMaterial, in: Capsule())
-        }
-    }
-}
-
-extension View {
-    /// The floating glass capsule the canvas controls share.
-    func macFloatingGlassCapsule() -> some View {
-        modifier(MacFloatingGlassCapsuleModifier())
-    }
-}
-
-/// Moodboard or study board, in the same floating glass capsule as search.
-/// The current side is a pill concentric with the capsule, so the switch
-/// reads as one rounded object instead of square segments in a round frame.
+/// Moodboard or study board, in the same glass segmented capsule as the
+/// study board's verdict filters.
 struct MacCanvasModeSwitch: View {
     @Binding var showsStudyBoard: Bool
 
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Namespace private var selection
-
-    private let height: CGFloat = 34
-    private let inset: CGFloat = 3
-
     var body: some View {
-        HStack(spacing: 0) {
-            segment("Moodboard", showsStudyBoard: false)
-            segment("Study board", showsStudyBoard: true)
+        GlassSegmentedControl(
+            selection: $showsStudyBoard,
+            values: [false, true],
+            accessibilityLabel: title
+        ) { value, _ in
+            Text(title(value))
         }
-        .padding(inset)
-        .frame(height: height)
-        .macFloatingGlassCapsule()
-        .overlay {
-            Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
-        }
-        .animation(reduceMotion ? nil : MacChromeMotion.quick, value: showsStudyBoard)
         .accessibilityRepresentation {
             Picker("Show", selection: $showsStudyBoard) {
                 Text("Moodboard").tag(false)
@@ -77,31 +43,8 @@ struct MacCanvasModeSwitch: View {
         }
     }
 
-    private func segment(_ title: String, showsStudyBoard value: Bool) -> some View {
-        let isSelected = showsStudyBoard == value
-        return Button {
-            showsStudyBoard = value
-        } label: {
-            Text(title)
-                .font(.system(size: 12.5, weight: .medium))
-                .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-                .padding(.horizontal, 12)
-                .frame(maxHeight: .infinity)
-                .background {
-                    if isSelected {
-                        Capsule()
-                            .fill(selectionFill)
-                            .shadow(color: .black.opacity(colorScheme == .dark ? 0.3 : 0.12), radius: 1.5, y: 0.5)
-                            .matchedGeometryEffect(id: "selection", in: selection)
-                    }
-                }
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var selectionFill: Color {
-        colorScheme == .dark ? .white.opacity(0.18) : .white
+    private func title(_ showsStudyBoard: Bool) -> String {
+        showsStudyBoard ? "Study board" : "Moodboard"
     }
 }
 
@@ -134,10 +77,7 @@ struct MacCanvasSearchControl: View {
             height: 34,
             alignment: .trailing
         )
-        .macFloatingGlassCapsule()
-        .overlay {
-            Capsule().strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
-        }
+        .floatingGlassCapsule()
         .contentShape(Capsule())
     }
 }

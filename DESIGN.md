@@ -223,6 +223,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 - **Style:** project and scope selectors are text-first native controls with a 7pt project-color dot where relevant. Counts use tertiary caption text and monospaced digits.
 - **State:** the active scope gains semibold weight plus a 2pt ink underline; inactive scopes remain primary text without colored fill.
+- **Glass segments:** switches that sit on the canvas (Moodboard or Study board, and the study board's verdict filters with their counts) share one floating glass capsule: the current segment is a pill concentric with the capsule that slides between segments. 34pt tall on macOS, 44pt on iOS.
 
 ### Cards / Containers
 
@@ -242,6 +243,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 - **iOS / iPadOS:** `NavigationStack`, inline mood. title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
 - **macOS:** the canvas occupies the window. A quiet editorial space heading (All inspiration, General, or the current project) opens a lightweight project switcher; Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Selecting an item opens its close look over the dimmed canvas, large enough to look properly: the image on the left, details and actions in a column beside it (stacked when the window is narrow). Item editing starts from there. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no permanent sidebar or toolbar.
+- **Study board:** the header is one line on the canvas, with no panel: the subject in serif with the brief beside it (clicking them edits the study), and the verdict filters at the board's right edge; when the line can't hold both, the filters drop below. The agent is not in the header. On macOS it is a glass capsule in the canvas chrome, beside the board switch, that says what it is doing or will do next ("Find more", "Codex · 3 found", "Codex · 5 new"); clicking it opens a card with one heading, the nudge as a soft well, one full-width primary action, and quiet secondary actions. On iOS a sparkles toolbar button opens the same card to copy a prompt.
 - **Iconography:** SF Symbols only, using semantic weights and platform alignment.
 
 ### Stepped Caption Cutout
