@@ -1,6 +1,6 @@
 # mood.
 
-mood. is a local-first visual moodboard for collecting anything that catches your eye on X and the web—from interfaces and typography to interiors, fashion, objects, places, and art. The native macOS and iOS apps share one library model with General and Projects, search, editing, drag-and-drop or manual link capture, and private CloudKit sync.
+mood. helps you find your design direction and hand it to your coding agent. Save what catches your eye on X and the web—interfaces and type, but also interiors, fashion, objects, places, and art—including the bookmarks you already have. Work out what your taste is on a study board where an agent proposes real, credited work and you keep or reject it with a reason. Then hand it over as direction in which every rule traces back to what you saved and why. The native macOS and iOS apps share one local-first library with General and Projects, search, editing, drag-and-drop or manual link capture, and private CloudKit sync; there is no mood. account, API key, or model inside the app.
 
 Capture surfaces are included for:
 
