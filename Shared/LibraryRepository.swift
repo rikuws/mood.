@@ -260,6 +260,7 @@ public actor LibraryRepository {
                 authorHandle: Self.cleanedHandle(payload.authorHandle),
                 imageURL: payload.imageURL,
                 localImageFilename: localImageFilename,
+                motion: payload.motion,
                 projectID: payload.projectID,
                 createdAt: now
             )
@@ -715,6 +716,7 @@ public actor LibraryRepository {
             inspiration.authorHandle = cleanedHandle(payload.authorHandle)
         }
         if inspiration.imageURL == nil { inspiration.imageURL = payload.imageURL }
+        if inspiration.motion == nil { inspiration.motion = payload.motion }
         if inspiration.source == .web && payload.source == .x { inspiration.source = .x }
     }
 
@@ -733,6 +735,7 @@ public actor LibraryRepository {
             inspiration.authorHandle = authorHandle
         }
         if let imageURL = payload.imageURL { inspiration.imageURL = imageURL }
+        if let motion = payload.motion { inspiration.motion = motion }
         if inspiration.source == .web && payload.source == .x { inspiration.source = .x }
     }
 

@@ -61,7 +61,8 @@ enum CaptureDeepLink {
             text: clean(values["text"], maximumLength: 12_000),
             authorName: cleanOptional(values["authorName"], maximumLength: 200),
             authorHandle: cleanOptional(values["authorHandle"], maximumLength: 100),
-            imageURL: imageURL
+            imageURL: imageURL,
+            motion: InspirationMotion(storedValue: values["motion"])
         )
     }
 

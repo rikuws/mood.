@@ -62,7 +62,7 @@ On `x.com` and legacy `twitter.com`, a narrowly scoped content script:
 2. adds a mood. button beside the native post actions;
 3. captures the post synchronously when the button is used;
 4. leaves X's own Bookmark and Remove bookmark controls alone;
-5. extracts the canonical `https://x.com/<handle>/status/<id>` URL, post text, author, handle, and first post image/video preview when the dedicated mood. control is clicked.
+5. extracts the canonical `https://x.com/<handle>/status/<id>` URL, post text, author, handle, and first post image/video preview when the dedicated mood. control is clicked, and marks a post whose media moves as `motion: "video"` or `"gif"` (the still is saved, and mood. plays it at the source).
 
 Both the content script and service worker coalesce rapid repeat captures. X gets an in-page status toast and button state; toolbar captures get an in-page toast plus a short action badge. “Saved to mood.” appears only after the Mac app acknowledges its repository commit; native-host connection, dispatch, save, and confirmation failures produce an actionable error instead of silently dropping the capture.
 
@@ -108,7 +108,7 @@ Request from the extension:
 }
 ```
 
-Required request fields are `protocolVersion`, `type`, `requestId`, `capturedAt`, `item.source`, `item.url`, `item.title`, `item.text`, `context.trigger`, `context.browser`, and `context.extensionVersion`. `authorName`, `authorHandle`, and `imageURL` are omitted when unavailable. Trigger is `toolbar`, `pinax_button`, or `bookmark_import`; source is `x` or `web`.
+Required request fields are `protocolVersion`, `type`, `requestId`, `capturedAt`, `item.source`, `item.url`, `item.title`, `item.text`, `context.trigger`, `context.browser`, and `context.extensionVersion`. `authorName`, `authorHandle`, `imageURL`, and `motion` are omitted when unavailable. Trigger is `toolbar`, `pinax_button`, or `bookmark_import`; source is `x` or `web`; `motion`, when present, is `video` or `gif` (anything else is dropped by the service worker and the native host).
 
 Accepted host response:
 

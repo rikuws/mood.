@@ -1,4 +1,5 @@
 import CoreText
+import PinaxCore
 import SwiftUI
 #if os(macOS)
 import AppKit
@@ -145,6 +146,45 @@ private enum SketchPaperGrain {
             pixels[index * 4 + 3] = UInt8(255 * alpha)
         }
         return context.makeImage()!
+    }
+}
+
+// MARK: - Motion
+
+/// Marks a saved post that moves. Its still is what's saved; the motion
+/// plays at the source, so the badge says so rather than pretending to play.
+struct MotionBadge: View {
+    let motion: InspirationMotion
+
+    var body: some View {
+        Group {
+            switch motion {
+            case .video:
+                Image(systemName: "play.fill")
+                    .font(.system(size: 9, weight: .bold))
+                    .frame(width: 22, height: 22)
+                    .background(.black.opacity(0.62), in: Circle())
+            case .gif:
+                Text("GIF")
+                    .font(.system(size: 9, weight: .heavy))
+                    .padding(.horizontal, 6)
+                    .frame(height: 18)
+                    .background(.black.opacity(0.62), in: Capsule())
+            }
+        }
+        .foregroundStyle(.white)
+        .padding(6)
+        .accessibilityHidden(true)
+    }
+}
+
+extension InspirationMotion {
+    /// Spoken after an item's label, so it's clear the card is a still.
+    var spokenDescription: String {
+        switch self {
+        case .video: "video, plays at the source"
+        case .gif: "GIF, plays at the source"
+        }
     }
 }
 

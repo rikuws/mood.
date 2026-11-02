@@ -7,6 +7,19 @@ public enum InspirationVerdict: String, Codable, CaseIterable, Hashable, Sendabl
     case reject
 }
 
+/// A saved post that moves. mood. keeps its still preview and opens the
+/// source to play it; the motion itself stays where it was published.
+public enum InspirationMotion: String, Codable, CaseIterable, Hashable, Sendable {
+    case video
+    case gif
+
+    /// Reads a stored or captured value, treating anything unknown as still.
+    public init?(storedValue: String?) {
+        guard let storedValue, let motion = Self(rawValue: storedValue) else { return nil }
+        self = motion
+    }
+}
+
 public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
     public typealias ID = UUID
 
@@ -27,6 +40,8 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
     public var imageURL: URL?
     /// A filename relative to the repository's shared Media directory.
     public var localImageFilename: String?
+    /// Set when the saved post is a video or GIF; `imageURL` is its still.
+    public var motion: InspirationMotion?
     /// `nil` represents the General collection.
     public var projectID: Project.ID?
     public var createdAt: Date
@@ -47,6 +62,7 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         authorHandle: String? = nil,
         imageURL: URL? = nil,
         localImageFilename: String? = nil,
+        motion: InspirationMotion? = nil,
         projectID: Project.ID? = nil,
         createdAt: Date = Date(),
         updatedAt: Date? = nil,
@@ -65,6 +81,7 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         self.authorHandle = authorHandle
         self.imageURL = imageURL
         self.localImageFilename = localImageFilename
+        self.motion = motion
         self.projectID = projectID
         self.createdAt = createdAt
         self.updatedAt = updatedAt ?? createdAt
@@ -85,6 +102,7 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         case authorHandle
         case imageURL
         case localImageFilename
+        case motion
         case projectID
         case createdAt
         case updatedAt
@@ -106,6 +124,7 @@ public struct Inspiration: Identifiable, Codable, Hashable, Sendable {
         authorHandle = try container.decodeIfPresent(String.self, forKey: .authorHandle)
         imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
         localImageFilename = try container.decodeIfPresent(String.self, forKey: .localImageFilename)
+        motion = InspirationMotion(storedValue: try container.decodeIfPresent(String.self, forKey: .motion))
         projectID = try container.decodeIfPresent(Project.ID.self, forKey: .projectID)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? createdAt

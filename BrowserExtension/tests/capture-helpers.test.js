@@ -204,6 +204,29 @@ test("checks all Open Graph candidates instead of stopping at an avatar", () => 
   );
 });
 
+test("marks posts that move, telling GIFs from videos", () => {
+  function article(media, { hasPlayer = false } = {}) {
+    return {
+      querySelectorAll: () => media,
+      querySelector: (selector) => (hasPlayer && selector.includes("videoPlayer") ? {} : null)
+    };
+  }
+
+  assert.equal(
+    capture.extractXMotion(article([fakeMedia({ src: "https://pbs.twimg.com/tweet_video_thumb/AbC.jpg" })], { hasPlayer: true })),
+    "gif"
+  );
+  assert.equal(
+    capture.extractXMotion(article([fakeMedia({ poster: "https://pbs.twimg.com/amplify_video_thumb/1/img/x.jpg" })])),
+    "video"
+  );
+  assert.equal(capture.extractXMotion(article([], { hasPlayer: true })), "video");
+  assert.equal(
+    capture.extractXMotion(article([fakeMedia({ src: "https://pbs.twimg.com/media/still.jpg" })])),
+    null
+  );
+});
+
 function fakeMedia(attributes) {
   return {
     currentSrc: attributes.currentSrc || "",

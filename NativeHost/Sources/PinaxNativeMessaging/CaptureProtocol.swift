@@ -9,6 +9,8 @@ public struct CaptureRequest: Decodable, Equatable {
         public let authorName: String?
         public let authorHandle: String?
         public let imageURL: String?
+        /// `video` or `gif` when the post moves; anything else is dropped.
+        public let motion: String?
 
         public init(
             source: String?,
@@ -17,7 +19,8 @@ public struct CaptureRequest: Decodable, Equatable {
             text: String?,
             authorName: String?,
             authorHandle: String?,
-            imageURL: String?
+            imageURL: String?,
+            motion: String? = nil
         ) {
             self.source = source
             self.url = url
@@ -26,6 +29,7 @@ public struct CaptureRequest: Decodable, Equatable {
             self.authorName = authorName
             self.authorHandle = authorHandle
             self.imageURL = imageURL
+            self.motion = motion
         }
     }
 
@@ -148,6 +152,9 @@ public struct CaptureURLBuilder {
         if let imageURLString = nonempty(request.item.imageURL),
            let imageURL = try? validatedWebURL(imageURLString) {
             queryItems.append(URLQueryItem(name: "imageURL", value: imageURL.absoluteString))
+        }
+        if let motion = nonempty(request.item.motion)?.lowercased(), motion == "video" || motion == "gif" {
+            queryItems.append(URLQueryItem(name: "motion", value: motion))
         }
 
         appendIfPresent(name: "capturedAt", value: request.capturedAt, to: &queryItems)

@@ -366,6 +366,26 @@
     return null;
   }
 
+  // Whether the post itself moves. X plays a GIF as a looping video whose
+  // still is a `tweet_video_thumb` image, and a video with an
+  // `amplify_video_thumb` or `ext_tw_video_thumb` still.
+  function extractXMotion(article) {
+    if (!article || typeof article.querySelectorAll !== "function") {
+      return null;
+    }
+    const sources = Array.from(article.querySelectorAll("video, video source, img, [poster]"))
+      .flatMap((element) => imageCandidateValues(element))
+      .join(" ");
+    if (/\/tweet_video(?:_thumb)?\//i.test(sources)) {
+      return "gif";
+    }
+    const player = article.querySelector('[data-testid="videoPlayer"], video');
+    if (player || /\/(?:amplify_video|ext_tw_video)(?:_thumb)?\//i.test(sources)) {
+      return "video";
+    }
+    return null;
+  }
+
   function extractXPost(article, pageURL) {
     if (!article || typeof article.querySelector !== "function") {
       throw new TypeError("A post article element is required");
@@ -398,6 +418,10 @@
     }
     if (imageURL) {
       item.imageURL = imageURL;
+    }
+    const motion = extractXMotion(article);
+    if (motion) {
+      item.motion = motion;
     }
 
     return item;
@@ -484,6 +508,7 @@
     canonicalizeXPostURL,
     extractPage,
     extractXImage,
+    extractXMotion,
     extractXPost,
     firstUsefulImage,
     isUsefulImageURL,

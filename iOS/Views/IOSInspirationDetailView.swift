@@ -132,8 +132,11 @@ struct IOSInspirationDetailView: View {
                 Button {
                     openURL(inspiration.url)
                 } label: {
-                    Label("Open original", systemImage: "arrow.up.right.square")
-                        .frame(maxWidth: .infinity)
+                    Label(
+                        inspiration.motion == nil ? "Open original" : "Play at source",
+                        systemImage: inspiration.motion == nil ? "arrow.up.right.square" : "play.circle"
+                    )
+                    .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)

@@ -149,7 +149,9 @@ and diacritics. Results are newest-first, matching the mood. library.
 
 Remote preview images use `imageURL`. Locally persisted media uses `localImagePath`, which
 is an absolute path suitable for an agent tool that can read local files. Either value may
-be absent.
+be absent. `motion` is `video` or `gif` when the saved post moves: the image is its still, and
+the motion itself plays at `url`, so judge timing and movement from the source, not the still.
+It's absent for still items.
 
 `text` is text captured with the item, such as an X post body or a page description.
 `note` is the user's own words about why the item matters, and `verdict` is `keep` or

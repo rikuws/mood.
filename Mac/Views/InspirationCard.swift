@@ -65,6 +65,11 @@ struct InspirationCard: View {
                     insetCaption(for: density)
                 }
             }
+            .overlay(alignment: .topTrailing) {
+                if let motion = inspiration.motion {
+                    MotionBadge(motion: motion)
+                }
+            }
     }
 
     private func preview(for density: Int) -> some View {
@@ -275,9 +280,10 @@ struct InspirationCard: View {
     }
 
     private var accessibilityLabel: String {
-        if inspiration.source == .x { return displayTitle }
-        guard let captionTitle else { return "Image from \(previewSourceLabel)" }
-        return "\(captionTitle), from \(previewSourceLabel)"
+        let motion = inspiration.motion.map { ", \($0.spokenDescription)" } ?? ""
+        if inspiration.source == .x { return displayTitle + motion }
+        guard let captionTitle else { return "Image from \(previewSourceLabel)\(motion)" }
+        return "\(captionTitle), from \(previewSourceLabel)\(motion)"
     }
 
     private var previewAspectRatio: CGFloat {

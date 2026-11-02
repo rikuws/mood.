@@ -34,6 +34,11 @@ struct IOSInspirationCard: View {
                             .accessibilityHidden(true)
                     }
                 }
+                .overlay(alignment: .topTrailing) {
+                    if let motion = inspiration.motion {
+                        MotionBadge(motion: motion)
+                    }
+                }
         }
         .padding(matInset)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -57,7 +62,7 @@ struct IOSInspirationCard: View {
             RoundedRectangle(cornerRadius: outerCornerRadius, style: .continuous)
         )
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(displayTitle)
+        .accessibilityLabel(displayTitle + (inspiration.motion.map { ", \($0.spokenDescription)" } ?? ""))
         .accessibilityHint("Opens item details")
     }
 

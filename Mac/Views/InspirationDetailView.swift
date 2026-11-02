@@ -229,13 +229,16 @@ struct InspirationDetailView: View {
             Button {
                 openURL(inspiration.url)
             } label: {
-                Label("Open", systemImage: "arrow.up.right.square")
-                    .padding(.horizontal, 6)
+                Label(
+                    inspiration.motion == nil ? "Open" : "Play at Source",
+                    systemImage: inspiration.motion == nil ? "arrow.up.right.square" : "play.circle"
+                )
+                .padding(.horizontal, 6)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .keyboardShortcut(.return, modifiers: [.command])
-            .help("Open original")
+            .help(inspiration.motion == nil ? "Open original" : "It moves: play it where it was posted")
 
             Spacer(minLength: 8)
 

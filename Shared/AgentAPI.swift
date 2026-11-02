@@ -103,6 +103,9 @@ public struct PinaxAgentInspiration: Codable, Equatable, Sendable {
     public let imageURL: URL?
     /// Absolute path to media stored by Pinax, when the inspiration has a local image.
     public let localImagePath: String?
+    /// `video` or `gif` for a post that moves; the image is its still, and
+    /// the motion plays at `url`.
+    public let motion: InspirationMotion?
     public let createdAt: Date
     public let updatedAt: Date
     public let lastCapturedAt: Date
@@ -126,6 +129,7 @@ public struct PinaxAgentInspiration: Codable, Equatable, Sendable {
         authorHandle = inspiration.authorHandle
         imageURL = inspiration.imageURL
         localImagePath = repository.localImageURL(for: inspiration)?.path
+        motion = inspiration.motion
         createdAt = inspiration.createdAt
         updatedAt = inspiration.updatedAt
         lastCapturedAt = inspiration.lastCapturedAt
@@ -151,6 +155,7 @@ public struct PinaxAgentSavedInspiration: Codable, Equatable, Sendable {
     public let authorHandle: String?
     public let imageURL: URL?
     public let localImagePath: String?
+    public let motion: InspirationMotion?
     public let createdAt: Date
     public let updatedAt: Date
     public let lastCapturedAt: Date
@@ -170,6 +175,7 @@ public struct PinaxAgentSavedInspiration: Codable, Equatable, Sendable {
         authorHandle = inspiration.authorHandle
         imageURL = inspiration.imageURL
         localImagePath = repository.localImageURL(for: inspiration)?.path
+        motion = inspiration.motion
         createdAt = inspiration.createdAt
         updatedAt = inspiration.updatedAt
         lastCapturedAt = inspiration.lastCapturedAt

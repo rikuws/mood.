@@ -61,6 +61,9 @@ function validatedItem(value) {
   if (authorHandle) {
     item.authorHandle = authorHandle;
   }
+  if (value.motion === "video" || value.motion === "gif") {
+    item.motion = value.motion;
+  }
   if (imageURL) {
     try {
       const parsedImageURL = new URL(imageURL, item.url);

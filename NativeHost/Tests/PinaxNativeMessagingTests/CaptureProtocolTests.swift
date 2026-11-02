@@ -56,6 +56,31 @@ final class CaptureProtocolTests: XCTestCase {
         XCTAssertNil(values["imageURL"] ?? nil)
     }
 
+    func testBuilderPassesOnlyKnownMotion() throws {
+        func motion(_ value: String?) throws -> String? {
+            let request = makeRequest(
+                item: .init(
+                    source: "x",
+                    url: "https://x.com/designer/status/123",
+                    title: nil,
+                    text: nil,
+                    authorName: nil,
+                    authorHandle: nil,
+                    imageURL: nil,
+                    motion: value
+                )
+            )
+            let url = try CaptureURLBuilder().build(from: request)
+            let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+            return components.queryItems?.first(where: { $0.name == "motion" })?.value
+        }
+
+        XCTAssertEqual(try motion("video"), "video")
+        XCTAssertEqual(try motion("GIF"), "gif")
+        XCTAssertNil(try motion("audio"))
+        XCTAssertNil(try motion(nil))
+    }
+
     func testBuilderRejectsNonHTTPURLs() {
         let request = makeRequest(
             item: .init(
