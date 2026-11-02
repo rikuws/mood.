@@ -17,7 +17,21 @@ colors:
   card-ink: "#000000E6"
   card-stroke: "#0000001A"
   toast-ink: "#000000D1"
+  study-paper-light: "#F2EDE3"
+  study-paper-dark: "#1A1916"
+  study-graphite-light: "#6A655B"
+  study-graphite-dark: "#A29C90"
+  study-pencil-light: "#8F897C"
+  study-pencil-dark: "#7E786D"
+  study-ink-light: "#2C43A3"
+  study-ink-dark: "#93A6F2"
 typography:
+  study-display:
+    fontFamily: "Geist Serif (bundled, OFL), Apple system serif fallback"
+    fontSize: "40pt study subject and pattern pane, 32pt close-look title on macOS; 34pt and 28pt relative to Large Title and Title on iOS"
+    fontWeight: 400
+    lineHeight: 1.0
+    letterSpacing: "-0.2pt"
   display:
     fontFamily: "Apple system serif (New York), Georgia, serif"
     fontSize: "28pt"
@@ -172,7 +186,7 @@ The palette is black and white, like a printed folio: true black canvas, white p
 
 **The Ink Rule.** Black (light) and white (dark) identify interaction and current state. They must never become a decorative wash across inactive surfaces.
 
-**The Content Color Rule.** Chromatic color belongs to captured imagery. Application chrome and text-only quote fills stay black, white, or gray.
+**The Content Color Rule.** Chromatic color belongs to captured imagery. Application chrome and text-only quote fills stay black, white, or gray. The one exception is the study board's ink (see "Study Board: Pencil and Ink"): a single blue-black for the person's own judgments, never for chrome or decoration.
 
 ## Typography
 
@@ -223,7 +237,8 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 - **Style:** project and scope selectors are text-first native controls with a 7pt project-color dot where relevant. Counts use tertiary caption text and monospaced digits.
 - **State:** the active scope gains semibold weight plus a 2pt ink underline; inactive scopes remain primary text without colored fill.
-- **Glass segments:** switches that sit on the canvas (Moodboard or Study board, and the study board's verdict filters with their counts) share one floating glass capsule: the current segment is a pill concentric with the capsule that slides between segments. 34pt tall on macOS, 44pt on iOS.
+- **Glass segments:** switches that sit on the canvas (Moodboard or Study board) share one floating glass capsule: the current segment is a pill concentric with the capsule that slides between segments. 34pt tall on macOS, 44pt on iOS.
+- **Study board filters:** the verdict filters with their counts are written on the page, not in a capsule: the current one is semibold with a short hand-drawn ink underline that slides between them; counts are graphite. 44pt targets on iOS.
 
 ### Cards / Containers
 
@@ -243,7 +258,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 - **iOS / iPadOS:** `NavigationStack`, inline mood. title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
 - **macOS:** the canvas occupies the window. A quiet editorial space heading (All inspiration, General, or the current project) opens a lightweight project switcher; Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Selecting an item opens its close look over the dimmed canvas, large enough to look properly: the image on the left, details and actions in a column beside it (stacked when the window is narrow). Item editing starts from there. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no permanent sidebar or toolbar.
-- **Study board:** the header is one line on the canvas, with no panel: the subject in serif with the brief beside it (clicking them edits the study), and the verdict filters at the board's right edge; when the line can't hold both, the filters drop below. The agent is not in the header. On macOS it is a glass capsule in the canvas chrome, beside the board switch, that says what it is doing or will do next ("Find more", "Codex · 3 found", "Codex · 5 new"); clicking it opens a card with one heading, the nudge as a soft well, one full-width primary action, and quiet secondary actions. On iOS a sparkles toolbar button opens the same card to copy a prompt.
+- **Study board:** the header is one line on the paper, with no panel: the subject in Geist Serif with the brief beside it (clicking them edits the study), and the verdict filters at the board's right edge, over a pencil rule; when the line can't hold both, the filters drop below. The agent is not in the header. On macOS it is a glass capsule in the canvas chrome, beside the board switch, that says what it is doing or will do next ("Find more", "Codex · 3 found", "Codex · 5 new"); clicking it opens a card with one heading, the nudge as a soft well, one full-width primary action, and quiet secondary actions. On iOS a sparkles toolbar button opens the same card to copy a prompt.
 - **Iconography:** SF Symbols only, using semantic weights and platform alignment.
 
 ### Stepped Caption Cutout
@@ -256,11 +271,28 @@ Text-only X captures become serif quotation cards chosen deterministically from 
 
 ### Motion and Density
 
-Pinch zoom interpolates the whole canvas continuously between adjacent column counts, then settles with a short interactive spring. On the study board, a find that arrives while the board is open develops into place: its image resolves out of monochrome grain in sixteen visible steps over about 1.7s, coarse shape and color first and detail last, like a diffusion sampler; grain tiles at the end of the board hold the slots a running agent is still filling. The grain stays gray so color still belongs to the imagery, and Reduce Motion replaces it with the usual fade. Most state changes use 160–220ms ease-out timing; loading images crossfade in 200ms. Pressed cards scale only to 0.985, while macOS hover lifts by 2pt and scales imagery to 1.018. Reduce Motion removes the spring, lift, and scale while preserving state legibility through opacity or immediate layout changes.
+Pinch zoom interpolates the whole canvas continuously between adjacent column counts, then settles with a short interactive spring. On the study board, a find that arrives while the board is open develops into place: its image resolves out of monochrome grain in sixteen visible steps over about 1.7s, coarse shape and color first and detail last, like a diffusion sampler; pencil-hatched tiles at the end of the board, breathing slowly, hold the slots a running agent is still filling. A new pattern's pencil frame is sketched in over 0.9s, and a verdict given while its card is in view is drawn in ink: the loop in 0.5s, the strike in 0.22s. The grain stays gray so color still belongs to the imagery, and Reduce Motion replaces all of it with the usual fade or an immediate mark. Most state changes use 160–220ms ease-out timing; loading images crossfade in 200ms. Pressed cards scale only to 0.985, while macOS hover lifts by 2pt and scales imagery to 1.018. Reduce Motion removes the spring, lift, and scale while preserving state legibility through opacity or immediate layout changes.
 
 **The Natural Shelf Rule.** Every column begins at the same top edge. Never add decorative per-column offsets; varying card heights already create the collected rhythm.
 
 **The Native First Rule.** Standard Apple affordances remain standard. Brand expression belongs in the card, content, tint, and quiet editorial type—not in replacements for navigation, forms, menus, alerts, or system gestures.
+
+## Study Board: Pencil and Ink
+
+The study board is where a direction is worked out, so it is drawn as a working sketchbook rather than a finished folio: two hands on one page. The agent drafts in pencil and writes in graphite; the person decides in ink. Saved work stays crisp and is never drawn on: a kept find is circled, not marked up. The moodboard keeps its scenery and folio look.
+
+- **Paper** (`{colors.study-paper-light}` / `{colors.study-paper-dark}`): warm ground with a faint tiled grain, in place of the moodboard's landscape. The white card mat stays white on it.
+- **Graphite** (`{colors.study-graphite-light}` / `{colors.study-graphite-dark}`): the agent's words, such as why a find is here and a pattern's label. At least 4.5:1 on paper.
+- **Pencil** (`{colors.study-pencil-light}` / `{colors.study-pencil-dark}`): the agent's marks, such as a proposed pattern's frame, the hatching of slots still being filled, and the rule under the header. Strokes only, never text.
+- **Ink** (`{colors.study-ink-light}` / `{colors.study-ink-dark}`): everything the person decides, such as the loop around a kept card, the stroke through a rejected one, their reasons (serif italic), the current filter's underline, a chosen lens, and a confirmed pattern's frame.
+- **Display type:** Geist Serif (`{typography.study-display}`), bundled under the SIL Open Font License and registered at first use, for the study subject, the close-look title, and a pattern given a whole pane. Its hairlines are cut for headlines, so it never goes below 28pt; pattern cards and reasons stay in the system serif.
+- **Marks** are drawn from each entry's ID, so a card's loop looks the same every time. The loop runs a rounded box about 7pt outside the card and a little past where it started; the strike crosses the whole card; the pattern frame is four quick lines that cross at the corners. Strokes are 1.8–2.2pt for ink, 1–1.1pt for pencil, with round caps.
+- **Margin notes** sit 12pt under a find, past the loop: the person's reason in ink once judged, or two lines of the agent's rationale in graphite while it waits. They show at four columns or fewer on macOS and two or fewer on iOS.
+- **Lenses:** the close look offers Dieter Rams' principles (As little design as possible, Understandable, Unobtrusive, Honest, Useful, Thorough to the detail, Long-lasting) as chips that add their words to the reason; a chosen one is circled in ink. They wrap on macOS and scroll in one row on iOS.
+
+**The Two Hands Rule.** Pencil means the agent proposed it and nothing is decided; ink means the person decided it. Never draw in ink for the agent, never use pencil for the person, and never draw on a saved image itself.
+
+**The Marks Stay Off Controls Rule.** The current filter's underline and a chosen lens are the only marks on controls. Buttons, menus, sheets, and the canvas chrome stay native.
 
 ## Do's and Don'ts
 

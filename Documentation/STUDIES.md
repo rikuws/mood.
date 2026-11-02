@@ -25,25 +25,33 @@ a study, with its items as the seeds.
 
 The study board shows everything the study turned up at once, on the same masonry canvas as
 the moodboard: every source an agent found, as the card it would become if kept, and every
-pattern it reflected back, as a serif quotation. It reads like a taste board the agent fills
-for you, from real, credited work.
+pattern it reflected back, written on the page. It reads like a sketchbook the agent drafts
+in for you, from real, credited work: the agent works in pencil, and you decide in ink.
 
-- **At a glance.** A slim header: the subject and brief, one row of agent controls, and
-  filters with counts: **All**, **To judge**, **Kept**, **Rejected**. Kept cards carry a small badge;
-  rejected ones step back in grayscale. Pinch, or ⌘+ and ⌘−, to see more or fewer at once.
-  Search filters the board by title, creator, source, reasoning, and your own reasons.
+- **At a glance.** A slim header on warm paper: the subject in Geist Serif with the brief beside
+  it, and filters with counts: **All**, **To judge**, **Kept**, **Rejected**, the current one
+  underlined in ink. A kept card is circled in ink with your reason under it; a rejected one
+  steps back in grayscale with an ink stroke through it. A find still waiting shows the
+  agent's note on why it's here, in graphite. A proposed pattern sits in a pencil frame that
+  turns to ink once you confirm it. Pinch, or ⌘+ and ⌘−, to see more or fewer at once; the
+  notes under cards give way at the densest zooms. Search filters the board by title, creator,
+  source, reasoning, and your own reasons.
 - **Up close.** Click a card (tap on iOS) for its close look. On the Mac it opens large over
   the dimmed board, the same as a moodboard item's: the image fills the left, and a column
   beside it has the credit and source link, why the agent thinks it relates to your seeds (with
-  those seeds), and, pinned at the bottom, your verdict with a reason. In a narrow window, and
-  on iPhone, the image sits above the details instead; on iPad the close look takes the page.
-  ⌘[ and ⌘] step through the board (and through the moodboard); after a verdict the close look
-  moves on to the next thing to judge. On the Mac, hovering a find offers **Keep** and
-  **Reject** right on the card; context menus have them everywhere.
+  those seeds), and, pinned at the bottom, your verdict with a reason. Your reason is written in
+  ink, and lenses from Dieter Rams' principles of good design (**As little design as
+  possible**, **Understandable**, **Honest**, …) add their words to it in one click. In a
+  narrow window, and on iPhone, the image sits above the details instead; on iPad the close
+  look takes the page. ⌘[ and ⌘] step through the board (and through the moodboard); after a
+  verdict the close look moves on to the next thing to judge. On the Mac, hovering a find
+  offers **Keep** and **Reject** right on the card; context menus have them everywhere.
 - **Live.** While the agent works, its finds appear on the board as soon as their credit
-  checks out, so you can judge the first ones while it keeps looking. Grain tiles at the end
-  hold the slots it's still filling, and each new find develops into place out of noise, like
-  a diffusion model resolving an image (a plain fade with Reduce Motion).
+  checks out, so you can judge the first ones while it keeps looking. Pencil hatching at the
+  end holds the slots it's still filling, each new find develops into place out of noise, like
+  a diffusion model resolving an image, and a new pattern's frame is sketched in. A verdict you
+  give while the card is in view is drawn in ink. Reduce Motion replaces all of it with a
+  plain fade.
 
 The board is ordered by arrival, so new finds land at the end and nothing you're looking at
 moves. Judging changes how a card looks, not where it sits.

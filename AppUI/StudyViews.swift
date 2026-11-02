@@ -113,9 +113,10 @@ struct StudyStartForm: View {
 // MARK: - Board header
 
 /// The top of the study board on one line, so the board starts right under
-/// it: the subject in serif with the brief beside it, and the verdict
-/// filters at the far edge. When the line can't hold both, the filters drop
-/// below. The agent isn't here; it lives in the canvas chrome.
+/// it: the subject in display serif with the brief beside it, and the
+/// verdict filters at the far edge, over a pencil rule. When the line can't
+/// hold both, the filters drop below. The agent isn't here; it lives in the
+/// canvas chrome.
 struct StudyBoardHeader: View {
     let study: ProjectStudy
     let board: StudyBoard
@@ -127,6 +128,16 @@ struct StudyBoardHeader: View {
     private let minimumBriefWidth: CGFloat = 160
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            titleAndFilters
+            PencilRule()
+                .stroke(Sketchbook.pencil, style: Sketchbook.inkStroke(1))
+                .frame(height: 6)
+                .accessibilityHidden(true)
+        }
+    }
+
+    private var titleAndFilters: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 0) {
                 StudyBoardTitleButton(study: study, onEdit: onEdit) {
@@ -165,7 +176,7 @@ struct StudyBoardHeader: View {
     private var subject: some View {
         Text(study.subject)
             .font(StudyBoardType.subject)
-            .tracking(-0.3)
+            .tracking(-0.2)
             .accessibilityAddTraits(.isHeader)
     }
 
@@ -220,15 +231,27 @@ private struct StudyBoardTitleButton<Label: View>: View {
     }
 }
 
-/// The verdict filters with their counts, in the same glass capsule as the
-/// canvas controls.
+/// The verdict filters with their counts, written on the page. Choosing one
+/// is the person's call, so the current filter is underlined in ink; it's
+/// one of the only marks that touch a control.
 struct StudyBoardFilterBar: View {
     @Binding var selection: StudyBoardFilter
     let board: StudyBoard
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var underline
+
+    private var minimumHeight: CGFloat {
+        #if os(iOS)
+        return 44
+        #else
+        return 28
+        #endif
+    }
+
     var body: some View {
         #if os(iOS)
-        // Large text can outgrow a phone's width; then the capsule scrolls.
+        // Large text can outgrow a phone's width; then the filters scroll.
         ViewThatFits(in: .horizontal) {
             control
             ScrollView(.horizontal, showsIndicators: false) {
@@ -241,20 +264,48 @@ struct StudyBoardFilterBar: View {
     }
 
     private var control: some View {
-        GlassSegmentedControl(
-            selection: $selection,
-            values: StudyBoardFilter.allCases,
-            accessibilityLabel: { "\($0.title), \(board.count(for: $0))" }
-        ) { filter, isSelected in
+        HStack(spacing: 18) {
+            ForEach(StudyBoardFilter.allCases, id: \.self) { filter in
+                segment(filter)
+            }
+        }
+        .animation(reduceMotion ? nil : GlassSegmentMetrics.selection, value: selection)
+    }
+
+    private func segment(_ filter: StudyBoardFilter) -> some View {
+        let isSelected = selection == filter
+        return Button {
+            selection = filter
+        } label: {
             HStack(spacing: 5) {
                 Text(filter.title)
+                    .fontWeight(isSelected ? .semibold : .medium)
                 Text("\(board.count(for: filter))")
                     .font(GlassSegmentMetrics.detailFont)
                     .monospacedDigit()
-                    .foregroundStyle(isSelected ? .secondary : .tertiary)
+                    .foregroundStyle(Sketchbook.graphite)
                     .contentTransition(.numericText())
             }
+            .font(GlassSegmentMetrics.font)
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .frame(minHeight: minimumHeight)
+            .overlay(alignment: .bottom) {
+                if isSelected {
+                    InkUnderline()
+                        .stroke(Sketchbook.ink, style: Sketchbook.inkStroke(2))
+                        .frame(height: 6)
+                        .padding(.horizontal, -3)
+                        .offset(y: minimumHeight > 30 ? -6 : 1)
+                        .matchedGeometryEffect(id: "underline", in: underline)
+                        .accessibilityHidden(true)
+                }
+            }
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(filter.title), \(board.count(for: filter))")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
@@ -512,29 +563,40 @@ struct StudyBoardEmptyState: View {
     }
 }
 
+/// Geist Serif carries the study's display moments; the system serif keeps
+/// everything smaller, where Geist's hairlines would thin out.
 enum StudyBoardType {
     static var subject: Font {
         #if os(macOS)
-        return .system(size: 24, weight: .semibold, design: .serif)
+        return SketchbookType.display(size: 40, relativeTo: .largeTitle)
         #else
-        return .system(.title2, design: .serif, weight: .semibold)
+        return SketchbookType.display(size: 34, relativeTo: .largeTitle)
         #endif
     }
 
     static var closeLookTitle: Font {
         #if os(macOS)
-        return .system(size: 24, weight: .semibold, design: .serif)
+        return SketchbookType.display(size: 32, relativeTo: .title)
         #else
-        return .system(.title2, design: .serif, weight: .semibold)
+        return SketchbookType.display(size: 28, relativeTo: .title)
         #endif
     }
 
     /// A pattern given a whole pane in the wide close look.
     static var patternStatement: Font {
         #if os(macOS)
-        return .system(size: 34, weight: .medium, design: .serif)
+        return SketchbookType.display(size: 40, relativeTo: .largeTitle)
         #else
-        return .system(.largeTitle, design: .serif, weight: .medium)
+        return SketchbookType.display(size: 34, relativeTo: .largeTitle)
+        #endif
+    }
+
+    /// The person's own words, in ink, in the close look.
+    static var reason: Font {
+        #if os(macOS)
+        return .system(size: 15, design: .serif).italic()
+        #else
+        return .system(.body, design: .serif).italic()
         #endif
     }
 }
@@ -666,92 +728,167 @@ struct StudyCardMat: ViewModifier {
     }
 }
 
-/// A reflected pattern on the board: a serif quotation on grayscale ground,
-/// like a text-only reference, so the person's taste in words sits among
-/// the images it was drawn from.
+/// A reflected pattern on the board: the agent's proposal, written on the
+/// page in a pencil frame among the images it was drawn from. Confirming it
+/// redraws the frame in ink; a new one is sketched in as it arrives.
 struct StudyPatternCard: View {
     let reflection: StudyReflection
     let columns: Int
     var isSelected = false
-    var developsOnArrival = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// How much of the frame is drawn: all of it, unless it's just arrived.
+    @State private var drawn: CGFloat
 
-    var body: some View {
-        Group {
-            if developsOnArrival, !reduceMotion {
-                DiffusionDevelopingView { quotation }
-            } else {
-                quotation
-            }
-        }
-        .clipShape(
-            RoundedRectangle(cornerRadius: StudyCardMetrics.innerCornerRadius(columns), style: .continuous)
-        )
-        .modifier(StudyCardMat(columns: columns, isSelected: isSelected))
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Pattern: \(statement)")
+    init(reflection: StudyReflection, columns: Int, isSelected: Bool = false, developsOnArrival: Bool = false) {
+        self.reflection = reflection
+        self.columns = columns
+        self.isSelected = isSelected
+        _drawn = State(initialValue: developsOnArrival ? 0 : 1)
     }
 
-    private var quotation: some View {
+    var body: some View {
         let padding = StudyCardMetrics.padding(columns)
-        return VStack(alignment: .leading, spacing: max(5, padding * 0.45)) {
+        VStack(alignment: .leading, spacing: max(5, padding * 0.45)) {
             Text("Pattern")
-                .font(.system(size: max(8.5, StudyCardMetrics.statementSize(columns) * 0.55), weight: .semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .font(.system(size: max(8.5, StudyCardMetrics.statementSize(columns) * 0.5), weight: .semibold))
+                .tracking(0.8)
+                .textCase(.uppercase)
+                .foregroundStyle(Sketchbook.graphite)
             Text(statement)
-                .font(
-                    .system(
-                        size: StudyCardMetrics.statementSize(columns),
-                        weight: .medium,
-                        design: .serif
-                    )
-                )
-                .foregroundStyle(.white)
+                .font(.system(size: StudyCardMetrics.statementSize(columns), design: .serif))
+                .foregroundStyle(.primary)
                 .lineLimit(StudyCardMetrics.lineLimit(columns))
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .opacity(Double(drawn))
         .padding(padding)
-        .padding(.top, padding)
-        .frame(maxWidth: .infinity, alignment: .bottomLeading)
-        .background(alignment: .topLeading) {
-            Text("\u{201C}")
-                .font(.system(size: StudyCardMetrics.statementSize(columns) * 2.8, design: .serif))
-                .foregroundStyle(.white.opacity(0.18))
-                .padding(.horizontal, padding)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
+        .background {
+            if isSelected {
+                RoundedRectangle(cornerRadius: StudyCardMetrics.cornerRadius(columns), style: .continuous)
+                    .fill(.primary.opacity(0.06))
+            }
+        }
+        .overlay {
+            PencilFrame(seed: frameSeed)
+                .trim(from: 0, to: drawn)
+                .stroke(isAnswered ? Sketchbook.ink : Sketchbook.pencil, style: Sketchbook.inkStroke(isAnswered ? 1.8 : 1.1))
                 .accessibilityHidden(true)
         }
-        .background(StudyBoardPalette.quoteFill(for: reflection.id))
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Pattern: \(statement)")
+        .onAppear {
+            guard drawn < 1 else { return }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.9)) { drawn = 1 }
+        }
     }
 
     private var statement: String {
         reflection.acceptedStatement ?? reflection.statement
     }
+
+    /// Confirmed or corrected: the person has made it theirs.
+    private var isAnswered: Bool {
+        reflection.status == .confirmed || reflection.status == .corrected
+    }
+
+    private var frameSeed: UInt64 {
+        SketchJitter.seed(for: reflection.id)
+    }
 }
 
-/// A card-shaped field of moving grain at the end of the board while an agent
-/// is still looking: the slot a find will develop into.
+/// Pencil hatching at the end of the board while an agent is still looking:
+/// the slot a find will develop into, blocked in before it's drawn.
 struct StudyLatentCard: View {
     let columns: Int
     let aspectRatio: CGFloat
     /// Offsets this tile's breathing from its neighbour's.
     var phase = 0.0
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isBreathingIn = false
+
     var body: some View {
-        Rectangle()
-            .fill(Color(white: 0.9))
+        PencilHatch(seed: UInt64(phase * 1000) + 3)
+            .opacity(isBreathingIn ? 0.5 : 0.28)
             .aspectRatio(aspectRatio, contentMode: .fit)
-            .overlay { DiffusionNoiseField(intensity: 0.5, breath: 0.12, phase: phase) }
-            .clipShape(
-                RoundedRectangle(cornerRadius: StudyCardMetrics.innerCornerRadius(columns), style: .continuous)
-            )
-            .modifier(StudyCardMat(columns: columns))
-            .compositingGroup()
-            .opacity(0.85)
+            .overlay {
+                PencilFrame(seed: UInt64(phase * 1000) + 5)
+                    .stroke(Sketchbook.pencil, style: Sketchbook.inkStroke(1.1))
+            }
+            .padding(StudyCardMetrics.matInset(columns))
             .accessibilityHidden(true)
+            .task {
+                guard !reduceMotion else { return }
+                try? await Task.sleep(for: .seconds(phase / .pi * 0.8))
+                withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                    isBreathingIn = true
+                }
+            }
     }
+}
+
+/// What sits under a find on the board, at the densities with room for it:
+/// the person's reason in ink once they've judged it, or the agent's note
+/// on why it's here, in graphite, while it waits.
+struct StudyMarginNote: View {
+    let suggestion: StudySuggestion
+    let columns: Int
+
+    var body: some View {
+        if columns <= Self.maximumColumns {
+            switch suggestion.status {
+            case .pending:
+                note(suggestion.rationale, isReason: false)
+            case .kept, .rejected:
+                if let reason = suggestion.reason, !reason.isEmpty {
+                    note("\u{201C}\(reason)\u{201D}", isReason: true)
+                }
+            }
+        }
+    }
+
+    private func note(_ text: String, isReason: Bool) -> some View {
+        Text(text.trimmingCharacters(in: .whitespacesAndNewlines))
+            .font(isReason ? reasonFont : agentFont)
+            .foregroundStyle(isReason ? Sketchbook.ink : Sketchbook.graphite)
+            .lineLimit(isReason ? 3 : 2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 2)
+            .accessibilityLabel(isReason ? "Your reason: \(text)" : "Why it's here: \(text)")
+    }
+
+    private static var maximumColumns: Int {
+        #if os(iOS)
+        return 2
+        #else
+        return 4
+        #endif
+    }
+
+    private var agentFont: Font {
+        #if os(iOS)
+        return .footnote
+        #else
+        return .system(size: columns >= 4 ? 11.5 : 12.5)
+        #endif
+    }
+
+    private var reasonFont: Font {
+        #if os(iOS)
+        return .system(.subheadline, design: .serif).italic()
+        #else
+        return .system(size: columns >= 4 ? 13 : 14, design: .serif).italic()
+        #endif
+    }
+
+    /// Clears the ink loop around a kept card above it.
+    static let spacing: CGFloat = 12
 }
 
 /// The board's motion, in one place so it can be tuned together.
@@ -780,52 +917,44 @@ enum StudyBoardMotion {
     }
 }
 
-enum StudyBoardPalette {
-    /// The same grayscale grounds text-only references use, picked by ID.
-    static func quoteFill(for id: UUID) -> Color {
-        let seed = id.uuidString.unicodeScalars.reduce(0) { $0 + Int($1.value) }
-        let palette: [Color] = [
-            .black,
-            Color(white: 0.067),
-            Color(white: 0.122),
-            Color(white: 0.173),
-        ]
-        return palette[seed % palette.count]
-    }
-}
-
 extension View {
-    /// Marks a board card with the person's verdict: kept cards carry a quiet
-    /// badge, rejected ones step back in grayscale.
-    func studyBoardVerdict(_ verdict: StudyBoardVerdict) -> some View {
-        modifier(StudyBoardVerdictStyle(verdict: verdict))
+    /// Marks a board card with the person's verdict, in ink: a kept card is
+    /// circled, and a rejected one steps back in grayscale with a stroke
+    /// through it. A verdict given while the card is on screen is drawn in.
+    /// - Parameter circlesKept: false for a card that shows being kept
+    ///   itself, like a pattern whose frame turns to ink.
+    func studyBoardVerdict(_ verdict: StudyBoardVerdict, seed: UUID, circlesKept: Bool = true) -> some View {
+        modifier(StudyBoardVerdictStyle(verdict: verdict, seed: seed, circlesKept: circlesKept))
     }
 }
 
 private struct StudyBoardVerdictStyle: ViewModifier {
     let verdict: StudyBoardVerdict
+    let seed: UUID
+    let circlesKept: Bool
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// The verdict the card was showing, so a change can be told from a
+    /// card that simply arrived already judged.
+    @State private var shownVerdict: StudyBoardVerdict?
 
     func body(content: Content) -> some View {
         content
             .compositingGroup()
             .saturation(verdict == .rejected ? 0 : 1)
             .opacity(verdict == .rejected ? 0.5 : 1)
-            .overlay(alignment: .topLeading) {
-                if verdict != .pending {
-                    Label(
-                        verdict == .kept ? "Kept" : "Rejected",
-                        systemImage: verdict == .kept ? "checkmark" : "xmark"
+            .overlay {
+                if verdict == .rejected || (verdict == .kept && circlesKept) {
+                    StudyVerdictMark(
+                        verdict: verdict,
+                        seed: seed,
+                        drawsIn: !reduceMotion && shownVerdict != nil && shownVerdict != verdict
                     )
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.black.opacity(0.85))
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 3)
-                    .background(Color.white, in: Capsule())
-                    .overlay { Capsule().strokeBorder(.black.opacity(0.1), lineWidth: 0.5) }
-                    .padding(9)
-                    .accessibilityHidden(true)
+                    .id(verdict)
                 }
             }
+            .onAppear { shownVerdict = verdict }
+            .onChange(of: verdict) { _, newVerdict in shownVerdict = newVerdict }
             .accessibilityValue(verdictDescription)
     }
 
@@ -834,6 +963,42 @@ private struct StudyBoardVerdictStyle: ViewModifier {
         case .pending: "To judge"
         case .kept: "Kept"
         case .rejected: "Rejected"
+        }
+    }
+}
+
+/// The ink loop or stroke itself, drawn in the way a hand would when the
+/// verdict is new.
+private struct StudyVerdictMark: View {
+    let verdict: StudyBoardVerdict
+    let seed: UUID
+
+    @State private var drawn: CGFloat
+
+    init(verdict: StudyBoardVerdict, seed: UUID, drawsIn: Bool) {
+        self.verdict = verdict
+        self.seed = seed
+        _drawn = State(initialValue: drawsIn ? 0 : 1)
+    }
+
+    var body: some View {
+        Group {
+            if verdict == .kept {
+                InkLoop(seed: seed)
+                    .trim(from: 0, to: drawn)
+                    .stroke(Sketchbook.ink, style: Sketchbook.inkStroke(1.8))
+                    .padding(-7)
+            } else {
+                InkStrike(seed: seed)
+                    .trim(from: 0, to: drawn)
+                    .stroke(Sketchbook.ink, style: Sketchbook.inkStroke(2.2))
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+        .onAppear {
+            guard drawn < 1 else { return }
+            withAnimation(.easeOut(duration: verdict == .kept ? 0.5 : 0.22)) { drawn = 1 }
         }
     }
 }
@@ -1078,6 +1243,7 @@ struct StudyFindingCloseLook: View {
 
                 StudyCloseLookSection("Why it's here") {
                     Text(suggestion.rationale)
+                        .foregroundStyle(Sketchbook.graphite)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 }
@@ -1106,6 +1272,9 @@ struct StudyFindingCloseLook: View {
                 )
                 .lineLimit(1...4)
                 .textFieldStyle(.roundedBorder)
+                .font(StudyBoardType.reason)
+                .foregroundStyle(Sketchbook.ink)
+                StudyLensPicker(reason: $reason)
                 HStack(spacing: 8) {
                     Button {
                         onDecide(.keep, reason)
@@ -1147,8 +1316,8 @@ struct StudyFindingCloseLook: View {
     private var reasonText: some View {
         if let reason = suggestion.reason, !reason.isEmpty {
             Text("\u{201C}\(reason)\u{201D}")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+                .font(StudyBoardType.reason)
+                .foregroundStyle(Sketchbook.ink)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -1215,18 +1384,20 @@ struct StudyPatternCloseLook: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Pattern")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.6))
+                .tracking(0.8)
+                .textCase(.uppercase)
+                .foregroundStyle(Sketchbook.graphite)
             Text("\u{201C}\(reflection.acceptedStatement ?? reflection.statement)\u{201D}")
                 .font(isWide ? StudyBoardType.patternStatement : StudyBoardType.closeLookTitle)
-                .tracking(-0.3)
+                .tracking(-0.2)
                 .lineSpacing(isWide ? 4 : 2)
-                .foregroundStyle(.white)
+                .foregroundStyle(.primary)
                 .fixedSize(horizontal: false, vertical: true)
                 .textSelection(.enabled)
             if reflection.status == .corrected {
                 Text("Proposed as: \(reflection.statement)")
                     .font(.caption)
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(Sketchbook.graphite)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -1236,7 +1407,7 @@ struct StudyPatternCloseLook: View {
             maxHeight: isWide ? .infinity : nil,
             alignment: isWide ? .bottomLeading : .leading
         )
-        .background(StudyBoardPalette.quoteFill(for: reflection.id))
+        .background(SketchPaper())
         .clipShape(RoundedRectangle(cornerRadius: isWide ? 0 : 10, style: .continuous))
     }
 
@@ -1364,6 +1535,162 @@ extension View {
         self
             .shadow(color: .black.opacity(isEnabled ? 0.12 : 0), radius: 2, y: 1)
             .shadow(color: .black.opacity(isEnabled ? 0.14 : 0), radius: 16, y: 8)
+    }
+}
+
+/// Quick ways to say why, through Dieter Rams' principles of good design.
+/// A lens goes into the reason as words, so it steers the search like
+/// anything else the person writes; a chosen one is circled in ink.
+struct StudyLensPicker: View {
+    @Binding var reason: String
+
+    static let lenses = [
+        "As little design as possible",
+        "Understandable",
+        "Unobtrusive",
+        "Honest",
+        "Useful",
+        "Thorough to the detail",
+        "Long-lasting",
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Or say it through a lens")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            #if os(iOS)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) { chips }
+                    .padding(.vertical, 6)
+                    .padding(.horizontal, 7)
+            }
+            .padding(.horizontal, -7)
+            #else
+            SketchFlowLayout(spacing: 8, lineSpacing: 8) { chips }
+                .padding(.vertical, 4)
+            #endif
+        }
+    }
+
+    private var chips: some View {
+        ForEach(Self.lenses, id: \.self) { lens in
+            let isChosen = contains(lens)
+            Button {
+                toggle(lens)
+            } label: {
+                Text(lens)
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(isChosen ? AnyShapeStyle(Sketchbook.ink) : AnyShapeStyle(.primary))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 5)
+                    .frame(minHeight: chipHeight)
+                    .overlay {
+                        if isChosen {
+                            InkLoop(seed: Self.seed(for: lens))
+                                .stroke(Sketchbook.ink, style: Sketchbook.inkStroke(1.5))
+                                .padding(-3)
+                        } else {
+                            Capsule().strokeBorder(.primary.opacity(0.16), lineWidth: 0.5)
+                        }
+                    }
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(isChosen ? .isSelected : [])
+            .accessibilityHint(isChosen ? "Removes it from your reason" : "Adds it to your reason")
+        }
+    }
+
+    private var chipHeight: CGFloat {
+        #if os(iOS)
+        return 44
+        #else
+        return 26
+        #endif
+    }
+
+    private func contains(_ lens: String) -> Bool {
+        reason.range(of: lens, options: [.caseInsensitive]) != nil
+    }
+
+    private func toggle(_ lens: String) {
+        if let range = reason.range(of: lens, options: [.caseInsensitive]) {
+            reason.removeSubrange(range)
+            reason = reason
+                .replacingOccurrences(of: "..", with: ".")
+                .replacingOccurrences(of: "  ", with: " ")
+                .trimmingCharacters(in: CharacterSet(charactersIn: " .").union(.whitespacesAndNewlines))
+            return
+        }
+        let current = reason.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let last = current.last else {
+            reason = lens
+            return
+        }
+        reason = current + (".!?".contains(last) ? " " : ". ") + lens
+    }
+
+    /// Each lens keeps its own loop, the same every time.
+    private static func seed(for lens: String) -> UUID {
+        var bytes = [UInt8](repeating: 0, count: 16)
+        for (index, byte) in lens.utf8.enumerated() {
+            bytes[index % 16] = bytes[index % 16] &* 31 &+ byte
+        }
+        return UUID(uuid: (
+            bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]
+        ))
+    }
+}
+
+/// Lays chips out in rows, wrapping to the next when a row is full.
+struct SketchFlowLayout: Layout {
+    var spacing: CGFloat
+    var lineSpacing: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = rows(for: subviews, width: proposal.width ?? .infinity)
+        let height = rows.reduce(0) { $0 + $1.height } + lineSpacing * CGFloat(max(0, rows.count - 1))
+        let width = rows.map(\.width).max() ?? 0
+        return CGSize(width: proposal.width ?? width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in rows(for: subviews, width: bounds.width) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + lineSpacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func rows(for subviews: Subviews, width: CGFloat) -> [Row] {
+        var rows: [Row] = []
+        var row = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            if needed > width, !row.indices.isEmpty {
+                rows.append(row)
+                row = Row()
+            }
+            row.width = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+        }
+        if !row.indices.isEmpty { rows.append(row) }
+        return rows
     }
 }
 

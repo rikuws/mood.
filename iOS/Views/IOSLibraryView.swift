@@ -245,7 +245,16 @@ struct IOSLibraryView: View {
                 }
             }
         }
-        .background(Color.pinaxCanvas)
+        .background {
+            // A study board is worked on paper.
+            if showsStudyBoard {
+                SketchPaper()
+                    .ignoresSafeArea()
+            } else {
+                Color.pinaxCanvas
+                    .ignoresSafeArea()
+            }
+        }
     }
 
     @ViewBuilder
@@ -453,13 +462,17 @@ struct IOSLibraryView: View {
                 guard allowsCardInteraction else { return }
                 openStudyCloseLook(entry.id, projectID: project.id)
             } label: {
-                IOSInspirationCard(
-                    inspiration: item,
-                    localImageURL: store.localImageURL(for: item),
-                    canvasColumnCount: columnCount
-                )
-                .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
-                .studyBoardVerdict(entry.verdict)
+                VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                    IOSInspirationCard(
+                        inspiration: item,
+                        localImageURL: store.localImageURL(for: item),
+                        canvasColumnCount: columnCount
+                    )
+                    .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
+                    .studyBoardVerdict(entry.verdict, seed: entry.id)
+
+                    StudyMarginNote(suggestion: suggestion, columns: columnCount)
+                }
             }
             .buttonStyle(CollectedCardButtonStyle())
             .contextMenu { studyFindingMenu(suggestion, projectID: project.id) }
@@ -475,7 +488,7 @@ struct IOSLibraryView: View {
                     columns: columnCount,
                     developsOnArrival: studyArrivals.fresh.contains(entry.id)
                 )
-                .studyBoardVerdict(entry.verdict)
+                .studyBoardVerdict(entry.verdict, seed: entry.id, circlesKept: false)
             }
             .buttonStyle(CollectedCardButtonStyle())
             .contextMenu { studyPatternMenu(reflection, projectID: project.id) }

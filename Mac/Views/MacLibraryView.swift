@@ -187,10 +187,18 @@ struct MacLibraryView: View {
             )
 
             ZStack {
-                MacMoodboardArtworkLayer(
-                    assetName: activeLandscape.rawValue,
-                    projectColorHex: currentProjectColorHex
-                )
+                // A study board is worked on paper; the moodboard keeps its
+                // scenery.
+                if showsStudyBoard {
+                    SketchPaper()
+                        .transition(.opacity)
+                } else {
+                    MacMoodboardArtworkLayer(
+                        assetName: activeLandscape.rawValue,
+                        projectColorHex: currentProjectColorHex
+                    )
+                    .transition(.opacity)
+                }
 
                 canvasStack
             }
@@ -453,8 +461,12 @@ struct MacLibraryView: View {
                 // Preserve an initial panoramic field so the built-in
                 // landscape reads as scenery, even on a full board.
                 // It scrolls away naturally once the user starts
-                // working through the collection.
-                .padding(.top, landscapeRevealHeight(for: geometry.size.height))
+                // working through the collection. The study board's
+                // paper has no scenery, only room for the chrome.
+                .padding(
+                    .top,
+                    showsStudyBoard ? studyBoardTopInset : landscapeRevealHeight(for: geometry.size.height)
+                )
                 .padding(.bottom, 28)
             }
             .contentShape(Rectangle())
@@ -585,23 +597,27 @@ struct MacLibraryView: View {
         case .finding(let suggestion):
             let item = savedInspiration(for: suggestion)
                 ?? suggestion.previewInspiration(projectID: project.id)
-            InspirationCard(
-                inspiration: item,
-                localImageURL: store.localImageURL(for: item),
-                canvasColumnCount: columnCount,
-                isSelected: isSelected,
-                onSelect: {
-                    guard canvasInteractionPhase == .idle else { return }
-                    selectStudyEntry(entry.id)
-                }
-            )
-            .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
-            .studyBoardVerdict(entry.verdict)
-            .modifier(
-                MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
-                    decide(suggestion, verdict: verdict, reason: nil, advancing: false)
-                }
-            )
+            VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                InspirationCard(
+                    inspiration: item,
+                    localImageURL: store.localImageURL(for: item),
+                    canvasColumnCount: columnCount,
+                    isSelected: isSelected,
+                    onSelect: {
+                        guard canvasInteractionPhase == .idle else { return }
+                        selectStudyEntry(entry.id)
+                    }
+                )
+                .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
+                .studyBoardVerdict(entry.verdict, seed: entry.id)
+                .modifier(
+                    MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
+                        decide(suggestion, verdict: verdict, reason: nil, advancing: false)
+                    }
+                )
+
+                StudyMarginNote(suggestion: suggestion, columns: columnCount)
+            }
             .contextMenu { studyFindingMenu(suggestion) }
         case .pattern(let reflection):
             Button {
@@ -616,7 +632,7 @@ struct MacLibraryView: View {
                 )
             }
             .buttonStyle(.plain)
-            .studyBoardVerdict(entry.verdict)
+            .studyBoardVerdict(entry.verdict, seed: entry.id, circlesKept: false)
             .contextMenu { studyPatternMenu(reflection) }
             .accessibilityHint("Opens the pattern up close")
         }
@@ -898,6 +914,9 @@ struct MacLibraryView: View {
     private func landscapeRevealHeight(for availableHeight: CGFloat) -> CGFloat {
         min(132, max(72, availableHeight * 0.17))
     }
+
+    /// Clears the canvas chrome above the study board's header.
+    private let studyBoardTopInset: CGFloat = 64
 
     private var emptyDescription: String {
         if !store.searchText.isEmpty { return "Try a different title, author, note, or URL." }
