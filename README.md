@@ -6,7 +6,7 @@ Capture surfaces are included for:
 
 - a Chromium toolbar action for the current page;
 - a mood. action beside posts on X;
-- X's own Bookmark action (Remove bookmark is ignored);
+- an import of the bookmarks you already have on X, from X's Bookmarks page (X's own Bookmark button doesn't save to mood.);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
 See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. [Guided visual studies](Documentation/STUDIES.md) let you seed a subject with work you love, judge the real sources an agent finds with the [`mood-study`](skills/mood-study) skill on a study board that fills in as it finds them, and confirm the patterns it reflects back. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
@@ -83,7 +83,7 @@ mood. supports Google Chrome, Chromium, Brave, Microsoft Edge, Arc, and Vivaldi.
 1. Build and launch the signed/direct Mac app. The app bundle contains both `Contents/Helpers/PinaxNativeHost` and `Contents/Resources/BrowserExtension`.
 2. In mood., open **Browser Setup** and choose **Install for all browsers** (or install one browser). This writes only the app's user-level `com.pinax.native_host.json` manifest, pointing to the helper inside the current app bundle.
 3. In the browser, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose **Load unpacked**, and select the BrowserExtension folder shown by mood. During repository development, `BrowserExtension/dist` is the equivalent folder.
-4. Pin the extension if desired. Its toolbar button saves the active HTTP(S) page. On X, use the injected mood. action or add the post to X Bookmarks.
+4. Pin the extension if desired. Its toolbar button saves the active HTTP(S) page. On X, use the injected mood. action. To bring in bookmarks you already have, open X's Bookmarks page, choose **Start importing** in the mood. panel, and scroll; each post is saved to General as it appears.
 
 The unpacked extension has the fixed ID `ohhhjpbfjecipcnkahlhaggckmdjfndg`; the installed native-host manifest authorizes that exact origin. Rerun Browser Setup after moving the app, because Chromium manifests contain an absolute helper path.
 

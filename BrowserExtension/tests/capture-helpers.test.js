@@ -40,6 +40,16 @@ test("normalizes safe page URLs without discarding meaningful queries", () => {
   assert.equal(capture.normalizeWebURL("file:///tmp/inspiration.png"), null);
 });
 
+test("recognizes X's Bookmarks page and its folders only", () => {
+  assert.equal(capture.isXBookmarksPage("https://x.com/i/bookmarks"), true);
+  assert.equal(capture.isXBookmarksPage("https://x.com/i/bookmarks/1790000000000000000"), true);
+  assert.equal(capture.isXBookmarksPage("https://twitter.com/i/bookmarks?ref=nav"), true);
+  assert.equal(capture.isXBookmarksPage("https://x.com/i/bookmarksarchive"), false);
+  assert.equal(capture.isXBookmarksPage("https://x.com/home"), false);
+  assert.equal(capture.isXBookmarksPage("https://example.com/i/bookmarks"), false);
+  assert.equal(capture.isXBookmarksPage("not a URL"), false);
+});
+
 test("classifies X and web sources", () => {
   assert.equal(capture.sourceForURL("https://x.com/explore"), "x");
   assert.equal(capture.sourceForURL("https://www.twitter.com/home"), "x");

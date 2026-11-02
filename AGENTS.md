@@ -1,6 +1,6 @@
 # mood.
 
-mood. is a local-first native macOS and iOS visual moodboard for collecting imagery, text, authorship, and source context into General and Projects. Mac and iOS share one coordinated App Group library (`library.json` plus `Media/`) with an optional private CloudKit replica. Capture surfaces are a Chromium toolbar action, an injected mood. control on X, and the iOS Share sheet (including X **Share via…**). Design is restrained and native: collected content carries personality; Apple navigation, sheets, menus, and gestures stay standard.
+mood. is a local-first native macOS and iOS visual moodboard for collecting imagery, text, authorship, and source context into General and Projects. Mac and iOS share one coordinated App Group library (`library.json` plus `Media/`) with an optional private CloudKit replica. Capture surfaces are a Chromium toolbar action, an injected mood. control on X, an import of existing bookmarks from X's Bookmarks page, and the iOS Share sheet (including X **Share via…**). Design is restrained and native: collected content carries personality; Apple navigation, sheets, menus, and gestures stay standard.
 
 ## Architecture
 

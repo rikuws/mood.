@@ -1,6 +1,6 @@
 # mood. Chromium extension
 
-The mood. extension saves the current web page from its toolbar button and adds a dedicated mood. control to every post on X. X's own **Bookmark** and **Remove bookmark** controls do not save to mood.
+The mood. extension saves the current web page from its toolbar button and adds a dedicated mood. control to every post on X. On X's Bookmarks page it can also import the bookmarks you already have. X's own **Bookmark** and **Remove bookmark** controls do not save to mood.
 
 It is a source-only Manifest V3 extension with no remote code, analytics, or network backend. Captures travel directly from the extension service worker to the installed mood. macOS app through Chromium native messaging.
 
@@ -66,6 +66,19 @@ On `x.com` and legacy `twitter.com`, a narrowly scoped content script:
 
 Both the content script and service worker coalesce rapid repeat captures. X gets an in-page status toast and button state; toolbar captures get an in-page toast plus a short action badge. “Saved to mood.” appears only after the Mac app acknowledges its repository commit; native-host connection, dispatch, save, and confirmation failures produce an actionable error instead of silently dropping the capture.
 
+### Importing existing bookmarks
+
+On X's Bookmarks page (`/i/bookmarks`, and a bookmark folder's page), a small mood. panel offers **Start importing**. While it runs:
+
+- every post you scroll into view is queued once and saved one at a time, with the `bookmark_import` trigger, through the same native-messaging path as the mood. button;
+- each post is read when it's found and again when its turn comes, so a late-loading image is included, and a post X recycles off screen is still saved from its first read;
+- the panel counts what was saved, what was already in mood. (the app's own duplicate check by canonical URL), and anything that couldn't be read;
+- **Stop** holds the queue and **Resume** picks it up, a failed save pauses the import with the app's message and **Try again** retries that post first, and leaving the page stops the import.
+
+The extension never scrolls, clicks, or fetches on its own: the import covers exactly the bookmarks you scroll past, so reaching the end of the list is up to you. It uses no X API, credentials, or new permissions. Imported posts land in General.
+
+The importer's queue and counts are in `lib/bookmark-import.js`, apart from the DOM, with tests in `tests/bookmark-import.test.js`. The page check and post reading reuse `lib/capture-helpers.js`, so X layout changes are fixed in one place. If a running import finds no posts within a few seconds, the panel says X may have changed its page.
+
 ## Native message protocol
 
 Messages use Chromium's native messaging framing: one UTF-8 JSON object prefixed with its 32-bit native-endian byte length. The extension opens one `sendNativeMessage` process per non-coalesced capture.
@@ -95,7 +108,7 @@ Request from the extension:
 }
 ```
 
-Required request fields are `protocolVersion`, `type`, `requestId`, `capturedAt`, `item.source`, `item.url`, `item.title`, `item.text`, `context.trigger`, `context.browser`, and `context.extensionVersion`. `authorName`, `authorHandle`, and `imageURL` are omitted when unavailable. Trigger is either `toolbar` or `pinax_button`; source is `x` or `web`.
+Required request fields are `protocolVersion`, `type`, `requestId`, `capturedAt`, `item.source`, `item.url`, `item.title`, `item.text`, `context.trigger`, `context.browser`, and `context.extensionVersion`. `authorName`, `authorHandle`, and `imageURL` are omitted when unavailable. Trigger is `toolbar`, `pinax_button`, or `bookmark_import`; source is `x` or `web`.
 
 Accepted host response:
 

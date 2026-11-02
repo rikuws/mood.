@@ -36,6 +36,7 @@
       ],
       "js": [
         "lib/capture-helpers.js",
+        "lib/bookmark-import.js",
         "content/x-content.js"
       ],
       "run_at": "document_idle"

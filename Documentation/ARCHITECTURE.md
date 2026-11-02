@@ -5,7 +5,7 @@ mood. is a local-first visual moodboard with several capture surfaces, one coord
 ## System overview
 
 ```text
-Chromium toolbar / X mood. action / confirmed X Bookmark
+Chromium toolbar / X mood. action / X bookmark import
                          |
                          v
         Chromium native messaging (framed JSON on stdio)
@@ -120,7 +120,9 @@ The helper targets its containing `mood.app` explicitly, so another registered b
 
 The Mac build bundles the helper at `Contents/Helpers/PinaxNativeHost` and the built extension at `Contents/Resources/BrowserExtension`. Browser Setup writes a per-user native-host manifest for Chrome, Chromium, Brave, Edge, Arc, and Vivaldi. Each manifest contains the helper's absolute path and only the fixed allowed origin. Existing unrelated or unreadable manifests are not overwritten.
 
-On X, the content script observes the recycled SPA timeline, adds its action beside each post, and extracts the canonical status URL and available metadata. For X's Bookmark action, it snapshots the post on the click and sends only after that same post changes to X's bookmarked state; Remove bookmark is ignored. Rapid repeated captures are coalesced.
+On X, the content script observes the recycled SPA timeline, adds its action beside each post, and extracts the canonical status URL and available metadata. X's own Bookmark and Remove bookmark controls are left alone. Rapid repeated captures are coalesced.
+
+On X's Bookmarks page (and a bookmark folder's), the content script also offers to import the bookmarks the person already has. Once they start it, every post that comes into view is read when it's found and again when its turn comes, keeping the fresher read only if X hasn't recycled the article for another post. Posts are sent one at a time through the same native-messaging capture, with the `bookmark_import` trigger, and each post is sent once per page visit. The extension never scrolls or fetches anything itself, so the import covers exactly what the person scrolls past. A failed save pauses the import with the host's message and retries that post first. Leaving the page stops it. The importer's queue and counts live in `BrowserExtension/lib/bookmark-import.js`, separate from the DOM, and have their own tests.
 
 Because the installer writes into browser Application Support directories, the Mac app is designed for direct distribution rather than a Mac App Store sandbox. Moving the app requires reinstalling its manifests so their absolute helper paths remain valid.
 

@@ -45,6 +45,17 @@ test("presents mood. as a general visual moodboard", () => {
   assert.doesNotMatch(serviceWorker, /x_bookmark/);
 });
 
+test("imports bookmarks only through the explicit import, never X's Bookmark button", () => {
+  const contentScripts = manifest.content_scripts[0].js;
+  assert.ok(
+    contentScripts.indexOf("lib/bookmark-import.js") < contentScripts.indexOf("content/x-content.js"),
+    "the importer loads before the X content script"
+  );
+  assert.match(serviceWorker, /VALID_TRIGGERS = new Set\(\[[^\]]*"bookmark_import"/);
+  assert.match(xContent, /sendCaptureMessage\(item, "bookmark_import"\)/);
+  assert.match(xContent, /isXBookmarksPage/);
+});
+
 test("keeps browser capture identities compatible", () => {
   assert.match(serviceWorker, /NATIVE_HOST_NAME = "com\.pinax\.native_host"/);
   assert.match(serviceWorker, /message\?\.type !== "pinax\.capture"/);

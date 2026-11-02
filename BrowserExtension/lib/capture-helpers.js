@@ -111,6 +111,12 @@
     return parseXStatusURL(value, baseURL)?.url || null;
   }
 
+  // X's Bookmarks page, including a bookmark folder's.
+  function isXBookmarksPage(value) {
+    const url = toHTTPURL(value);
+    return Boolean(url && isXHostname(url.hostname) && /^\/i\/bookmarks(?:\/|$)/i.test(url.pathname));
+  }
+
   function sourceForURL(value, baseURL) {
     const url = toHTTPURL(value, baseURL);
     return url && isXHostname(url.hostname) ? "x" : "web";
@@ -481,6 +487,7 @@
     extractXPost,
     firstUsefulImage,
     isUsefulImageURL,
+    isXBookmarksPage,
     isXHostname,
     normalizeXMediaURL,
     normalizeWebURL,
