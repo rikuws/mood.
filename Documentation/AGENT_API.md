@@ -35,6 +35,47 @@ The version number covers the executable's JSON wire contract. The public Swift 
 not a source-stable SDK. External integrations should invoke the helper and consume its
 versioned JSON instead of switching over those Swift enums.
 
+## Use it as an MCP server
+
+`mood-agent mcp` serves the same reads and proposals to any coding agent that speaks the Model
+Context Protocol, over stdin and stdout, one JSON-RPC message per line. Nothing listens on the
+network; the client starts the helper and stops it. Add it once:
+
+```sh
+# Claude Code
+claude mcp add mood -- /Applications/mood.app/Contents/Helpers/mood-agent mcp
+```
+
+```toml
+# Codex: ~/.codex/config.toml
+[mcp_servers.mood]
+command = "/Applications/mood.app/Contents/Helpers/mood-agent"
+args = ["mcp"]
+```
+
+```jsonc
+// Cursor and other clients: their mcp.json
+{ "mcpServers": { "mood": { "command": "/Applications/mood.app/Contents/Helpers/mood-agent", "args": ["mcp"] } } }
+```
+
+| Tool | Same as | Notes |
+|---|---|---|
+| `list_projects` | `projects` | |
+| `get_project_items` | `inspirations --project` | `project`: name or UUID |
+| `get_item` | `inspiration --id` | `id`: item UUID |
+| `get_item_image` | — | the item's stored image as an MCP image (PNG, JPEG, GIF or WebP up to 4 MB), otherwise its path |
+| `get_essence` | `essence --project` | the latest saved design essence |
+| `get_study` | `study --project` | |
+| `propose_sources` | `suggest` | `suggestions`: the entries a `suggest --file` holds, including moves |
+| `propose_patterns` | `reflect` | `reflections`: the entries a `reflect --file` holds |
+
+Each tool's result is the command's JSON as text. A failure comes back as a result with
+`isError` and the command's error JSON, so the agent can read and fix it. The server's
+instructions tell the agent to build from the person's saved items and essence rather than
+generic defaults. As on the command line, proposals only wait for the person: nothing is kept,
+rejected or edited through MCP. It reads the library through the same location rules as every
+other command, including `MOOD_LIBRARY_DIRECTORY`.
+
 ## Discover projects
 
 ```sh
