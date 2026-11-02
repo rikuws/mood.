@@ -26,6 +26,7 @@ struct MacLibraryView: View {
     @AppStorage("macStudyShowsBoard") private var prefersStudyBoard = true
     @State private var studyFilter = StudyBoardFilter.all
     @State private var selectedStudyEntryID: StudyBoardEntry.ID?
+    @State private var hoveredStudyPatternID: StudyReflection.ID?
     @State private var studyArrivals = StudyBoardArrivals()
     @State private var studyRunner = StudyAgentRunner.shared
 
@@ -452,6 +453,9 @@ struct MacLibraryView: View {
                     ) {
                         cards(activeColumnCount)
                     }
+                    .overlayPreferenceValue(StudyCardAnchorKey.self) { anchors in
+                        studyEvidenceOverlay(anchors)
+                    }
                     .scaleEffect(
                         reduceMotion ? 1 : canvasGesturePresentation.boundaryScale,
                         anchor: canvasGesturePresentation.anchor
@@ -615,6 +619,7 @@ struct MacLibraryView: View {
                         decide(suggestion, verdict: verdict, reason: nil, advancing: false)
                     }
                 )
+                .studyCardAnchor(entry.id)
 
                 StudyMarginNote(suggestion: suggestion, columns: columnCount)
             }
@@ -633,8 +638,38 @@ struct MacLibraryView: View {
             }
             .buttonStyle(.plain)
             .studyBoardVerdict(entry.verdict, seed: entry.id, circlesKept: false)
+            .studyCardAnchor(entry.id)
+            .onHover { isHovering in
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) {
+                    if isHovering {
+                        hoveredStudyPatternID = reflection.id
+                    } else if hoveredStudyPatternID == reflection.id {
+                        hoveredStudyPatternID = nil
+                    }
+                }
+            }
             .contextMenu { studyPatternMenu(reflection) }
             .accessibilityHint("Opens the pattern up close")
+        }
+    }
+
+    /// While the pointer rests on a pattern, pencil lines run to the kept
+    /// finds it was drawn from, and dashed ones to the rejects it stands
+    /// against.
+    @ViewBuilder
+    private func studyEvidenceOverlay(_ anchors: [UUID: Anchor<CGRect>]) -> some View {
+        if showsStudyBoard,
+           selectedStudyEntryID == nil,
+           let patternID = hoveredStudyPatternID,
+           let study = currentStudyProject?.study,
+           let reflection = study.reflections.first(where: { $0.id == patternID }) {
+            StudyEvidenceLines(
+                pattern: patternID,
+                evidence: reflection.evidence(in: study),
+                contrasts: reflection.rejectedSuggestionIDs,
+                anchors: anchors
+            )
+            .transition(.opacity)
         }
     }
 

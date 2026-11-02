@@ -1010,6 +1010,143 @@ extension StudyBoardArrivals {
     }
 }
 
+// MARK: - Evidence
+
+/// Where each card on the study board sits, so a pattern can point at the
+/// cards it was drawn from.
+struct StudyCardAnchorKey: PreferenceKey {
+    static let defaultValue: [UUID: Anchor<CGRect>] = [:]
+
+    static func reduce(value: inout [UUID: Anchor<CGRect>], nextValue: () -> [UUID: Anchor<CGRect>]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
+extension View {
+    func studyCardAnchor(_ id: UUID) -> some View {
+        anchorPreference(key: StudyCardAnchorKey.self, value: .bounds) { [id: $0] }
+    }
+}
+
+extension StudyReflection {
+    /// The finds on the board this pattern was drawn from: the ones kept
+    /// into the items it cites.
+    func evidence(in study: ProjectStudy) -> [StudySuggestion.ID] {
+        study.suggestions
+            .filter { suggestion in
+                suggestion.savedInspirationID.map(inspirationIDs.contains) ?? false
+            }
+            .map(\.id)
+    }
+}
+
+/// The agent showing its work: pencil lines from a pattern into the kept
+/// cards it was drawn from, and dashed ones to the rejected finds it stands
+/// against, drawn in while the pattern is pointed at.
+struct StudyEvidenceLines: View {
+    let pattern: UUID
+    let evidence: [UUID]
+    let contrasts: [UUID]
+    let anchors: [UUID: Anchor<CGRect>]
+
+    var body: some View {
+        GeometryReader { proxy in
+            if let source = anchors[pattern].map({ proxy[$0] }) {
+                StudyEvidenceSketch(
+                    source: source,
+                    evidence: evidence.compactMap { anchors[$0].map { proxy[$0] } },
+                    contrasts: contrasts.compactMap { anchors[$0].map { proxy[$0] } },
+                    seed: SketchJitter.seed(for: pattern)
+                )
+                .id(pattern)
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+private struct StudyEvidenceSketch: View {
+    let source: CGRect
+    let evidence: [CGRect]
+    let contrasts: [CGRect]
+    let seed: UInt64
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var drawn: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            StudyEvidencePath(source: source, targets: evidence, seed: seed)
+                .trim(from: 0, to: drawn)
+                .stroke(Sketchbook.pencil, style: Sketchbook.inkStroke(1.5))
+            StudyEvidencePath(source: source, targets: contrasts, seed: seed &+ 7)
+                .trim(from: 0, to: drawn)
+                .stroke(Sketchbook.pencil, style: StrokeStyle(lineWidth: 1.2, lineCap: .round, dash: [3, 5]))
+        }
+        .onAppear {
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.45)) { drawn = 1 }
+        }
+    }
+}
+
+/// A quick curve from just outside the pattern to a little way into each
+/// card, ending in a small ring, the way a hand points at something.
+private struct StudyEvidencePath: Shape {
+    let source: CGRect
+    let targets: [CGRect]
+    let seed: UInt64
+
+    func path(in _: CGRect) -> Path {
+        var jitter = SketchJitter(seed: seed)
+        var path = Path()
+        for target in targets {
+            let targetCenter = CGPoint(x: target.midX, y: target.midY)
+            let start = Self.edgePoint(of: source, toward: targetCenter, outset: 4)
+            let edge = Self.edgePoint(of: target, toward: CGPoint(x: source.midX, y: source.midY), outset: 0)
+            let reach = min(28, min(target.width, target.height) * 0.2)
+            let end = Self.point(from: edge, toward: targetCenter, distance: reach)
+
+            let dx = end.x - start.x
+            let dy = end.y - start.y
+            let length = max(1, hypot(dx, dy))
+            let bow = length * (0.12 + 0.06 * jitter.next())
+            let control = CGPoint(
+                x: (start.x + end.x) / 2 - dy / length * bow,
+                y: (start.y + end.y) / 2 + dx / length * bow
+            )
+            path.move(to: start)
+            path.addQuadCurve(to: end, control: control)
+            path.addEllipse(in: CGRect(x: end.x - 5, y: end.y - 5, width: 10, height: 10))
+        }
+        return path
+    }
+
+    /// Where a line from the rect's center toward `point` leaves the rect,
+    /// pushed `outset` points further out.
+    private static func edgePoint(of rect: CGRect, toward point: CGPoint, outset: CGFloat) -> CGPoint {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        guard dx != 0 || dy != 0 else { return center }
+        let halfWidth = rect.width / 2 + outset
+        let halfHeight = rect.height / 2 + outset
+        let scale = min(
+            dx == 0 ? .infinity : halfWidth / abs(dx),
+            dy == 0 ? .infinity : halfHeight / abs(dy)
+        )
+        return CGPoint(x: center.x + dx * scale, y: center.y + dy * scale)
+    }
+
+    private static func point(from origin: CGPoint, toward target: CGPoint, distance: CGFloat) -> CGPoint {
+        let dx = target.x - origin.x
+        let dy = target.y - origin.y
+        let length = hypot(dx, dy)
+        guard length > distance else { return target }
+        return CGPoint(x: origin.x + dx / length * distance, y: origin.y + dy / length * distance)
+    }
+}
+
 // MARK: - Close look
 
 /// A study item shown in the close look, such as the seed a find relates to.
