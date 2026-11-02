@@ -455,6 +455,26 @@ struct IOSLibraryView: View {
     @ViewBuilder
     private func studyCard(_ entry: StudyBoardEntry, project: Project, columnCount: Int) -> some View {
         switch entry {
+        case .finding(let suggestion) where suggestion.isMove:
+            Button {
+                guard allowsCardInteraction else { return }
+                openStudyCloseLook(entry.id, projectID: project.id)
+            } label: {
+                VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                    StudyMoveCard(
+                        suggestion: suggestion,
+                        localImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                        columns: columnCount
+                    )
+                    .studyBoardVerdict(entry.verdict, seed: entry.id)
+
+                    StudyMarginNote(suggestion: suggestion, columns: columnCount)
+                }
+            }
+            .buttonStyle(CollectedCardButtonStyle())
+            .contextMenu { studyFindingMenu(suggestion, projectID: project.id) }
+            .disabled(!allowsCardInteraction)
+            .allowsHitTesting(allowsCardInteraction)
         case .finding(let suggestion):
             let item = savedInspiration(for: suggestion)
                 ?? suggestion.previewInspiration(projectID: project.id)
@@ -579,6 +599,7 @@ struct IOSLibraryView: View {
                                 suggestion: suggestion,
                                 savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
                                 relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                                targetItems: studyCloseLookItems(suggestion.forInspirationID.map { [$0] } ?? []),
                                 onDecide: { verdict, reason in
                                     decide(suggestion, projectID: projectID, verdict: verdict, reason: reason, advancing: true)
                                 }
@@ -907,6 +928,22 @@ struct IOSLibraryView: View {
             }
         } label: {
             Label("Move to", systemImage: "folder")
+        }
+
+        // iOS doesn't start agents itself, so this hands over a prompt.
+        if let project = inspiration.projectID.flatMap({ store.snapshot.project(id: $0) }), project.isStudy {
+            Button {
+                StudyAgentPromptText.copy(
+                    for: project,
+                    target: StudyAgentTarget(
+                        inspirationID: inspiration.id,
+                        title: inspiration.meaningfulTitle ?? inspiration.title
+                    )
+                )
+                showMessage("Copied. Paste it into an agent with mood-study")
+            } label: {
+                Label("Copy prompt: make this better", systemImage: "wand.and.stars")
+            }
         }
 
         Button(role: .destructive) {

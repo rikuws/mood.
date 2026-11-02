@@ -74,6 +74,16 @@ final class StudyBoardTests: XCTestCase {
         XCTAssertEqual(board.entries(for: .all, matching: "   ").count, 3)
     }
 
+    func testSearchFindsAMoveByItsWordsAndLens() {
+        var move = suggestion("Today list", at: 0)
+        move.move = "Drop the section headers"
+        move.lens = "As little design as possible"
+        let board = StudyBoard(study: ProjectStudy(subject: "Calm tools", startedAt: start, suggestions: [move]))
+
+        XCTAssertEqual(board.entries(for: .all, matching: "section headers").map(\.id), [move.id])
+        XCTAssertEqual(board.entries(for: .all, matching: "little design").map(\.id), [move.id])
+    }
+
     func testArrivalsMarkOnlyWhatAppearsAfterTheBoardOpens() {
         let first = UUID()
         let second = UUID()

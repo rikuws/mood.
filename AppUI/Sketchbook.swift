@@ -14,6 +14,8 @@ import UIKit
 enum Sketchbook {
     /// Warm paper under the study board, in place of the moodboard's scenery.
     static let paper = Color(light: 0xF2EDE3, dark: 0x1A1916)
+    /// A slip of lighter paper on it, such as a move's index card.
+    static let sheet = Color(light: 0xFBF8F1, dark: 0x23211D)
     /// The agent's words: why a find is here, a pattern's label.
     static let graphite = Color(light: 0x6A655B, dark: 0xA29C90)
     /// The agent's marks: a proposed pattern's frame, slots still being filled.

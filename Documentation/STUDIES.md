@@ -138,6 +138,31 @@ start; those use `mood-agent` directly.
 On iOS, the board copies a ready prompt, with your nudge, for an agent on another machine, and
 finds from a Mac run appear when the library syncs (pull to refresh).
 
+### Ways to make it better
+
+A study can also work on the person's own things. Add a screenshot of something you're making
+to the study's moodboard, then choose **Find Ways to Make This Better** from its context menu
+(on iOS, **Copy prompt: make this better** for an agent elsewhere). The agent runs the skill's
+"Make it better" section and proposes 10 to 15 **moves**: one concrete change each ("Drop the
+section headers and let spacing group the rows"), seen through one of Dieter Rams' principles
+of good design, and shown done well by a real, credited source. The agent never draws or
+generates a variant of your work. Your own coding agent makes the change once you keep the
+move.
+
+Moves arrive on the study board as index cards: the lens in graphite, the move in serif, and the
+source's thumbnail and credit underneath. You keep or reject them with a reason in ink, like any
+find; the close look leads with the move, the item it's for, and the source that shows it.
+Keeping a move saves its source to the moodboard, and kept moves with their reasons are
+direction for `mood-distill`.
+
+**Check Against Your Direction** runs the same thing with a different lens: the study's
+confirmed and corrected patterns instead of Rams. Each move then says where the item strays
+from your own direction, which is how something your agent built gets checked against what you
+asked for. It's available once the study has a confirmed or corrected pattern.
+
+A run passes the item as `MOOD_STUDY_TARGET` and the lens set as `MOOD_STUDY_LENSES` (`rams` or
+`direction`) to other commands, and the prompt names the item's image in `images/`.
+
 ## What is stored
 
 All of it lives in `Project.study`, an optional key in `library.json` (schema version 1). It
@@ -158,6 +183,10 @@ pending, then the later decision.
   - **Reject** keeps the suggestion in the study with its reason. Rejects are taste data:
     they are shown to the agent, can be cited by patterns, and the same URL is never proposed
     again. A reject can be reconsidered and kept later.
+  - A **move** also has `move`, `lens` and `forInspirationID` (the study item it improves).
+    Moves are known by source and wording together, so one source can show several moves and a
+    rejected move isn't proposed again while its source can still show another. Clients from
+    before moves read them as plain sources.
 - `reflections[]`: patterns with the study items and rejected suggestions they cite, and the
   person's response (`confirmed`, `corrected` with their own wording, or `dismissed`).
 
@@ -173,9 +202,18 @@ The storage layer enforces what it can:
 What it can't check, such as whether a credited page really shows real work, is the skill's
 job and, finally, the person's: nothing reaches the moodboard until they keep it.
 
+## Optional: Taste Engine
+
+If the person has connected the Taste Labs brand API to their agent (its `brand-api` MCP
+server), the skills may use it: `mood-study` to find candidate sites by describing the look the
+seeds share or starting from a saved site, and `mood-distill` to read exact colors and type from
+a saved website. Candidates still go through every check above, and nothing it returns becomes
+a rule unless it traces to a saved item. It spends the person's credits and is never required;
+mood. doesn't install it, sign in to it, or ask for it.
+
 ## Not yet
 
-- `mood-distill` doesn't yet read a study's rejected suggestions and confirmed patterns as
-  evidence; it sees kept items with their notes and verdicts like any other project.
 - Built-in providers (Are.na, Refero, Mobbin) are not wired in; the skill can use them when the
   person's agent has access.
+- Moves are proposed for one item at a time, and only from its image; the agent doesn't see the
+  live product.

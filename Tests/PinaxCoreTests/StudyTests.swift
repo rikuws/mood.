@@ -621,7 +621,146 @@ final class StudyTests: XCTestCase, @unchecked Sendable {
         }
     }
 
+    // MARK: - Moves
+
+    func testMovesNeedALensAndOneOfTheStudysOwnItems() async throws {
+        let repository = try makeRepository()
+        let project = try await repository.createProject(name: "Ledger")
+        let screen = try await capture("https://example.com/my-settings", into: project.id, repository)
+        _ = try await repository.startStudy(projectID: project.id, subject: "Calm tools")
+
+        let result = try await repository.addStudySuggestions(
+            projectID: project.id,
+            drafts: [
+                move("https://example.com/list", "  Drop the section headers;\n let spacing group rows. ", lens: " As little design as possible ", for: screen.id),
+                move("https://example.com/list", "Put the two most-changed settings first.", lens: "Useful", for: screen.id),
+                move("https://example.com/list", "drop the section headers; let spacing group rows.", lens: "Unobtrusive", for: screen.id),
+                move("https://example.com/no-lens", "Quiet the delete row.", lens: nil, for: screen.id),
+                move("https://example.com/lens-only", nil, lens: "Honest", for: screen.id),
+                move("https://example.com/elsewhere", "Merge two rows.", lens: "Useful", for: UUID()),
+                move("https://example.com/no-target", "Merge two rows.", lens: "Useful", for: nil),
+                move("https://example.com/my-settings", "Show what sync did.", lens: "Honest", for: screen.id),
+            ]
+        )
+
+        XCTAssertEqual(result.added.count, 3)
+        let first = try XCTUnwrap(result.added.first)
+        XCTAssertTrue(first.isMove)
+        XCTAssertEqual(first.move, "Drop the section headers; let spacing group rows.")
+        XCTAssertEqual(first.lens, "As little design as possible")
+        XCTAssertEqual(first.forInspirationID, screen.id)
+        XCTAssertEqual(
+            result.skipped.map(\.reason),
+            [.duplicateInBatch, .missingLens, .missingLens, .unknownTarget, .unknownTarget]
+        )
+        // A move can cite a source already on the moodboard, even the item itself.
+        XCTAssertEqual(result.added.last?.url.absoluteString, "https://example.com/my-settings")
+    }
+
+    func testARejectedMoveIsNotProposedAgainButItsSourceCanShowAnother() async throws {
+        let repository = try makeRepository()
+        let project = try await repository.createProject(name: "Ledger")
+        let screen = try await capture("https://example.com/my-settings", into: project.id, repository)
+        _ = try await repository.startStudy(projectID: project.id, subject: "Calm tools")
+        let first = try await repository.addStudySuggestions(
+            projectID: project.id,
+            drafts: [move("https://example.com/list", "Drop the section headers.", lens: "Useful", for: screen.id)]
+        )
+        _ = try await repository.decideStudySuggestion(
+            projectID: project.id,
+            suggestionID: try XCTUnwrap(first.added.first?.id),
+            verdict: .reject,
+            reason: "I like the headers"
+        )
+
+        let again = try await repository.addStudySuggestions(
+            projectID: project.id,
+            drafts: [
+                move("https://example.com/list", "Drop the section headers.", lens: "Useful", for: screen.id),
+                move("https://example.com/list", "Align every toggle to one column.", lens: "Thorough to the detail", for: screen.id),
+            ]
+        )
+
+        XCTAssertEqual(again.skipped.map(\.reason), [.previouslyRejected])
+        XCTAssertEqual(again.added.map(\.move), ["Align every toggle to one column."])
+    }
+
+    func testMoveFieldsRoundTripAndOlderSuggestionsAreNotMoves() throws {
+        let screen = UUID()
+        let suggestion = StudySuggestion(
+            url: URL(string: "https://example.com/list")!,
+            canonicalURL: URL(string: "https://example.com/list")!,
+            title: "Today list",
+            creator: "Olm",
+            rationale: "One toggle, nothing around it.",
+            suggestedAt: fixedDate,
+            move: "Drop the section headers.",
+            lens: "As little design as possible",
+            forInspirationID: screen
+        )
+        let data = try encoder().encode(suggestion)
+        XCTAssertEqual(try decoder().decode(StudySuggestion.self, from: data), suggestion)
+
+        let plain = """
+        {"id":"7D3C9A51-1D1B-4F3E-9C7B-0B9A3D0E2F11","url":"https://example.com/a","suggestedAt":0}
+        """
+        XCTAssertFalse(try decoder().decode(StudySuggestion.self, from: Data(plain.utf8)).isMove)
+    }
+
+    func testMergeKeepsAMovesWordsWhenACopyWithoutThemWins() {
+        let id = UUID()
+        let screen = UUID()
+        let proposed = StudySuggestion(
+            id: id,
+            url: URL(string: "https://example.com/list")!,
+            canonicalURL: URL(string: "https://example.com/list")!,
+            title: "Today list",
+            creator: "Olm",
+            rationale: "One toggle.",
+            suggestedAt: fixedDate,
+            move: "Drop the section headers.",
+            lens: "Useful",
+            forInspirationID: screen
+        )
+        // Kept on a device whose app predates moves, which saved it without them.
+        var keptElsewhere = proposed
+        keptElsewhere.move = nil
+        keptElsewhere.lens = nil
+        keptElsewhere.forInspirationID = nil
+        keptElsewhere.status = .kept
+        keptElsewhere.decidedAt = fixedDate.addingTimeInterval(60)
+
+        let merged = ProjectStudy.merged(
+            preferring: ProjectStudy(subject: "Calm tools", startedAt: fixedDate, suggestions: [proposed]),
+            with: ProjectStudy(subject: "Calm tools", startedAt: fixedDate, suggestions: [keptElsewhere])
+        )
+
+        let result = try? XCTUnwrap(merged?.suggestions.first)
+        XCTAssertEqual(result?.status, .kept)
+        XCTAssertEqual(result?.move, "Drop the section headers.")
+        XCTAssertEqual(result?.lens, "Useful")
+        XCTAssertEqual(result?.forInspirationID, screen)
+    }
+
     // MARK: - Helpers
+
+    private func move(
+        _ url: String,
+        _ move: String?,
+        lens: String?,
+        for target: Inspiration.ID?
+    ) -> StudySuggestionDraft {
+        StudySuggestionDraft(
+            url: URL(string: url)!,
+            title: "Today list",
+            creator: "Olm",
+            imageURL: nil,
+            rationale: "Shows the move done well.",
+            move: move,
+            lens: lens,
+            forInspirationID: target
+        )
+    }
 
     private func draft(
         _ url: String,

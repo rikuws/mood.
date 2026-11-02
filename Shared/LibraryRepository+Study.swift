@@ -109,9 +109,10 @@ public extension LibraryRepository {
             var rejectedURLs = Set<String>()
             var pendingURLs = Set<String>()
             for suggestion in study.suggestions {
+                let key = Self.proposalKey(suggestion.canonicalURL, move: suggestion.move)
                 switch suggestion.status {
-                case .rejected: rejectedURLs.insert(suggestion.canonicalURL.absoluteString)
-                case .pending: pendingURLs.insert(suggestion.canonicalURL.absoluteString)
+                case .rejected: rejectedURLs.insert(key)
+                case .pending: pendingURLs.insert(key)
                 case .kept: break
                 }
             }
@@ -141,15 +142,23 @@ public extension LibraryRepository {
                 let creator = Self.cleaned(draft.creator)
                 let rationale = Self.cleaned(draft.rationale)
                 let basis = Self.orderedUnique(draft.basedOnInspirationIDs ?? [])
-                let key = canonicalURL.absoluteString
+                // A move is one change to the user's own work, shown by the
+                // source. The same source can show different moves, so a
+                // move is known by its source and its words together.
+                let move = Self.oneLine(draft.move, limit: Self.maximumMoveLength)
+                let lens = Self.oneLine(draft.lens, limit: Self.maximumLensLength)
+                let isMove = move != nil || lens != nil || draft.forInspirationID != nil
+                let key = Self.proposalKey(canonicalURL, move: move)
 
                 let skipReason: StudySuggestionSkipReason? =
                     if title.isEmpty { .missingTitle }
                     else if creator.isEmpty { .missingCreator }
                     else if rationale.isEmpty { .missingRationale }
                     else if !basis.allSatisfy(projectItemIDs.contains) { .unknownBasis }
+                    else if isMove, move == nil || lens == nil { .missingLens }
+                    else if isMove, !(draft.forInspirationID.map(projectItemIDs.contains) ?? false) { .unknownTarget }
                     else if rejectedURLs.contains(key) { .previouslyRejected }
-                    else if savedURLs.contains(key) { .alreadySaved }
+                    else if !isMove, savedURLs.contains(key) { .alreadySaved }
                     else if pendingURLs.contains(key) { .alreadySuggested }
                     else if batchURLs.contains(key) { .duplicateInBatch }
                     else { nil }
@@ -169,7 +178,10 @@ public extension LibraryRepository {
                         imageURL: draft.imageURL,
                         rationale: rationale,
                         basedOnInspirationIDs: basis,
-                        suggestedAt: now
+                        suggestedAt: now,
+                        move: isMove ? move : nil,
+                        lens: isMove ? lens : nil,
+                        forInspirationID: isMove ? draft.forInspirationID : nil
                     )
                 )
             }
@@ -421,5 +433,23 @@ public extension LibraryRepository {
     private nonisolated static func orderedUnique<Element: Hashable>(_ values: [Element]) -> [Element] {
         var seen = Set<Element>()
         return values.filter { seen.insert($0).inserted }
+    }
+
+    private static let maximumMoveLength = 280
+    private static let maximumLensLength = 80
+
+    /// A move or lens reads as one line on its card.
+    private nonisolated static func oneLine(_ value: String?, limit: Int) -> String? {
+        guard let value else { return nil }
+        let line = value.split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        return line.isEmpty ? nil : String(line.prefix(limit))
+    }
+
+    /// A source is known by its URL; a move by its source and its words, so
+    /// one source can back different moves and a rejected move stays out.
+    private nonisolated static func proposalKey(_ canonicalURL: URL, move: String?) -> String {
+        guard let move else { return canonicalURL.absoluteString }
+        let words = move.lowercased().split(whereSeparator: { $0.isWhitespace }).joined(separator: " ")
+        return canonicalURL.absoluteString + "\n" + words
     }
 }

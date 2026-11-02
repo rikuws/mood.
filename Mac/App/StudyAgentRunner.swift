@@ -151,6 +151,8 @@ final class StudyAgentRunner {
         var output: String
         /// The direction the user gave this run, if any.
         var nudge: String?
+        /// For a "make it better" run, the user's item it's for.
+        var target: StudyAgentTarget?
         /// Everything mood. has added from this run so far.
         var result = StudyAgentHandoffResult(foundProposals: false)
     }
@@ -163,6 +165,7 @@ final class StudyAgentRunner {
         let configuration: StudyAgentConfiguration
         let repository: LibraryRepository
         let nudge: String?
+        let target: StudyAgentTarget?
         let onProgress: @Sendable @MainActor () async -> Void
         let onChange: @Sendable @MainActor () async -> Void
     }
@@ -205,6 +208,7 @@ final class StudyAgentRunner {
         configuration: StudyAgentConfiguration,
         repository: LibraryRepository,
         nudge: String? = nil,
+        target: StudyAgentTarget? = nil,
         onProgress: @escaping @Sendable @MainActor () async -> Void = {},
         onChange: @escaping @Sendable @MainActor () async -> Void
     ) async throws {
@@ -216,7 +220,8 @@ final class StudyAgentRunner {
             agent: agent,
             configuration: configuration,
             storageDirectory: repository.storageDirectory,
-            nudge: nudge
+            nudge: nudge,
+            target: target
         )
         let workingDirectory = URL(fileURLWithPath: invocation.workingDirectory, isDirectory: true)
         let api = PinaxAgentAPI(repository: repository)
@@ -233,7 +238,8 @@ final class StudyAgentRunner {
             startedAt: Date(),
             phase: .running,
             output: "",
-            nudge: nudge
+            nudge: nudge,
+            target: target
         )
         do {
             try await StudyAgentHandoff.prepare(api: api, projectID: projectID, in: workingDirectory)
@@ -322,6 +328,7 @@ final class StudyAgentRunner {
         configuration: StudyAgentConfiguration,
         repository: LibraryRepository,
         nudge: String?,
+        target: StudyAgentTarget? = nil,
         onProgress: @escaping @Sendable @MainActor () async -> Void = {},
         onChange: @escaping @Sendable @MainActor () async -> Void
     ) async throws {
@@ -333,6 +340,7 @@ final class StudyAgentRunner {
                 configuration: configuration,
                 repository: repository,
                 nudge: nudge,
+                target: target,
                 onProgress: onProgress,
                 onChange: onChange
             )
@@ -345,6 +353,7 @@ final class StudyAgentRunner {
             configuration: configuration,
             repository: repository,
             nudge: nudge,
+            target: target,
             onProgress: onProgress,
             onChange: onChange
         )
@@ -372,7 +381,8 @@ final class StudyAgentRunner {
         agent: ResolvedStudyAgent,
         configuration: StudyAgentConfiguration,
         storageDirectory: URL,
-        nudge: String?
+        nudge: String?,
+        target: StudyAgentTarget?
     ) throws -> StudyAgentInvocation {
         let fileManager = FileManager.default
         let helper = StudyAgentSettings.bundledMoodAgent
@@ -395,7 +405,8 @@ final class StudyAgentRunner {
             skillDirectory: skill.path,
             workingDirectory: workingDirectory.path,
             storageDirectory: storageDirectory.path,
-            nudge: nudge
+            nudge: nudge,
+            target: target
         )
         do {
             return try configuration.invocation(
@@ -496,6 +507,7 @@ final class StudyAgentRunner {
                 configuration: pending.configuration,
                 repository: pending.repository,
                 nudge: pending.nudge,
+                target: pending.target,
                 onProgress: pending.onProgress,
                 onChange: pending.onChange
             )

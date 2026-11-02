@@ -87,6 +87,8 @@ public enum StudyBoardEntry: Identifiable, Hashable, Sendable {
                 suggestion.rationale,
                 suggestion.reason,
                 suggestion.url.host(),
+                suggestion.move,
+                suggestion.lens,
             ]
         case .pattern(let reflection):
             [reflection.statement, reflection.correction]

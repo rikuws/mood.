@@ -88,6 +88,15 @@ public struct StudySuggestion: Identifiable, Codable, Hashable, Sendable {
     public var decidedAt: Date?
     /// The library item created or linked when the user kept the suggestion.
     public var savedInspirationID: Inspiration.ID?
+    /// For a move ("a way to make it better"): one concrete change to the
+    /// user's own work, which the source shows done well. `nil` for a plain
+    /// source.
+    public var move: String?
+    /// The principle the move is seen through, such as one of Dieter Rams'
+    /// or one of the study's confirmed patterns.
+    public var lens: String?
+    /// The study item, the user's own work, the move is for.
+    public var forInspirationID: Inspiration.ID?
 
     public init(
         id: ID = ID(),
@@ -103,7 +112,10 @@ public struct StudySuggestion: Identifiable, Codable, Hashable, Sendable {
         status: Status = .pending,
         reason: String? = nil,
         decidedAt: Date? = nil,
-        savedInspirationID: Inspiration.ID? = nil
+        savedInspirationID: Inspiration.ID? = nil,
+        move: String? = nil,
+        lens: String? = nil,
+        forInspirationID: Inspiration.ID? = nil
     ) {
         self.id = id
         self.url = url
@@ -119,6 +131,14 @@ public struct StudySuggestion: Identifiable, Codable, Hashable, Sendable {
         self.reason = reason
         self.decidedAt = decidedAt
         self.savedInspirationID = savedInspirationID
+        self.move = move
+        self.lens = lens
+        self.forInspirationID = forInspirationID
+    }
+
+    /// A way to make the user's own work better, rather than a source.
+    public var isMove: Bool {
+        move != nil
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -136,6 +156,9 @@ public struct StudySuggestion: Identifiable, Codable, Hashable, Sendable {
         case reason
         case decidedAt
         case savedInspirationID
+        case move
+        case lens
+        case forInspirationID
     }
 
     public init(from decoder: any Decoder) throws {
@@ -160,6 +183,9 @@ public struct StudySuggestion: Identifiable, Codable, Hashable, Sendable {
         reason = try container.decodeIfPresent(String.self, forKey: .reason)
         decidedAt = try container.decodeIfPresent(Date.self, forKey: .decidedAt)
         savedInspirationID = try container.decodeIfPresent(Inspiration.ID.self, forKey: .savedInspirationID)
+        move = try container.decodeIfPresent(String.self, forKey: .move)
+        lens = try container.decodeIfPresent(String.self, forKey: .lens)
+        forInspirationID = try container.decodeIfPresent(Inspiration.ID.self, forKey: .forInspirationID)
     }
 }
 
@@ -305,6 +331,7 @@ public extension ProjectStudy {
             preferred.suggestions,
             other.suggestions,
             prefer: StudySuggestion.mergePrecedes,
+            combine: StudySuggestion.keepingMove,
             order: { ($0.suggestedAt, $0.id.uuidString) < ($1.suggestedAt, $1.id.uuidString) }
         )
         result.reflections = mergedByID(
@@ -320,6 +347,7 @@ public extension ProjectStudy {
         _ preferred: [Element],
         _ other: [Element],
         prefer: (Element, Element) -> Bool,
+        combine: (_ winner: Element, _ loser: Element) -> Element = { winner, _ in winner },
         order: (Element, Element) -> Bool
     ) -> [Element] {
         var byID: [Element.ID: Element] = [:]
@@ -332,15 +360,25 @@ public extension ProjectStudy {
                 continue
             }
             // Ties keep the preferred copy.
-            if prefer(element, existing) {
-                byID[element.id] = element
-            }
+            byID[element.id] = prefer(element, existing)
+                ? combine(element, existing)
+                : combine(existing, element)
         }
         return byID.values.sorted(by: order)
     }
 }
 
 extension StudySuggestion {
+    /// A move's words never change once proposed, so a copy saved by an app
+    /// from before moves, which drops them, can't erase them by winning.
+    static func keepingMove(_ winner: StudySuggestion, _ loser: StudySuggestion) -> StudySuggestion {
+        var result = winner
+        result.move = winner.move ?? loser.move
+        result.lens = winner.lens ?? loser.lens
+        result.forInspirationID = winner.forInspirationID ?? loser.forInspirationID
+        return result
+    }
+
     /// Whether `lhs` should replace `rhs` when both copies of one suggestion meet.
     static func mergePrecedes(_ lhs: StudySuggestion, _ rhs: StudySuggestion) -> Bool {
         let lhsRank = lhs.status.mergeRank
@@ -380,6 +418,11 @@ public struct StudySuggestionDraft: Codable, Equatable, Sendable {
     public var imageURL: URL?
     public var rationale: String
     public var basedOnInspirationIDs: [Inspiration.ID]?
+    /// Set together for a move: the change, its lens, and the user's item it
+    /// improves. The rest of the draft is the source that shows the move.
+    public var move: String?
+    public var lens: String?
+    public var forInspirationID: Inspiration.ID?
 
     public init(
         url: URL,
@@ -388,7 +431,10 @@ public struct StudySuggestionDraft: Codable, Equatable, Sendable {
         sourceName: String? = nil,
         imageURL: URL? = nil,
         rationale: String,
-        basedOnInspirationIDs: [Inspiration.ID]? = nil
+        basedOnInspirationIDs: [Inspiration.ID]? = nil,
+        move: String? = nil,
+        lens: String? = nil,
+        forInspirationID: Inspiration.ID? = nil
     ) {
         self.url = url
         self.title = title
@@ -397,6 +443,9 @@ public struct StudySuggestionDraft: Codable, Equatable, Sendable {
         self.imageURL = imageURL
         self.rationale = rationale
         self.basedOnInspirationIDs = basedOnInspirationIDs
+        self.move = move
+        self.lens = lens
+        self.forInspirationID = forInspirationID
     }
 
     /// Missing text fields decode as empty so the repository skips that entry
@@ -413,6 +462,9 @@ public struct StudySuggestionDraft: Codable, Equatable, Sendable {
             [Inspiration.ID].self,
             forKey: .basedOnInspirationIDs
         )
+        move = try container.decodeIfPresent(String.self, forKey: .move)
+        lens = try container.decodeIfPresent(String.self, forKey: .lens)
+        forInspirationID = try container.decodeIfPresent(Inspiration.ID.self, forKey: .forInspirationID)
     }
 }
 
@@ -466,6 +518,10 @@ public enum StudySuggestionSkipReason: String, Codable, Hashable, Sendable {
     /// The user rejected this URL before. It is never proposed again.
     case previouslyRejected = "previously_rejected"
     case duplicateInBatch = "duplicate_in_batch"
+    /// A move named no lens, or a lens came without a move.
+    case missingLens = "missing_lens"
+    /// A move's `forInspirationID` isn't one of the study's items.
+    case unknownTarget = "unknown_target"
 }
 
 public struct StudySuggestionSkip: Codable, Equatable, Sendable {

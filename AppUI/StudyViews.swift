@@ -832,6 +832,77 @@ struct StudyLatentCard: View {
     }
 }
 
+/// A way to make the user's own work better, on the board: an index card
+/// with the lens it's seen through, the move, and the real source that
+/// shows it done well.
+struct StudyMoveCard: View {
+    let suggestion: StudySuggestion
+    /// The stored image of the moodboard item the source became, once kept.
+    var localImageURL: URL?
+    let columns: Int
+    var isSelected = false
+
+    var body: some View {
+        let padding = max(8, StudyCardMetrics.padding(columns) * 0.75)
+        let shape = RoundedRectangle(cornerRadius: StudyCardMetrics.cornerRadius(columns) + 2, style: .continuous)
+        VStack(alignment: .leading, spacing: max(6, padding * 0.5)) {
+            Text(suggestion.lens ?? "Move")
+                .font(.system(size: max(8.5, StudyCardMetrics.statementSize(columns) * 0.5), weight: .semibold))
+                .tracking(0.8)
+                .textCase(.uppercase)
+                .foregroundStyle(Sketchbook.graphite)
+                .lineLimit(2)
+            Text(suggestion.move ?? suggestion.title)
+                .font(.system(size: StudyCardMetrics.statementSize(columns) * 0.85, design: .serif))
+                .foregroundStyle(.primary)
+                .lineLimit(StudyCardMetrics.lineLimit(columns))
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if columns <= 5 {
+                source
+            }
+        }
+        .padding(padding)
+        .background(Sketchbook.sheet, in: shape)
+        .overlay {
+            shape.strokeBorder(
+                isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.primary.opacity(0.14)),
+                lineWidth: isSelected ? 2 : 0.5
+            )
+        }
+        .contentShape(shape)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var source: some View {
+        let side: CGFloat = columns <= 2 ? 44 : 34
+        return HStack(spacing: 8) {
+            DownsampledPreviewImage(localURL: localImageURL, remoteURL: suggestion.imageURL) {
+                Rectangle().fill(.quaternary)
+            } failure: {
+                Rectangle().fill(.quaternary)
+            }
+            .frame(width: side, height: side)
+            .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(suggestion.title)
+                    .font(.caption)
+                    .foregroundStyle(.primary)
+                Text("by \(suggestion.creator)")
+                    .font(.caption2)
+                    .foregroundStyle(Sketchbook.graphite)
+            }
+            .lineLimit(1)
+        }
+    }
+
+    private var accessibilityText: String {
+        let lens = suggestion.lens.map { "\($0): " } ?? ""
+        return "Move. \(lens)\(suggestion.move ?? suggestion.title). Shown in \(suggestion.title) by \(suggestion.creator)."
+    }
+}
+
 /// What sits under a find on the board, at the densities with room for it:
 /// the person's reason in ink once they've judged it, or the agent's note
 /// on why it's here, in graphite, while it waits.
@@ -1337,12 +1408,16 @@ struct StudyCloseLookSection<Content: View>: View {
 }
 
 /// A find seen up close: the whole image, its credit and source, why the
-/// agent thinks it relates to the person's seeds, and the verdict.
+/// agent thinks it relates to the person's seeds, and the verdict. A move
+/// leads with the change it proposes and the work it's for; the image is
+/// the source that shows it done well.
 struct StudyFindingCloseLook: View {
     let suggestion: StudySuggestion
     /// The stored image of the moodboard item a kept find became.
     var savedImageURL: URL?
     let relatedItems: [StudyCloseLookItem]
+    /// For a move: the person's own item it would make better.
+    var targetItems: [StudyCloseLookItem] = []
     let onDecide: (StudyVerdict, String?) -> Void
 
     @State private var reason = ""
@@ -1357,28 +1432,36 @@ struct StudyFindingCloseLook: View {
             )
         } details: {
             VStack(alignment: .leading, spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(suggestion.title)
-                        .font(StudyBoardType.closeLookTitle)
-                        .tracking(-0.3)
-                        .lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                        .accessibilityAddTraits(.isHeader)
-                    if !attribution.isEmpty {
-                        Text(attribution)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
+                if let move = suggestion.move {
+                    VStack(alignment: .leading, spacing: 8) {
+                        if let lens = suggestion.lens {
+                            Text(lens)
+                                .font(.caption.weight(.semibold))
+                                .tracking(0.8)
+                                .textCase(.uppercase)
+                                .foregroundStyle(Sketchbook.graphite)
+                        }
+                        Text(move)
+                            .font(StudyBoardType.closeLookTitle)
+                            .tracking(-0.2)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
+                            .accessibilityAddTraits(.isHeader)
                     }
-                    Link(destination: suggestion.url) {
-                        Label(linkTitle, systemImage: "arrow.up.right.square")
+                    if !targetItems.isEmpty {
+                        StudyCloseLookSection("For") {
+                            StudyItemStrip(items: targetItems)
+                        }
                     }
-                    .font(.callout)
-                    .padding(.top, 2)
+                    StudyCloseLookSection("Shown in") {
+                        sourceCredit(titleFont: .headline)
+                    }
+                } else {
+                    sourceCredit(titleFont: StudyBoardType.closeLookTitle)
                 }
 
-                StudyCloseLookSection("Why it's here") {
+                StudyCloseLookSection(suggestion.isMove ? "Why it fits" : "Why it's here") {
                     Text(suggestion.rationale)
                         .foregroundStyle(Sketchbook.graphite)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1393,6 +1476,29 @@ struct StudyFindingCloseLook: View {
             }
         } footer: {
             verdict
+        }
+    }
+
+    private func sourceCredit(titleFont: Font) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(suggestion.title)
+                .font(titleFont)
+                .tracking(suggestion.isMove ? 0 : -0.3)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .textSelection(.enabled)
+                .accessibilityAddTraits(suggestion.isMove ? [] : .isHeader)
+            if !attribution.isEmpty {
+                Text(attribution)
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+            Link(destination: suggestion.url) {
+                Label(linkTitle, systemImage: "arrow.up.right.square")
+            }
+            .font(.callout)
+            .padding(.top, 2)
         }
     }
 
@@ -1882,8 +1988,24 @@ enum StudyAgentPromptText {
         return text
     }
 
+    /// Asks for moves that make one of the person's own items better.
+    static func make(for project: Project, target: StudyAgentTarget) -> String {
+        let lenses = switch target.lenses {
+        case .rams: "Dieter Rams' ten principles of good design"
+        case .direction: "my confirmed patterns, so it shows where the item strays from my direction"
+        }
+        return "Use the mood-study skill's \"Make it better\" section to propose ways to make my own work better in my mood. study \"\(project.name)\" (project \(project.id.uuidString)): the item \(target.inspirationID.uuidString) (\"\(target.title)\"). Look through \(lenses). Back every move with a real, credited source that shows it done well, never a drawn or generated variant, and add them with `mood-agent suggest` so I can keep or reject them in mood."
+    }
+
     static func copy(for project: Project, nudge: String? = nil) {
-        let text = make(for: project, nudge: nudge)
+        write(make(for: project, nudge: nudge))
+    }
+
+    static func copy(for project: Project, target: StudyAgentTarget) {
+        write(make(for: project, target: target))
+    }
+
+    private static func write(_ text: String) {
         #if os(macOS)
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)

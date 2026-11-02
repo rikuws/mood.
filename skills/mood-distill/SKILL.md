@@ -56,6 +56,19 @@ The user's words are taste data. When an item's `text` or `title` says why the u
 cite those exact words as textual evidence (`kind` plus `quote`, see the schema reference)
 alongside the image evidence, rather than paraphrasing them into a model-written cue.
 
+If the project is a study, also read `study --project <uuid> --pretty`. Kept **moves**
+(suggestions with `move` and `lens`) are changes the user accepted for their own work: treat
+each as direction, cite the move, its lens and the user's `reason` as textual evidence, and
+tie it to the kept source item it was shown in. Confirmed or corrected patterns are direction
+in the user's own words too. Rejected moves and sources with a reason are counter-evidence:
+never turn them into a rule.
+
+If the Taste Labs `extract_brand` tool is available from the user's own `brand-api` MCP server,
+you may run it on a saved item whose source is a website, to read exact colors and type from
+the live site. It only corroborates what the saved item shows: every value you keep must still
+trace to that saved item, and the tool's output never adds a rule on its own. It spends the
+user's credits, so don't run it on every item. mood. never needs it.
+
 If the project is empty, say so and stop. Text-only items may inform voice and provenance,
 but they are not visual evidence. Report every skipped or unavailable visual.
 

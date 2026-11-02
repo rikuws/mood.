@@ -296,9 +296,13 @@ mood-agent reflect --project <name-or-uuid> --file <path> [--pretty]
   `inspirations`), every suggestion with its status and the user's reason, every reflected
   pattern with the user's response, and the current `stage`.
 - `suggest` reads `{"suggestions": [{url, title, creator, rationale, sourceName?, imageURL?,
-  basedOnInspirationIDs?}]}` and adds each acceptable entry as a pending suggestion. Entries
-  without a creator or rationale, on a known AI image generator, already saved, already
-  pending, or previously rejected are returned in `skipped` with a reason code instead.
+  basedOnInspirationIDs?, move?, lens?, forInspirationID?}]}` and adds each acceptable entry as
+  a pending suggestion. Entries without a creator or rationale, on a known AI image generator,
+  already saved, already pending, or previously rejected are returned in `skipped` with a
+  reason code instead. An entry with `move`, `lens` and `forInspirationID` is a **move**: one
+  change to the user's own study item, seen through a lens and shown by the credited source.
+  Moves are compared by source and wording, and need a lens and an item from the study
+  (`missing_lens`, `unknown_target`).
 - `reflect` reads `{"reflections": [{statement, inspirationIDs?, rejectedSuggestionIDs?}]}`.
   Each pattern must cite at least one study item or rejected suggestion.
 

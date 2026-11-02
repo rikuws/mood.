@@ -598,6 +598,32 @@ struct MacLibraryView: View {
     private func studyBoardCard(_ entry: StudyBoardEntry, project: Project, columnCount: Int) -> some View {
         let isSelected = selectedStudyEntryID == entry.id
         switch entry {
+        case .finding(let suggestion) where suggestion.isMove:
+            VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                Button {
+                    guard canvasInteractionPhase == .idle else { return }
+                    selectStudyEntry(entry.id)
+                } label: {
+                    StudyMoveCard(
+                        suggestion: suggestion,
+                        localImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                        columns: columnCount,
+                        isSelected: isSelected
+                    )
+                }
+                .buttonStyle(.plain)
+                .studyBoardVerdict(entry.verdict, seed: entry.id)
+                .modifier(
+                    MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
+                        decide(suggestion, verdict: verdict, reason: nil, advancing: false)
+                    }
+                )
+                .studyCardAnchor(entry.id)
+
+                StudyMarginNote(suggestion: suggestion, columns: columnCount)
+            }
+            .contextMenu { studyFindingMenu(suggestion) }
+            .accessibilityHint("Opens the move up close")
         case .finding(let suggestion):
             let item = savedInspiration(for: suggestion)
                 ?? suggestion.previewInspiration(projectID: project.id)
@@ -729,6 +755,7 @@ struct MacLibraryView: View {
                             suggestion: suggestion,
                             savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
                             relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                            targetItems: studyCloseLookItems(suggestion.forInspirationID.map { [$0] } ?? []),
                             onDecide: { verdict, reason in
                                 decide(suggestion, verdict: verdict, reason: reason, advancing: true)
                             }
@@ -981,8 +1008,63 @@ struct MacLibraryView: View {
             }
         }
         Button("Edit…") { sheet = .editInspiration(inspiration) }
+        if let study = inspiration.projectID.flatMap(project(with:))?.study {
+            Divider()
+            Button("Find Ways to Make This Better") { startImproving(inspiration, lenses: .rams) }
+            Button("Check Against Your Direction") { startImproving(inspiration, lenses: .direction) }
+                .disabled(!study.reflections.contains { $0.status == .confirmed || $0.status == .corrected })
+        }
         Divider()
         Button("Delete", role: .destructive) { pendingInspirationDeletion = inspiration }
+    }
+
+    /// Starts the study's agent on ways to make one of the person's own items
+    /// better, then shows the board where the moves arrive.
+    private func startImproving(_ inspiration: Inspiration, lenses: StudyAgentTarget.Lenses) {
+        guard let projectID = inspiration.projectID,
+              let project = project(with: projectID),
+              project.isStudy else { return }
+        guard !studyRunner.isBusy(projectID) else {
+            showToast("The study's agent is already working", symbol: "hourglass")
+            return
+        }
+        let target = StudyAgentTarget(
+            inspirationID: inspiration.id,
+            title: inspiration.meaningfulTitle ?? inspiration.title,
+            lenses: lenses
+        )
+        Task {
+            let configuration = StudyAgentSettings.load()
+            let agent = await Task.detached { ResolvedStudyAgent.resolve(configuration) }.value
+            guard let agent else {
+                showToast("Set up a study agent first", symbol: "exclamationmark.triangle")
+                return
+            }
+            do {
+                try await studyRunner.start(
+                    task: .improve,
+                    project: project,
+                    agent: agent,
+                    configuration: configuration,
+                    repository: store.repository,
+                    target: target,
+                    onProgress: { [store] in
+                        await store.reload()
+                    },
+                    onChange: { [store, syncCoordinator] in
+                        await store.reload()
+                        guard let syncCoordinator else { return }
+                        _ = await syncCoordinator.sync()
+                        await store.reload()
+                    }
+                )
+                closeDetailInspector()
+                openStudyBoard(projectID)
+                studyFilter = .toJudge
+            } catch {
+                showToast(error.localizedDescription, symbol: "exclamationmark.triangle")
+            }
+        }
     }
 
     @ViewBuilder

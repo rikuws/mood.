@@ -93,6 +93,14 @@ The file holds `{"suggestions": [ … ]}` with 1 to 50 entries:
 | `sourceName` | no | archive, publisher, Are.na, … |
 | `imageURL` | no | http(s) image of the work, shown as a thumbnail |
 | `basedOnInspirationIDs` | no | item IDs from this study |
+| `move` | for a move | one concrete change to the user's own item, in one sentence |
+| `lens` | for a move | the principle or confirmed pattern the move is seen through |
+| `forInspirationID` | for a move | the study item (the user's own work) the move is for |
+
+An entry with `move`, `lens` and `forInspirationID` is a **move**: a way to make the user's own
+work better, shown done well by the source in `url`. The source's fields are required as for any
+suggestion. Moves are compared by source *and* wording, so one source can back several moves,
+and a move may cite a source that's already on the moodboard.
 
 The response lists `added` suggestions and `skipped` entries `{url, reason}`. Each entry is
 checked on its own, so one bad entry doesn't block the batch. Skip reasons:
@@ -106,7 +114,9 @@ checked on its own, so one bad entry doesn't block the batch. Skip reasons:
 | `previously_rejected` | the user rejected this URL before |
 | `already_saved` | the URL is already on the study's moodboard |
 | `already_suggested` | the URL is already waiting for a verdict |
-| `duplicate_in_batch` | the same URL appears earlier in the file |
+| `duplicate_in_batch` | the same URL (or, for a move, the same URL and move) appears earlier in the file |
+| `missing_lens` | a move has no `lens`, or a `lens` or `forInspirationID` came without a `move` |
+| `unknown_target` | a move's `forInspirationID` is missing or not an item in this study |
 
 URLs are compared after mood.'s canonicalization (no `www.`, no tracking parameters).
 

@@ -36,16 +36,18 @@ public enum StudyAgentHandoff {
         return result.0
     }
 
+    /// Moves are suggestions that carry a lens and a move, so they travel the
+    /// same way.
     public static func proposalsFilename(for task: StudyAgentTask) -> String {
         switch task {
-        case .findSources: suggestionsFilename
+        case .findSources, .improve: suggestionsFilename
         case .reflect: reflectionsFilename
         }
     }
 
     public static func proposalsDirectoryName(for task: StudyAgentTask) -> String {
         switch task {
-        case .findSources: suggestionsDirectoryName
+        case .findSources, .improve: suggestionsDirectoryName
         case .reflect: reflectionsDirectoryName
         }
     }
@@ -291,7 +293,7 @@ public actor StudyAgentProposalCollector {
         var settledKeys: [String] = []
         do {
             switch task {
-            case .findSources:
+            case .findSources, .improve:
                 guard var drafts = Self.suggestionDrafts(from: data) else {
                     if reportsShapeMismatch { piece.unusableFiles.append(mismatch) }
                     return piece
@@ -339,7 +341,7 @@ public actor StudyAgentProposalCollector {
     }
 
     private static func batchKey(_ draft: StudySuggestionDraft) -> String {
-        draft.url.absoluteString
+        [draft.url.absoluteString, draft.move].compactMap { $0 }.joined(separator: "\n")
     }
 
     private static func batchKey(_ draft: StudyReflectionDraft) -> String {
