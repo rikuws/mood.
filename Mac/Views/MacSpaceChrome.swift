@@ -209,98 +209,6 @@ struct MacCanvasWindowConfigurator: NSViewRepresentable {
         window.backgroundColor = .clear
     }
 }
-/// Renders an original built-in pixel landscape behind the moodboard. The
-/// artwork is decorative and deliberately washed so saved imagery stays primary.
-struct MacMoodboardArtworkLayer: View {
-    let assetName: String
-    let projectColorHex: String?
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                fallbackField
-
-                if let artwork = NSImage(named: NSImage.Name(assetName)) {
-                    Image(nsImage: artwork)
-                        .resizable()
-                        .interpolation(.medium)
-                        .scaledToFill()
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .scaleEffect(1.005)
-                        .saturation(colorScheme == .dark ? 0.72 : 0.9)
-                        .contrast(colorScheme == .dark ? 0.88 : 0.94)
-                        .brightness(colorScheme == .dark ? -0.12 : 0)
-                        .id(assetName)
-                        .transition(.opacity)
-                }
-
-                treatmentOverlay
-            }
-            .frame(width: geometry.size.width, height: geometry.size.height)
-            .clipped()
-            .animation(reduceMotion ? nil : MacChromeMotion.fade, value: assetName)
-        }
-        .accessibilityHidden(true)
-        .allowsHitTesting(false)
-    }
-
-    private var treatmentOverlay: some View {
-        ZStack {
-            if colorScheme == .dark {
-                Color(red: 0.055, green: 0.06, blue: 0.065)
-                    .opacity(reduceTransparency ? 0.94 : 0.5)
-            } else {
-                Color(red: 0.91, green: 0.93, blue: 0.92)
-                    .opacity(reduceTransparency ? 0.94 : 0.36)
-            }
-
-            LinearGradient(
-                colors: stageGradientColors,
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
-    }
-
-    private var stageGradientColors: [Color] {
-        if colorScheme == .dark {
-            return [
-                .black.opacity(reduceTransparency ? 0.16 : 0.03),
-                .black.opacity(reduceTransparency ? 0.34 : 0.12),
-            ]
-        }
-        return [
-            .white.opacity(reduceTransparency ? 0.24 : 0.08),
-            .white.opacity(reduceTransparency ? 0.5 : 0.28),
-        ]
-    }
-
-    private var fallbackField: some View {
-        let projectColor = projectColorHex.map { Color(hex: $0) }
-        return LinearGradient(
-            colors: fallbackColors(accent: projectColor),
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private func fallbackColors(accent: Color?) -> [Color] {
-        if colorScheme == .dark {
-            return [
-                accent?.opacity(0.24) ?? Color(red: 0.12, green: 0.14, blue: 0.15),
-                Color(red: 0.035, green: 0.04, blue: 0.045),
-            ]
-        }
-        return [
-            accent?.opacity(0.24) ?? Color(red: 0.79, green: 0.83, blue: 0.82),
-            Color(red: 0.9, green: 0.88, blue: 0.82),
-        ]
-    }
-}
 
 struct MacProjectSidebarItem: Identifiable {
     var id: LibraryScope { scope }
@@ -347,10 +255,9 @@ struct MacProjectSidebar: View {
 
                     if !projectItems.isEmpty {
                         if !isCollapsed {
-                            Text("PROJECTS")
-                                .font(.system(size: 10, weight: .semibold))
-                                .tracking(0.7)
-                                .foregroundStyle(.white.opacity(0.42))
+                            Text("Projects")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(.white.opacity(0.46))
                                 .padding(.horizontal, 10)
                                 .padding(.top, 16)
                                 .padding(.bottom, 5)
@@ -390,8 +297,8 @@ struct MacProjectSidebar: View {
             if isCollapsed {
                 Button(action: onToggleCollapse) {
                     Text("m.")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .tracking(-0.7)
+                        .font(SketchbookType.display(size: 28, relativeTo: .title))
+                        .tracking(-0.4)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                 }
@@ -400,9 +307,11 @@ struct MacProjectSidebar: View {
                 .accessibilityLabel("Show projects sidebar")
             } else {
                 HStack(spacing: 10) {
+                    // The sketchbook's name on its cover, in the same serif
+                    // as the page titles.
                     Text("mood.")
-                        .font(.system(size: 23, weight: .semibold, design: .rounded))
-                        .tracking(-0.7)
+                        .font(SketchbookType.display(size: 28, relativeTo: .title))
+                        .tracking(-0.4)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .accessibilityLabel("mood.")
@@ -567,6 +476,8 @@ struct MacProjectSidebar: View {
                 action: onCapture
             )
 
+            // Drawn as its own label rather than a borderless menu button,
+            // which centered it and tinted it apart from the actions above.
             Menu {
                 Button("New Visual Study…", action: onCreateStudy)
                 Divider()
@@ -574,13 +485,10 @@ struct MacProjectSidebar: View {
             } label: {
                 sidebarActionLabel(title: "More", systemImage: "ellipsis")
             }
-            .menuStyle(.borderlessButton)
-            // Borderless macOS menus otherwise inherit the light-appearance
-            // control tint and can render this label black on the dark rail.
-            .tint(.white.opacity(0.68))
+            .menuStyle(.button)
+            .buttonStyle(.plain)
             .menuIndicator(.hidden)
-            .fixedSize(horizontal: false, vertical: true)
-            .help("More actions")
+            .help(isCollapsed ? "More" : "")
         }
         .padding(8)
         .overlay(alignment: .top) {
@@ -623,6 +531,6 @@ struct MacProjectSidebar: View {
     }
 
     private var sidebarBackground: Color {
-        Color(red: 0.025, green: 0.027, blue: 0.03)
+        Sketchbook.cover
     }
 }

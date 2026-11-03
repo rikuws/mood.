@@ -107,9 +107,12 @@ struct IOSInspirationDetailView: View {
                 .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
 
                 VStack(alignment: .leading, spacing: 10) {
+                    // The same display serif as a study find's close look.
                     Text(displayTitle(for: inspiration))
-                        .font(.system(.title2, design: .serif, weight: .bold))
+                        .font(StudyBoardType.closeLookTitle)
+                        .tracking(-0.2)
                         .textSelection(.enabled)
+                        .accessibilityAddTraits(.isHeader)
 
                     if let byline = byline(for: inspiration) {
                         Text(byline)

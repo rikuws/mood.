@@ -51,7 +51,7 @@ xcodebuild \
   build
 ```
 
-Those `CODE_SIGNING_ALLOWED=NO` commands verify compilation only. The unsigned Mac app deliberately stores its development library under Application Support and does not initialize CloudKit, because it has no effective App Group or iCloud entitlement. Use a properly signed build to verify shared-container and cross-device behavior.
+Those `CODE_SIGNING_ALLOWED=NO` commands verify compilation only. The unsigned Mac app deliberately stores its development library under Application Support and does not initialize CloudKit, because it has no effective App Group or iCloud entitlement. Use a properly signed build to verify shared-container and cross-device behavior. To look at the iOS app on a sample library, build for the simulator with `CODE_SIGN_IDENTITY=-` (an unsigned build stops at CloudKit setup) and launch it with `SIMCTL_CHILD_PINAX_STORAGE_DIRECTORY=<folder> xcrun simctl launch booted com.rikuwikman.Pinax`; Debug simulator builds read that override, device builds never do.
 
 For normal development, open `Pinax.xcodeproj`, select a team for **PinaxMac**, **PinaxiOS**, and **PinaxShareExtension**, then run the corresponding shared scheme. `project.yml` is the project source of truth; regenerate after changing it instead of hand-editing the generated project.
 

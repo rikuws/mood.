@@ -41,7 +41,7 @@ xcodebuild -project Pinax.xcodeproj -scheme PinaxiOS \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-Unsigned builds prove compilation only. The unsigned Mac app uses Application Support and skips CloudKit. They do not validate App Group storage, browser installation, signing, or live CloudKit.
+Unsigned builds prove compilation only. The unsigned Mac app uses Application Support and skips CloudKit. They do not validate App Group storage, browser installation, signing, or live CloudKit. To look at the iOS app on a sample library, build for the simulator with `CODE_SIGN_IDENTITY=-` (an unsigned build stops at CloudKit setup) and launch it with `SIMCTL_CHILD_PINAX_STORAGE_DIRECTORY=<folder> xcrun simctl launch booted com.rikuwikman.Pinax`; Debug simulator builds read that override, device builds never do.
 
 ## Test
 

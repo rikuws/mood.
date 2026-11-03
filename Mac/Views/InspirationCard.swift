@@ -625,12 +625,9 @@ enum PinaxCatalogPalette {
     /// Black keyline on the permanent white card mat.
     static let selectionInk = Color.black
 
-    static func canvas(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? .black : Color(white: 0.96)
-    }
-
+    /// A close look is a sheet laid over the sketchbook's page.
     static func folio(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(white: 0.067) : .white
+        Sketchbook.sheet
     }
 
     static func accent(for colorScheme: ColorScheme) -> Color {
@@ -642,7 +639,7 @@ enum PinaxCatalogPalette {
     }
 
     static func previewSurface(for colorScheme: ColorScheme) -> Color {
-        colorScheme == .dark ? Color(white: 0.102) : Color(white: 0.941)
+        Sketchbook.wash
     }
 
     static func quoteSurface(for colorScheme: ColorScheme) -> Color {
@@ -654,12 +651,6 @@ enum PinaxCatalogPalette {
     }
 
     static func quoteFill(seed: Int) -> Color {
-        let palette: [Color] = [
-            .black,
-            Color(white: 0.067),
-            Color(white: 0.122),
-            Color(white: 0.173),
-        ]
-        return palette[abs(seed) % palette.count]
+        Sketchbook.quoteGrounds[abs(seed) % Sketchbook.quoteGrounds.count]
     }
 }

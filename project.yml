@@ -213,7 +213,9 @@ targets:
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSHasLocalizedDisplayName: true
-        UILaunchScreen: {}
+        # Opens on the sketchbook's paper, so launch doesn't flash white.
+        UILaunchScreen:
+          UIColorName: LaunchPaper
         UIBackgroundModes:
           - fetch
           - remote-notification

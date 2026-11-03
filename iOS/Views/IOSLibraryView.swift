@@ -40,7 +40,7 @@ struct IOSLibraryView: View {
                 libraryContent
 
                 if let message {
-                    ToastView(message: message.text)
+                    ToastView(message: message.text, symbol: message.symbol)
                         .padding(.horizontal)
                         .padding(.bottom, 10)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -131,9 +131,7 @@ struct IOSLibraryView: View {
             "mood. couldn't complete that",
             isPresented: Binding(
                 get: {
-                    operationError != nil
-                        || store.lastError != nil
-                        || syncCoordinator.lastError != nil
+                    operationError != nil || store.lastError != nil
                 },
                 set: { isPresented in
                     if !isPresented {
@@ -153,7 +151,6 @@ struct IOSLibraryView: View {
             Text(
                 operationError
                     ?? store.lastError
-                    ?? syncCoordinator.lastError
                     ?? "An unknown error occurred."
             )
         }
@@ -202,38 +199,43 @@ struct IOSLibraryView: View {
                 Spacer()
                 ProgressView("Opening library…")
                 Spacer()
-            } else if store.visibleInspirations.isEmpty {
-                emptyState
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    InterleavedCardLayout(
-                        columnPosition: reduceMotion
-                            ? CGFloat(activeCanvasColumnCount)
-                            : canvasLayoutColumnPosition,
-                        minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
-                        maximumColumnCount: maximumCanvasColumnCount
-                    ) {
-                        ForEach(store.visibleInspirations) { inspiration in
-                            card(
-                                for: inspiration,
-                                columnCount: activeCanvasColumnCount
+                    VStack(alignment: .leading, spacing: 18) {
+                        moodboardHeader
+
+                        if store.visibleInspirations.isEmpty {
+                            emptyState
+                        } else {
+                            InterleavedCardLayout(
+                                columnPosition: reduceMotion
+                                    ? CGFloat(activeCanvasColumnCount)
+                                    : canvasLayoutColumnPosition,
+                                minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
+                                maximumColumnCount: maximumCanvasColumnCount
+                            ) {
+                                ForEach(store.visibleInspirations) { inspiration in
+                                    card(
+                                        for: inspiration,
+                                        columnCount: activeCanvasColumnCount
+                                    )
+                                }
+                            }
+                            .transaction { transaction in
+                                guard reduceMotion else { return }
+                                transaction.animation = nil
+                                transaction.disablesAnimations = true
+                            }
+                            .scaleEffect(
+                                reduceMotion ? 1 : canvasBoundaryScale,
+                                anchor: canvasPinch.anchor
                             )
                         }
                     }
                     .padding(.horizontal, 16)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 16)
                     .padding(.bottom, 34)
-                    .transaction { transaction in
-                        guard reduceMotion else { return }
-                        transaction.animation = nil
-                        transaction.disablesAnimations = true
-                    }
-                    .scaleEffect(
-                        reduceMotion ? 1 : canvasBoundaryScale,
-                        anchor: canvasPinch.anchor
-                    )
                 }
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .contain)
@@ -245,55 +247,72 @@ struct IOSLibraryView: View {
                 }
             }
         }
+        // Every board is a page of the sketchbook.
         .background {
-            // A study board is worked on paper.
-            if showsStudyBoard {
-                SketchPaper()
-                    .ignoresSafeArea()
-            } else {
-                Color.pinaxCanvas
-                    .ignoresSafeArea()
-            }
+            SketchPaper()
+                .ignoresSafeArea()
         }
     }
 
+    /// The page's name, written like the study board's subject, so the two
+    /// boards of a study share one header line.
+    private var moodboardHeader: some View {
+        let project = selectedProject
+        let edit = project.map { project in
+            BoardPageEdit(
+                title: project.isStudy ? "Edit Study…" : "Manage Projects…",
+                help: "",
+                hint: project.isStudy ? "Edits the subject and brief" : "Opens your projects",
+                action: { sheet = project.isStudy ? .startStudy(project) : .projects }
+            )
+        }
+        return BoardPageHeader(
+            title: project?.name ?? (store.scope == .general ? "General" : "All inspiration"),
+            detail: project?.study?.brief ?? "",
+            onEdit: edit
+        )
+    }
+
+    /// Written on the page, under its header, where the cards would be.
     @ViewBuilder
     private var emptyState: some View {
-        if store.snapshot.inspirations.isEmpty {
-            ContentUnavailableView {
-                Label("Start your moodboard", systemImage: "sparkles.rectangle.stack")
-            } description: {
-                VStack(spacing: 8) {
-                    Text("Collect visual ideas from X and the web — from interfaces and type to interiors, fashion, objects, and art.")
-                    Text("In the X app, tap Share on a post, choose Share via…, then choose Save to mood. If it isn't visible, tap More to enable it.")
-                }
-            } actions: {
-                Button {
-                    sheet = .manualCapture
-                } label: {
-                    Label("Save a link", systemImage: "plus")
-                }
-                .buttonStyle(.borderedProminent)
+        if !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            BoardPageNote(
+                title: "No matches",
+                message: "Try a different title, author, note, or link."
+            )
+        } else if store.snapshot.inspirations.isEmpty {
+            BoardPageNote(
+                title: "Start your moodboard",
+                message: "Save what catches your eye from X and the web: interfaces and type, interiors, fashion, objects, and art. In the X app, tap Share on a post, choose Share via…, then Save to mood. If it isn't there, tap More to turn it on."
+            ) {
+                HStack(spacing: 10) {
+                    Button {
+                        sheet = .manualCapture
+                    } label: {
+                        Label("Save a Link", systemImage: "plus")
+                    }
+                    .buttonStyle(.borderedProminent)
 
-                Button("Manage projects") {
-                    sheet = .projects
+                    Button("Manage Projects") {
+                        sheet = .projects
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
-            .padding(24)
-        } else if !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            ContentUnavailableView.search(text: store.searchText)
         } else {
-            ContentUnavailableView {
-                Label("Nothing here yet", systemImage: "rectangle.stack")
-            } description: {
-                Text("Move saved visuals here or add a new link to this project.")
-            } actions: {
+            BoardPageNote(
+                title: "Nothing here yet",
+                message: store.scope == .general
+                    ? "What you save without a project lands here."
+                    : "Move things here from the moodboard, or save a link straight into this project."
+            ) {
                 Button {
                     sheet = .manualCapture
                 } label: {
-                    Label("Save a link", systemImage: "plus")
+                    Label("Save a Link", systemImage: "plus")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
             }
         }
     }
@@ -390,7 +409,8 @@ struct IOSLibraryView: View {
                             ? CGFloat(activeCanvasColumnCount)
                             : canvasLayoutColumnPosition,
                         minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
-                        maximumColumnCount: maximumCanvasColumnCount
+                        maximumColumnCount: maximumCanvasColumnCount,
+                        minimumSpacing: 22
                     ) {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                             studyCard(entry, project: project, columnCount: activeCanvasColumnCount)
@@ -1002,21 +1022,32 @@ struct IOSLibraryView: View {
     }
 
     @MainActor
-    private func showMessage(_ text: String) {
-        let message = LibraryMessage(text: text)
-        withAnimation(.snappy) { self.message = message }
+    private func showMessage(_ text: String, symbol: String = "checkmark.circle.fill") {
+        let message = LibraryMessage(text: text, symbol: symbol)
+        withAnimation(reduceMotion ? nil : .snappy) { self.message = message }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(2.2))
             guard self.message?.id == message.id else { return }
-            withAnimation(.easeOut(duration: 0.18)) { self.message = nil }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { self.message = nil }
         }
     }
 
     @MainActor
     private func syncAndReload() async {
         await store.reload()
-        _ = await syncCoordinator.sync()
+        let result = await syncCoordinator.sync()
         await store.reload()
+
+        // Sync is optional and the library is saved here either way, so a
+        // failure is said in passing, as on the Mac, rather than in an alert
+        // that blocks the board, for example when iCloud is signed out.
+        if result == nil, syncCoordinator.lastError != nil {
+            syncCoordinator.clearError()
+            showMessage(
+                "Sync unavailable. Your changes are saved on this \(UIDevice.current.localizedModel).",
+                symbol: "icloud.slash"
+            )
+        }
     }
 
     private func requestSync() {
@@ -1030,6 +1061,9 @@ private struct InterleavedCardLayout: Layout {
     var columnPosition: CGFloat
     let minimumColumnCount: Int
     let maximumColumnCount: Int
+    /// The least room between cards: the study board's is wider, so the ink
+    /// loops around kept cards don't run into each other.
+    var minimumSpacing: CGFloat = 0
 
     var animatableData: CGFloat {
         get { columnPosition }
@@ -1140,15 +1174,16 @@ private struct InterleavedCardLayout: Layout {
     }
 
     private func horizontalSpacing(for columnCount: Int) -> CGFloat {
-        columnCount >= 4 ? 8 : 12
+        max(minimumSpacing, columnCount >= 4 ? 8 : 12)
     }
 
     private func verticalSpacing(for columnCount: Int) -> CGFloat {
-        switch columnCount {
+        let spacing: CGFloat = switch columnCount {
         case 1...2: 18
         case 3: 14
         default: 10
         }
+        return max(minimumSpacing, spacing)
     }
 
     private func measurements(
@@ -1253,6 +1288,9 @@ private struct ScopeBar: View {
     @Bindable var store: LibraryStore
     let onManageProjects: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var underline
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
@@ -1279,7 +1317,8 @@ private struct ScopeBar: View {
             }
             .padding(.horizontal, 16)
         }
-        .background(.bar)
+        // Written on the page like the study board's filters, not on a
+        // bar of its own.
     }
 
     private func scopeButton(
@@ -1288,29 +1327,37 @@ private struct ScopeBar: View {
         scope: LibraryScope,
         color: Color? = nil
     ) -> some View {
-        Button {
-            withAnimation(.snappy) { store.scope = scope }
+        let isSelected = store.scope == scope
+        return Button {
+            withAnimation(reduceMotion ? nil : GlassSegmentMetrics.selection) { store.scope = scope }
         } label: {
-            VStack(spacing: 5) {
-                HStack(spacing: 6) {
-                    if let color {
-                        Circle()
-                            .fill(color)
-                            .frame(width: 7, height: 7)
-                    }
-                    Text(title)
-                    Text("\(count)")
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                if let color {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 7, height: 7)
                 }
-
-                Capsule()
-                    .fill(store.scope == scope ? Color.pinaxPlum : .clear)
-                    .frame(height: 2)
+                Text(title)
+                Text("\(count)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(Sketchbook.graphite)
             }
-            .font(.subheadline.weight(store.scope == scope ? .semibold : .regular))
+            .font(.subheadline.weight(isSelected ? .semibold : .regular))
             .foregroundStyle(.primary)
             .frame(minHeight: 44)
+            // The page you're on is your choice, so it's underlined in ink,
+            // like the study board's current filter.
+            .overlay(alignment: .bottom) {
+                if isSelected {
+                    InkUnderline()
+                        .stroke(Sketchbook.ink, style: Sketchbook.inkStroke(2))
+                        .frame(height: 6)
+                        .padding(.horizontal, -3)
+                        .offset(y: -6)
+                        .matchedGeometryEffect(id: "underline", in: underline)
+                        .accessibilityHidden(true)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -1389,18 +1436,23 @@ private enum CanvasInteractionPhase: Equatable {
 private struct LibraryMessage: Identifiable {
     let id = UUID()
     let text: String
+    var symbol = "checkmark.circle.fill"
 }
 
 private struct ToastView: View {
     let message: String
+    var symbol = "checkmark.circle.fill"
 
     var body: some View {
-        Label(message, systemImage: "checkmark.circle.fill")
+        // A capsule on one line, and the same rounded ends when a longer
+        // message wraps to two.
+        Label(message, systemImage: symbol)
             .font(.subheadline.weight(.medium))
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .frame(minHeight: 44)
-            .background(.black.opacity(0.82), in: Capsule())
+            .background(Sketchbook.cover.opacity(0.88), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: .black.opacity(0.16), radius: 12, y: 5)
             .accessibilityAddTraits(.isStaticText)
     }

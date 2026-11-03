@@ -9,29 +9,14 @@ extension Color {
 
     static let pinaxRose = Color.primary
 
-    static let pinaxCanvas = Color(uiColor: UIColor { traits in
-        if traits.userInterfaceStyle == .dark {
-            .black
-        } else {
-            UIColor(white: 0.96, alpha: 1)
-        }
-    })
+    /// The sketchbook's page, behind every board and detail.
+    static let pinaxCanvas = Sketchbook.paper
 
-    static let pinaxCardSurface = Color(uiColor: UIColor { traits in
-        if traits.userInterfaceStyle == .dark {
-            UIColor(white: 0.067, alpha: 1)
-        } else {
-            .white
-        }
-    })
+    /// A sheet laid on the page.
+    static let pinaxCardSurface = Sketchbook.sheet
 
-    static let pinaxPreviewSurface = Color(uiColor: UIColor { traits in
-        if traits.userInterfaceStyle == .dark {
-            UIColor(white: 0.102, alpha: 1)
-        } else {
-            UIColor(white: 0.941, alpha: 1)
-        }
-    })
+    /// Behind an image while it loads.
+    static let pinaxPreviewSurface = Sketchbook.wash
 
     init(pinaxHex hex: String?) {
         let cleaned = (hex ?? "")

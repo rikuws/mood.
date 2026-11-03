@@ -4,16 +4,17 @@ description: A native living visual moodboard for collecting what catches your e
 colors:
   accent-ink: "#000000"
   accent-paper: "#FFFFFF"
-  canvas-light: "#F5F5F5"
-  canvas-dark: "#000000"
-  folio-light: "#FFFFFF"
-  folio-dark: "#111111"
-  preview-light: "#F0F0F0"
-  preview-dark: "#1A1A1A"
-  quote-ink: "#000000"
-  quote-charcoal: "#111111"
-  quote-graphite: "#1F1F1F"
-  quote-slate: "#2C2C2C"
+  canvas-light: "#F2EDE3"
+  canvas-dark: "#1A1916"
+  folio-light: "#FBF8F1"
+  folio-dark: "#23211D"
+  cover: "#13120F"
+  preview-light: "#EAE5DA"
+  preview-dark: "#2A2824"
+  quote-ink: "#0E0D0B"
+  quote-charcoal: "#181614"
+  quote-graphite: "#23211D"
+  quote-slate: "#2E2B27"
   card-ink: "#000000E6"
   card-stroke: "#0000001A"
   toast-ink: "#000000D1"
@@ -141,9 +142,9 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Living Moodboard"**
+**Creative North Star: "The Working Sketchbook"**
 
-mood. feels like a personal folio that happens to be native software. A black-and-white canvas and quiet Apple chrome recede around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery.
+mood. feels like a designer's sketchbook that happens to be native software: warm paper pages inside a black cover, with saved work pasted in as white prints and the thinking about it written around them. Quiet Apple chrome recedes around expressive imagery, quotations, provenance, and notes. The collection provides the color and surprise; the interface supplies calm structure, dependable capture, and an inviting rhythm for rediscovery. Every board, the moodboard and a study's board alike, is a page of the same book.
 
 The visual language juxtaposes material, editorial cards with familiar SwiftUI navigation, search, forms, menus, sheets, context menus, and keyboard behavior. It is artful, human, and collectible without becoming ornamental. iOS, iPadOS, and macOS share the same moodboard character while preserving each platform's own layout and interaction conventions.
 
@@ -162,7 +163,7 @@ This system explicitly rejects a generic Pinterest clone, a utilitarian bookmark
 
 ## Colors
 
-The palette is black and white, like a printed folio: true black canvas, white paper cards, and inverted ink for primary actions. Collected imagery supplies every chromatic moment.
+The palette is warm paper, white prints, and a black cover, with inverted ink for primary actions. Every neutral is warm, the same temperature as the paper; collected imagery supplies every chromatic moment.
 
 ### Primary
 
@@ -175,18 +176,19 @@ The palette is black and white, like a printed folio: true black canvas, white p
 
 ### Tertiary
 
-- **Quote Ink**, **Charcoal**, **Graphite**, and **Slate** (`{colors.quote-ink}`, `{colors.quote-charcoal}`, `{colors.quote-graphite}`, `{colors.quote-slate}`): deterministic grayscale backgrounds for text-only X references. They make missing imagery feel intentional, never like an error state.
+- **Quote Ink**, **Charcoal**, **Graphite**, and **Slate** (`{colors.quote-ink}`, `{colors.quote-charcoal}`, `{colors.quote-graphite}`, `{colors.quote-slate}`): deterministic warm-black backgrounds for text-only X references. They make missing imagery feel intentional, never like an error state.
 
 ### Neutral
 
-- **Gallery Canvas** (`{colors.canvas-light}` / `{colors.canvas-dark}`): the library field behind the collection. Dark appearance is true black (`#000000`), not a tinted near-black.
-- **Folio Paper** (`{colors.folio-light}` / `{colors.folio-dark}`): detail surfaces and native panels. The collected card mat itself remains white Folio Paper in both appearances to preserve the physical-print metaphor.
-- **Preview Ground** (`{colors.preview-light}` / `{colors.preview-dark}`): quiet image-loading and web-reference backing on every platform.
+- **Paper** (`{colors.canvas-light}` / `{colors.canvas-dark}`): the page behind every board, with a faint tiled grain, on both platforms.
+- **Sheet** (`{colors.folio-light}` / `{colors.folio-dark}`): a lighter slip laid on the page, such as a close look, a detail surface, or a move's index card. The collected card mat itself stays pure white in both appearances to preserve the physical-print metaphor.
+- **Cover** (`{colors.cover}`): the Mac window's frame and sidebar in both appearances, the sketchbook's binding around the page.
+- **Wash** (`{colors.preview-light}` / `{colors.preview-dark}`): quiet image-loading and web-reference backing on every platform.
 - **Card Ink**, **Hairline Ink**, and **Toast Ink** (`{colors.card-ink}`, `{colors.card-stroke}`, `{colors.toast-ink}`): permanent ink for the white card mat, its half-point border, and transient confirmation capsules.
 
 **The Ink Rule.** Black (light) and white (dark) identify interaction and current state. They must never become a decorative wash across inactive surfaces.
 
-**The Content Color Rule.** Chromatic color belongs to captured imagery. Application chrome and text-only quote fills stay black, white, or gray. The one exception is the study board's ink (see "Study Board: Pencil and Ink"): a single blue-black for the person's own judgments, never for chrome or decoration.
+**The Content Color Rule.** Chromatic color belongs to captured imagery. Application chrome and text-only quote fills stay warm black, white, paper, or warm gray. The one exception is the study board's ink (see "Study Board: Pencil and Ink"): a single blue-black for the person's own judgments, never for chrome or decoration.
 
 ## Typography
 
@@ -207,7 +209,7 @@ The palette is black and white, like a printed folio: true black canvas, white p
 - **Label** (`{typography.label}`): scope tabs, actions, and transient confirmation messages.
 - **Caption** (`{typography.caption}`): provenance, source, project counts, dates, and tertiary metadata.
 
-**The Serif Lives with Content Rule.** Serif is reserved for saved titles, quotations, editorial previews, the quiet mood. wordmark moment, and the macOS space identity heading. Buttons, fields, navigation labels, and data remain SF Pro.
+**The Serif Lives with Content Rule.** Serif is reserved for saved titles, quotations, editorial previews, the mood. wordmark on the Mac sidebar (Geist Serif, 28pt), and each page's title. Buttons, fields, navigation labels, and data remain SF Pro.
 
 **The Dynamic Type Rule.** iOS typography must use semantic styles or `ScaledMetric`; accessibility sizes collapse the canvas to one column and must never be defeated with fixed text.
 
@@ -236,7 +238,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 ### Chips
 
 - **Style:** project and scope selectors are text-first native controls with a 7pt project-color dot where relevant. Counts use tertiary caption text and monospaced digits.
-- **State:** the active scope gains semibold weight plus a 2pt ink underline; inactive scopes remain primary text without colored fill.
+- **State:** on iOS the active scope gains semibold weight and the same short hand-drawn ink underline as the study board's current filter, sliding between scopes; counts are graphite. On macOS the sidebar row is selected natively.
 - **Glass segments:** switches that sit on the canvas (Moodboard or Study board) share one floating glass capsule: the current segment is a pill concentric with the capsule that slides between segments. 34pt tall on macOS, 44pt on iOS.
 - **Study board filters:** the verdict filters with their counts are written on the page, not in a capsule: the current one is semibold with a short hand-drawn ink underline that slides between them; counts are graphite. 44pt targets on iOS.
 
@@ -246,7 +248,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 - **Background:** every collectible card uses permanent white Folio Paper around the preview, including in Dark Mode. Preview content adapts independently.
 - **Shadow Strategy:** use the Print vocabulary above and a 0.5pt Card Stroke. Selection is an outline, not a heavier shadow.
 - **Internal Padding:** caption padding contracts with density from roughly 6pt to 2.5pt. The caption is the mat's white, so on the left and below its text margin runs on to the card edge; on macOS the trailing padding adds the mat inset so the text sits as far from the image as from the edge. iOS captions add 2pt of trailing breathing room so the title never crowds the cutout edge.
-- **Layout:** iOS uses 16pt horizontal canvas padding, 8–12pt horizontal card gaps, and 10–18pt vertical gaps. macOS uses 20pt canvas padding and 16pt gaps. Columns start at the same top edge; different content heights create the rhythm naturally.
+- **Layout:** iOS uses 16pt horizontal canvas padding, 8–12pt horizontal card gaps, and 10–18pt vertical gaps. macOS uses 20pt canvas padding and 16pt gaps. A study board spaces its cards wider (24pt on macOS, at least 22pt on iOS) so the ink loops around kept cards never run into each other. Columns start at the same top edge; different content heights create the rhythm naturally.
 
 ### Inputs / Fields
 
@@ -257,8 +259,9 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 ### Navigation
 
 - **iOS / iPadOS:** `NavigationStack`, inline mood. title, system search drawer, horizontal scope bar, toolbar menu, system sheets, context menus, swipe actions, alerts, and edge-swipe back.
-- **macOS:** the canvas occupies the window. A quiet editorial space heading (All inspiration, General, or the current project) opens a lightweight project switcher; Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Selecting an item opens its close look over the dimmed canvas, large enough to look properly: the image on the left, details and actions in a column beside it (stacked when the window is narrow). Item editing starts from there. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no permanent sidebar or toolbar.
-- **Study board:** the header is one line on the paper, with no panel: the subject in Geist Serif with the brief beside it (clicking them edits the study), and the verdict filters at the board's right edge, over a pencil rule; when the line can't hold both, the filters drop below. The agent is not in the header. On macOS it is a glass capsule in the canvas chrome, beside the board switch, that says what it is doing or will do next ("Find more", "Codex · 3 found", "Codex · 5 new"); clicking it opens a card with one heading, the nudge as a soft well, one full-width primary action, and quiet secondary actions. On iOS a sparkles toolbar button opens the same card to copy a prompt.
+- **macOS:** a collapsible sidebar on the cover lists All inspiration, General, and projects; the page fills the rest of the window, and switching spaces crossfades to the new page, opened at its top. Find (`⌘F`) and Switch Project (`⌘K`) invoke search and navigation. Selecting an item opens its close look over the dimmed page, large enough to look properly: the image on the left, details and actions in a column beside it (stacked when the window is narrow). Item editing starts from there. Menus, context menus, drag and drop, and keyboard shortcuts remain native. There is no toolbar; search and the board switch float as glass capsules over the page, and the page softens as it scrolls under them.
+- **Page header:** every board opens with the same line on the paper, with no panel: the page's title in Geist Serif (the space, project, or study subject) with a line beside it (a study's brief), over a pencil rule. Clicking a project's or study's title edits it. An empty page writes a short note under the rule, on its left edge, with what to do next.
+- **Study board:** the page header carries the verdict filters at its right edge, on the title's baseline; when the line can't hold both, the filters drop below. The agent is not in the header. On macOS it is a glass capsule in the canvas chrome, beside the board switch, that says what it is doing or will do next ("Find more", "Codex · 3 found", "Codex · 5 new"); clicking it opens a card with one heading, the nudge as a soft well, one full-width primary action, and quiet secondary actions. On iOS a sparkles toolbar button opens the same card to copy a prompt.
 - **Iconography:** SF Symbols only, using semantic weights and platform alignment.
 
 ### Stepped Caption Cutout
@@ -279,10 +282,10 @@ Pinch zoom interpolates the whole canvas continuously between adjacent column co
 
 ## Study Board: Pencil and Ink
 
-The study board is where a direction is worked out, so it is drawn as a working sketchbook rather than a finished folio: two hands on one page. The agent drafts in pencil and writes in graphite; the person decides in ink. Saved work stays crisp and is never drawn on: a kept find is circled, not marked up. The moodboard keeps its scenery and folio look.
+Every board is a page of the sketchbook, but the study board is where a direction is worked out, so it is the page with two hands on it. The agent drafts in pencil and writes in graphite; the person decides in ink. Saved work stays crisp and is never drawn on: a kept find is circled, not marked up.
 
-- **Paper** (`{colors.study-paper-light}` / `{colors.study-paper-dark}`): warm ground with a faint tiled grain, in place of the moodboard's landscape. The white card mat stays white on it.
-- **Graphite** (`{colors.study-graphite-light}` / `{colors.study-graphite-dark}`): the agent's words, such as why a find is here and a pattern's label. At least 4.5:1 on paper.
+- **Paper** (`{colors.study-paper-light}` / `{colors.study-paper-dark}`): the same page as every board. The white card mat stays white on it.
+- **Graphite** (`{colors.study-graphite-light}` / `{colors.study-graphite-dark}`): the agent's words, such as why a find is here, how much a pattern rests on ("Seen in 3 of your saves"), and the lens a move is seen through (after an eyeglasses glyph, under the move, never as an uppercase label over it). At least 4.5:1 on paper.
 - **Pencil** (`{colors.study-pencil-light}` / `{colors.study-pencil-dark}`): the agent's marks, such as a proposed pattern's frame, the hatching of slots still being filled, and the rule under the header. Strokes only, never text.
 - **Ink** (`{colors.study-ink-light}` / `{colors.study-ink-dark}`): everything the person decides, such as the loop around a kept card, the stroke through a rejected one, their reasons (serif italic), the current filter's underline, a chosen lens, and a confirmed pattern's frame.
 - **Display type:** Geist Serif (`{typography.study-display}`), bundled under the SIL Open Font License and registered at first use, for the study subject, the close-look title, and a pattern given a whole pane. Its hairlines are cut for headlines, so it never goes below 28pt; pattern cards and reasons stay in the system serif.
@@ -292,7 +295,7 @@ The study board is where a direction is worked out, so it is drawn as a working 
 
 **The Two Hands Rule.** Pencil means the agent proposed it and nothing is decided; ink means the person decided it. Never draw in ink for the agent, never use pencil for the person, and never draw on a saved image itself.
 
-**The Marks Stay Off Controls Rule.** The current filter's underline and a chosen lens are the only marks on controls. Buttons, menus, sheets, and the canvas chrome stay native.
+**The Marks Stay Off Controls Rule.** The current filter's (and on iOS, the current scope's) underline and a chosen lens are the only marks on controls. Buttons, menus, sheets, and the canvas chrome stay native.
 
 ## Do's and Don'ts
 

@@ -112,24 +112,52 @@ struct StudyStartForm: View {
 
 // MARK: - Board header
 
-/// The top of the study board on one line, so the board starts right under
-/// it: the subject in display serif with the brief beside it, and the
-/// verdict filters at the far edge, over a pencil rule. When the line can't
-/// hold both, the filters drop below. The agent isn't here; it lives in the
-/// canvas chrome.
+/// The top of the study board: the subject with its brief, and the verdict
+/// filters at the far edge. The agent isn't here; it lives in the canvas
+/// chrome.
 struct StudyBoardHeader: View {
     let study: ProjectStudy
     let board: StudyBoard
     @Binding var filter: StudyBoardFilter
     var onEdit: (() -> Void)?
 
-    /// The least of the brief worth showing beside the subject before the
-    /// filters move to their own line.
-    private let minimumBriefWidth: CGFloat = 160
+    var body: some View {
+        BoardPageHeader(
+            title: study.subject,
+            detail: study.brief,
+            onEdit: onEdit.map { edit in
+                BoardPageEdit(
+                    title: "Edit Study…",
+                    help: study.brief.isEmpty ? "Edit the subject and brief" : study.brief,
+                    hint: "Edits the subject and brief",
+                    action: edit
+                )
+            }
+        ) {
+            StudyBoardFilterBar(selection: $filter, board: board)
+        }
+    }
+}
+
+/// The top of every board on one line, so the board starts right under it:
+/// the page's name in display serif with a line about it beside it, and
+/// whatever steers the board at the far edge, over a pencil rule. When the
+/// line can't hold both, the trailing part drops below. The moodboard and
+/// the study board share it, so moving between them keeps the top of the
+/// page still.
+struct BoardPageHeader<Trailing: View>: View {
+    let title: String
+    var detail = ""
+    var onEdit: BoardPageEdit?
+    @ViewBuilder var trailing: () -> Trailing
+
+    /// The least of the detail worth showing beside the title before the
+    /// trailing part moves to its own line.
+    private let minimumDetailWidth: CGFloat = 160
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            titleAndFilters
+            titleAndTrailing
             PencilRule()
                 .stroke(Sketchbook.pencil, style: Sketchbook.inkStroke(1))
                 .frame(height: 6)
@@ -137,72 +165,88 @@ struct StudyBoardHeader: View {
         }
     }
 
-    private var titleAndFilters: some View {
+    private var titleAndTrailing: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 0) {
-                StudyBoardTitleButton(study: study, onEdit: onEdit) {
+            // On the title's baseline, so the filters read as part of the
+            // same line of writing.
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                BoardPageTitleButton(edit: onEdit) {
                     HStack(alignment: .firstTextBaseline, spacing: 10) {
-                        subject
+                        titleText
                             .fixedSize()
-                        if !study.brief.isEmpty {
-                            brief
+                        if !detail.isEmpty {
+                            detailText
                                 .lineLimit(1)
-                                .frame(minWidth: 0, idealWidth: minimumBriefWidth, alignment: .leading)
+                                .frame(minWidth: 0, idealWidth: minimumDetailWidth, alignment: .leading)
                         }
                     }
                 }
                 Spacer(minLength: 20)
-                StudyBoardFilterBar(selection: $filter, board: board)
+                trailing()
                     .fixedSize()
             }
 
             VStack(alignment: .leading, spacing: 14) {
-                StudyBoardTitleButton(study: study, onEdit: onEdit) {
+                BoardPageTitleButton(edit: onEdit) {
                     VStack(alignment: .leading, spacing: 3) {
-                        subject
+                        titleText
                             .lineLimit(2)
-                        if !study.brief.isEmpty {
-                            brief
+                        if !detail.isEmpty {
+                            detailText
                                 .lineLimit(2)
                         }
                     }
                 }
-                StudyBoardFilterBar(selection: $filter, board: board)
+                trailing()
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private var subject: some View {
-        Text(study.subject)
+    private var titleText: some View {
+        Text(title)
             .font(StudyBoardType.subject)
             .tracking(-0.2)
             .accessibilityAddTraits(.isHeader)
     }
 
-    private var brief: some View {
-        Text(study.brief)
+    private var detailText: some View {
+        Text(detail)
             .font(.callout)
             .foregroundStyle(.secondary)
             .truncationMode(.tail)
     }
 }
 
-/// The subject and brief, which open the study's editor like a window title
-/// that renames: a soft highlight on hover says it can be clicked, and it
-/// sits outside the text so the words stay on the board's left edge.
-private struct StudyBoardTitleButton<Label: View>: View {
-    let study: ProjectStudy
-    let onEdit: (() -> Void)?
+/// What clicking a page's title edits, and how that's said.
+struct BoardPageEdit {
+    let title: String
+    let help: String
+    let hint: String
+    let action: () -> Void
+}
+
+extension BoardPageHeader where Trailing == EmptyView {
+    init(title: String, detail: String = "", onEdit: BoardPageEdit? = nil) {
+        self.init(title: title, detail: detail, onEdit: onEdit) { EmptyView() }
+    }
+}
+
+/// A page's title, which opens its editor like a window title that renames:
+/// a soft highlight on hover says it can be clicked, and it sits outside the
+/// text so the words stay on the board's left edge.
+private struct BoardPageTitleButton<Label: View>: View {
+    let edit: BoardPageEdit?
     @ViewBuilder var label: () -> Label
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     private let highlightInset = CGSize(width: 6, height: 3)
 
     var body: some View {
-        if let onEdit {
-            Button(action: onEdit) {
+        if let edit {
+            Button(action: edit.action) {
                 label()
                     .padding(.horizontal, highlightInset.width)
                     .padding(.vertical, highlightInset.height)
@@ -216,15 +260,15 @@ private struct StudyBoardTitleButton<Label: View>: View {
             }
             .buttonStyle(.plain)
             .onHover { hovering in
-                withAnimation(.easeOut(duration: 0.12)) { isHovered = hovering }
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.12)) { isHovered = hovering }
             }
-            .help(study.brief.isEmpty ? "Edit the subject and brief" : study.brief)
+            .help(edit.help)
             .contextMenu {
-                Button("Edit Study…", action: onEdit)
+                Button(edit.title, action: edit.action)
             }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(.isHeader)
-            .accessibilityHint("Edits the subject and brief")
+            .accessibilityHint(edit.hint)
         } else {
             label()
         }
@@ -519,6 +563,39 @@ struct StudyAgentPrimaryButton: View {
 }
 
 /// Shown where cards would be when there are none to show.
+/// A note written on the page where cards would be, under the header and on
+/// its left edge, with what to do next.
+struct BoardPageNote<Actions: View>: View {
+    let title: String
+    var message: String?
+    @ViewBuilder var actions: () -> Actions
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                if let message {
+                    Text(message)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .accessibilityElement(children: .combine)
+            actions()
+        }
+        .frame(maxWidth: 520, alignment: .leading)
+        .padding(.vertical, 16)
+    }
+}
+
+extension BoardPageNote where Actions == EmptyView {
+    init(title: String, message: String?) {
+        self.init(title: title, message: message) { EmptyView() }
+    }
+}
+
 struct StudyBoardEmptyState: View {
     let stage: StudyStage
     let filter: StudyBoardFilter
@@ -526,19 +603,7 @@ struct StudyBoardEmptyState: View {
     let isSearchingText: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-                .font(.headline)
-            if let message {
-                Text(message)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: 520, alignment: .leading)
-        .padding(.vertical, 16)
-        .accessibilityElement(children: .combine)
+        BoardPageNote(title: title, message: message)
     }
 
     private var title: String {
@@ -750,11 +815,6 @@ struct StudyPatternCard: View {
     var body: some View {
         let padding = StudyCardMetrics.padding(columns)
         VStack(alignment: .leading, spacing: max(5, padding * 0.45)) {
-            Text("Pattern")
-                .font(.system(size: max(8.5, StudyCardMetrics.statementSize(columns) * 0.5), weight: .semibold))
-                .tracking(0.8)
-                .textCase(.uppercase)
-                .foregroundStyle(Sketchbook.graphite)
             Text(statement)
                 .font(.system(size: StudyCardMetrics.statementSize(columns), design: .serif))
                 .foregroundStyle(.primary)
@@ -762,6 +822,14 @@ struct StudyPatternCard: View {
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            // What it rests on, in the agent's hand: pointing at the card
+            // draws the lines to those saves.
+            if let evidence {
+                Text(evidence)
+                    .font(.system(size: max(10, StudyCardMetrics.statementSize(columns) * 0.62)))
+                    .foregroundStyle(Sketchbook.graphite)
+                    .lineLimit(1)
+            }
         }
         .opacity(Double(drawn))
         .padding(padding)
@@ -781,6 +849,7 @@ struct StudyPatternCard: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Pattern: \(statement)")
+        .accessibilityValue(reflection.evidenceSummary ?? "")
         .onAppear {
             guard drawn < 1 else { return }
             withAnimation(reduceMotion ? nil : .easeOut(duration: 0.9)) { drawn = 1 }
@@ -789,6 +858,11 @@ struct StudyPatternCard: View {
 
     private var statement: String {
         reflection.acceptedStatement ?? reflection.statement
+    }
+
+    private var evidence: String? {
+        guard columns <= 5 else { return nil }
+        return reflection.evidenceSummary
     }
 
     /// Confirmed or corrected: the person has made it theirs.
@@ -846,18 +920,16 @@ struct StudyMoveCard: View {
         let padding = max(8, StudyCardMetrics.padding(columns) * 0.75)
         let shape = RoundedRectangle(cornerRadius: StudyCardMetrics.cornerRadius(columns) + 2, style: .continuous)
         VStack(alignment: .leading, spacing: max(6, padding * 0.5)) {
-            Text(suggestion.lens ?? "Move")
-                .font(.system(size: max(8.5, StudyCardMetrics.statementSize(columns) * 0.5), weight: .semibold))
-                .tracking(0.8)
-                .textCase(.uppercase)
-                .foregroundStyle(Sketchbook.graphite)
-                .lineLimit(2)
             Text(suggestion.move ?? suggestion.title)
                 .font(.system(size: StudyCardMetrics.statementSize(columns) * 0.85, design: .serif))
                 .foregroundStyle(.primary)
                 .lineLimit(StudyCardMetrics.lineLimit(columns))
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
+            if let lens = suggestion.lens {
+                StudyLensLabel(lens: lens)
+                    .font(.system(size: max(10, StudyCardMetrics.statementSize(columns) * 0.6)))
+            }
             if columns <= 5 {
                 source
             }
@@ -900,6 +972,34 @@ struct StudyMoveCard: View {
     private var accessibilityText: String {
         let lens = suggestion.lens.map { "\($0): " } ?? ""
         return "Move. \(lens)\(suggestion.move ?? suggestion.title). Shown in \(suggestion.title) by \(suggestion.creator)."
+    }
+}
+
+/// The lens a move was seen through, in the agent's graphite: metadata
+/// under the move rather than a label over it.
+struct StudyLensLabel: View {
+    let lens: String
+
+    var body: some View {
+        Label {
+            Text(lens)
+        } icon: {
+            Image(systemName: "eyeglasses")
+                .imageScale(.small)
+        }
+        .labelStyle(StudyLensLabelStyle())
+        .foregroundStyle(Sketchbook.graphite)
+        .lineLimit(1)
+        .accessibilityLabel("Through \(lens)")
+    }
+}
+
+private struct StudyLensLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 5) {
+            configuration.icon
+            configuration.title
+        }
     }
 }
 
@@ -1100,6 +1200,15 @@ extension View {
 }
 
 extension StudyReflection {
+    /// How much the pattern rests on, such as "Seen in 3 of your saves".
+    var evidenceSummary: String? {
+        switch inspirationIDs.count {
+        case 0: nil
+        case 1: "Seen in one of your saves"
+        case let count: "Seen in \(count) of your saves"
+        }
+    }
+
     /// The finds on the board this pattern was drawn from: the ones kept
     /// into the items it cites.
     func evidence(in study: ProjectStudy) -> [StudySuggestion.ID] {
@@ -1433,14 +1542,7 @@ struct StudyFindingCloseLook: View {
         } details: {
             VStack(alignment: .leading, spacing: 20) {
                 if let move = suggestion.move {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if let lens = suggestion.lens {
-                            Text(lens)
-                                .font(.caption.weight(.semibold))
-                                .tracking(0.8)
-                                .textCase(.uppercase)
-                                .foregroundStyle(Sketchbook.graphite)
-                        }
+                    VStack(alignment: .leading, spacing: 10) {
                         Text(move)
                             .font(StudyBoardType.closeLookTitle)
                             .tracking(-0.2)
@@ -1448,6 +1550,10 @@ struct StudyFindingCloseLook: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .textSelection(.enabled)
                             .accessibilityAddTraits(.isHeader)
+                        if let lens = suggestion.lens {
+                            StudyLensLabel(lens: lens)
+                                .font(.callout)
+                        }
                     }
                     if !targetItems.isEmpty {
                         StudyCloseLookSection("For") {
@@ -1494,10 +1600,13 @@ struct StudyFindingCloseLook: View {
                     .foregroundStyle(.secondary)
                     .textSelection(.enabled)
             }
+            // In the page's own ink rather than link blue, which would read
+            // as the person's blue-black marks.
             Link(destination: suggestion.url) {
                 Label(linkTitle, systemImage: "arrow.up.right.square")
             }
             .font(.callout)
+            .foregroundStyle(.primary)
             .padding(.top, 2)
         }
     }
@@ -1625,11 +1734,6 @@ struct StudyPatternCloseLook: View {
 
     private func quotation(isWide: Bool) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Pattern")
-                .font(.caption.weight(.semibold))
-                .tracking(0.8)
-                .textCase(.uppercase)
-                .foregroundStyle(Sketchbook.graphite)
             Text("\u{201C}\(reflection.acceptedStatement ?? reflection.statement)\u{201D}")
                 .font(isWide ? StudyBoardType.patternStatement : StudyBoardType.closeLookTitle)
                 .tracking(-0.2)

@@ -138,6 +138,18 @@ public actor LibraryRepository {
             clock: clock
         )
         #else
+        #if DEBUG && targetEnvironment(simulator)
+        // Lets an unsigned simulator build open a fixture library. A device
+        // build never reads it, so the app and share extension can't drift.
+        if let override = ProcessInfo.processInfo.environment["PINAX_STORAGE_DIRECTORY"],
+           override.hasPrefix("/"),
+           !override.contains("\0") {
+            return try LibraryRepository(
+                storageDirectory: URL(fileURLWithPath: override, isDirectory: true),
+                clock: clock
+            )
+        }
+        #endif
         if let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: PinaxStorage.appGroupIdentifier
         ) {

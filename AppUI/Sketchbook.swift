@@ -9,14 +9,29 @@ import UIKit
 
 // MARK: - Palette
 
-/// The study board's two hands on one page. The agent drafts in pencil and
-/// writes its notes in graphite; the person decides in ink. Saved work stays
-/// crisp and is never drawn on: a kept find is circled, not marked up.
+/// mood. is a working sketchbook: every board is a page of warm paper with
+/// saved work pasted on it as white prints. On a study, two hands share the
+/// page. The agent drafts in pencil and writes its notes in graphite; the
+/// person decides in ink. Saved work stays crisp and is never drawn on: a
+/// kept find is circled, not marked up.
 enum Sketchbook {
-    /// Warm paper under the study board, in place of the moodboard's scenery.
+    /// The page under every board.
     static let paper = Color(light: 0xF2EDE3, dark: 0x1A1916)
-    /// A slip of lighter paper on it, such as a move's index card.
+    /// A slip of lighter paper on it, such as a move's index card or a close
+    /// look laid over the page.
     static let sheet = Color(light: 0xFBF8F1, dark: 0x23211D)
+    /// The cover around the page: the Mac window's frame and sidebar.
+    static let cover = Color(light: 0x13120F, dark: 0x13120F)
+    /// Behind an image while it loads, and under a page saved without one.
+    static let wash = Color(light: 0xEAE5DA, dark: 0x2A2824)
+    /// Grounds for a post saved without a picture, chosen by its ID: warm
+    /// blacks, the same temperature as the page.
+    static let quoteGrounds = [
+        Color(light: 0x0E0D0B, dark: 0x0E0D0B),
+        Color(light: 0x181614, dark: 0x181614),
+        Color(light: 0x23211D, dark: 0x23211D),
+        Color(light: 0x2E2B27, dark: 0x2E2B27),
+    ]
     /// The agent's words: why a find is here, a pattern's label.
     static let graphite = Color(light: 0x6A655B, dark: 0xA29C90)
     /// The agent's marks: a proposed pattern's frame, slots still being filled.
