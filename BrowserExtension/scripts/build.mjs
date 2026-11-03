@@ -24,7 +24,8 @@ const runtimeFiles = [
   "background/service-worker.js",
   "content/x-content.css",
   "content/x-content.js",
-  "lib/capture-helpers.js"
+  "lib/capture-helpers.js",
+  "lib/bookmark-import.js"
 ];
 
 function extensionIDFromKey(encodedKey) {

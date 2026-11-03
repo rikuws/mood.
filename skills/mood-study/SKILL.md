@@ -1,6 +1,6 @@
 ---
 name: mood-study
-description: Find real, credited inspiration for a guided visual study in mood. and reflect the user's patterns back for them to confirm. Use when the user asks to find inspirations, explore a study subject, suggest references, or reflect on what they keep and reject in a mood. study.
+description: Find real, credited inspiration for a guided visual study in mood., propose ways to make the user's own work better through a lens, and reflect the user's patterns back for them to confirm. Use when the user asks to find inspirations, explore a study subject, suggest references, improve or check one of their screens against their direction, or reflect on what they keep and reject in a mood. study.
 compatibility: Requires macOS with mood.app installed, a study started in the mood. app, web search or another source of real published work, and image inspection.
 metadata:
   version: "1.0"
@@ -127,6 +127,62 @@ one entry (the object inside the list) as the next file in `./suggestions/`, the
 Report `added` and every `skipped` entry with its reason. Fix and resubmit a skipped item only
 when the fix is honest (a missing credit you can actually verify); never reword a refusal
 away. Tell the user the sources are waiting on the study board in mood.
+
+## Optional: Taste Engine
+
+If the Taste Labs brand API is available to you as tools (`search_brands`,
+`search_similar_brands`, `extract_brand`, from the user's own `brand-api` MCP server), you may use
+them to find candidate sites: describe the look the seeds share to `search_brands`, or start
+`search_similar_brands` from a site already on the moodboard. They are only a way to find
+candidates. Each one still has to pass everything above: a real page, credited to who made it,
+tied to the seeds, with a rationale. Each call spends the user's credits, so search a few times
+with care rather than many times at random. Never install or sign in to it yourself, and never
+mention it to the user as a requirement: mood. works without it.
+
+## Make it better
+
+Run this when mood. asks for "ways to make it better", or the user asks you to improve one of
+their own items (a screen, a page, a poster) in a study. The item is named by its ID; look at its
+image closely before anything else.
+
+Propose 10 to 15 **moves**. A move is one concrete change to that item, in one sentence ("Drop
+the section headers and let spacing group the rows"), seen through a **lens**:
+
+- **Dieter Rams' principles** (the default): Innovative, Useful, Aesthetic, Understandable,
+  Unobtrusive, Honest, Long-lasting, Thorough to the detail, Light on resources (his
+  "environmentally friendly", for software), As little design as possible. Use only the ones that
+  genuinely apply, and don't force all ten.
+- **The user's direction**, when asked: the study's patterns with status `confirmed` or
+  `corrected` (use the correction). Each move says where the item strays from one of them, which
+  is how a build gets checked against the direction. If there are none, say so and stop.
+
+Every move is shown done well by a **real, credited source** you found and confirmed, exactly as
+in "Find sources": the source's `url`, `title`, `creator`, `imageURL`, and a `rationale` saying
+what in the source shows the move and why it fits this item. Never draw, render, mock up or
+generate a variant of the user's work; the user's coding agent makes the change once they keep
+the move. Spread moves across lenses and parts of the item, and prefer moves the user can judge
+at a glance.
+
+```json
+{
+  "suggestions": [
+    {
+      "move": "Drop the section headers and let spacing group the rows.",
+      "lens": "As little design as possible",
+      "forInspirationID": "<the item's uuid>",
+      "url": "https://example.com/today-list",
+      "title": "Today list",
+      "creator": "Olm",
+      "imageURL": "https://example.com/today-list.png",
+      "rationale": "Groups twelve rows with spacing alone, no headers, which is what your settings screen's four headers are doing by hand."
+    }
+  ]
+}
+```
+
+Add them with `suggest`, or, when mood. started you, save each move as its own file in
+`./suggestions/` as soon as its source checks out. The user keeps or rejects each move with a
+reason in mood.; kept moves are direction for `mood-distill`.
 
 ## Reflect patterns back
 

@@ -72,6 +72,11 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
         category: "cloud-push"
     )
     private var receivedCaptureURL = false
+    /// Browser captures can arrive one after another, as in a bookmark
+    /// import; they share one sync once they stop coming for a moment.
+    private var captureSyncDeadline: ContinuousClock.Instant?
+    private var isWaitingToSyncCaptures = false
+    private static let captureSyncDelay = Duration.seconds(2)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         let application = NSApplication.shared
@@ -221,10 +226,28 @@ final class PinaxAppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate 
                 }
             }
 
-            if capturedAny, let syncCoordinator = Self.syncCoordinator {
-                _ = await syncCoordinator.sync()
-                await Self.libraryStore?.reload()
+            if capturedAny {
+                scheduleCaptureSync()
             }
+        }
+    }
+
+    /// Syncs once the captures stop arriving. Each new one pushes the sync
+    /// back rather than cancelling it, so a sync already under way finishes.
+    private func scheduleCaptureSync() {
+        guard Self.syncCoordinator != nil else { return }
+        captureSyncDeadline = .now + Self.captureSyncDelay
+        guard !isWaitingToSyncCaptures else { return }
+        isWaitingToSyncCaptures = true
+        Task { @MainActor in
+            while let deadline = captureSyncDeadline, ContinuousClock.now < deadline {
+                try? await Task.sleep(until: deadline)
+            }
+            captureSyncDeadline = nil
+            isWaitingToSyncCaptures = false
+            guard let syncCoordinator = Self.syncCoordinator else { return }
+            _ = await syncCoordinator.sync()
+            await Self.libraryStore?.reload()
         }
     }
 

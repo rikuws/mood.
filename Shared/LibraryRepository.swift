@@ -138,6 +138,18 @@ public actor LibraryRepository {
             clock: clock
         )
         #else
+        #if DEBUG && targetEnvironment(simulator)
+        // Lets an unsigned simulator build open a fixture library. A device
+        // build never reads it, so the app and share extension can't drift.
+        if let override = ProcessInfo.processInfo.environment["PINAX_STORAGE_DIRECTORY"],
+           override.hasPrefix("/"),
+           !override.contains("\0") {
+            return try LibraryRepository(
+                storageDirectory: URL(fileURLWithPath: override, isDirectory: true),
+                clock: clock
+            )
+        }
+        #endif
         if let container = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: PinaxStorage.appGroupIdentifier
         ) {
@@ -260,6 +272,7 @@ public actor LibraryRepository {
                 authorHandle: Self.cleanedHandle(payload.authorHandle),
                 imageURL: payload.imageURL,
                 localImageFilename: localImageFilename,
+                motion: payload.motion,
                 projectID: payload.projectID,
                 createdAt: now
             )
@@ -715,6 +728,7 @@ public actor LibraryRepository {
             inspiration.authorHandle = cleanedHandle(payload.authorHandle)
         }
         if inspiration.imageURL == nil { inspiration.imageURL = payload.imageURL }
+        if inspiration.motion == nil { inspiration.motion = payload.motion }
         if inspiration.source == .web && payload.source == .x { inspiration.source = .x }
     }
 
@@ -733,6 +747,7 @@ public actor LibraryRepository {
             inspiration.authorHandle = authorHandle
         }
         if let imageURL = payload.imageURL { inspiration.imageURL = imageURL }
+        if let motion = payload.motion { inspiration.motion = motion }
         if inspiration.source == .web && payload.source == .x { inspiration.source = .x }
     }
 

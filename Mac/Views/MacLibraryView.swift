@@ -26,6 +26,7 @@ struct MacLibraryView: View {
     @AppStorage("macStudyShowsBoard") private var prefersStudyBoard = true
     @State private var studyFilter = StudyBoardFilter.all
     @State private var selectedStudyEntryID: StudyBoardEntry.ID?
+    @State private var hoveredStudyPatternID: StudyReflection.ID?
     @State private var studyArrivals = StudyBoardArrivals()
     @State private var studyRunner = StudyAgentRunner.shared
 
@@ -186,19 +187,16 @@ struct MacLibraryView: View {
                     : expandedProjectSidebarWidth
             )
 
+            // Every board is a page of the sketchbook, inside its cover.
             ZStack {
-                MacMoodboardArtworkLayer(
-                    assetName: activeLandscape.rawValue,
-                    projectColorHex: currentProjectColorHex
-                )
-
+                SketchPaper()
                 canvasStack
             }
             .clipShape(moodboardStageShape)
             .padding(.vertical, 4)
             .padding(.trailing, 4)
         }
-        .background(Color.black)
+        .background(Sketchbook.cover)
     }
 
     private var moodboardStageShape: RoundedRectangle {
@@ -370,6 +368,10 @@ struct MacLibraryView: View {
                 moodboard
             }
         }
+        // Each space is its own page: switching crossfades to it, opened
+        // at the top.
+        .id(store.scope)
+        .transition(.opacity)
         .task(id: canvasInteractionPhase) {
             await finishCanvasInteractionAfterSettling()
         }
@@ -382,10 +384,16 @@ struct MacLibraryView: View {
         if store.isLoading && store.inspirations.isEmpty {
             ProgressView("Opening your moodboard…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if visibleInspirations.isEmpty {
-            emptyState
         } else {
-            zoomableCanvas { activeColumnCount in
+            zoomableCanvas(spacing: canvasSpacing) {
+                VStack(alignment: .leading, spacing: canvasSpacing) {
+                    moodboardHeader
+                    if visibleInspirations.isEmpty {
+                        moodboardEmptyNote
+                    }
+                }
+                .padding(.bottom, pageHeaderGap)
+            } cards: { activeColumnCount in
                 ForEach(visibleInspirations) { inspiration in
                     InspirationCard(
                         inspiration: inspiration,
@@ -408,15 +416,11 @@ struct MacLibraryView: View {
         }
     }
 
-    private func zoomableCanvas<Cards: View>(
-        @ViewBuilder cards: @escaping (_ activeColumnCount: Int) -> Cards
-    ) -> some View {
-        zoomableCanvas(header: { EmptyView() }, cards: cards)
-    }
-
     /// The pinch-zoomable masonry both the moodboard and the study board sit
-    /// on, below the landscape reveal. `header` scrolls with the cards.
+    /// on. `header` scrolls with the cards. The study board spaces its cards
+    /// wider, so the ink loops around kept ones don't run into each other.
     private func zoomableCanvas<Header: View, Cards: View>(
+        spacing: CGFloat,
         @ViewBuilder header: @escaping () -> Header,
         @ViewBuilder cards: @escaping (_ activeColumnCount: Int) -> Cards
     ) -> some View {
@@ -439,10 +443,13 @@ struct MacLibraryView: View {
                         columnPosition: canvasLayoutColumnPosition(for: availableWidth),
                         minimumColumnCount: 1,
                         maximumColumnCount: maximumColumnCount,
-                        horizontalSpacing: canvasSpacing,
-                        verticalSpacing: canvasSpacing
+                        horizontalSpacing: spacing,
+                        verticalSpacing: spacing
                     ) {
                         cards(activeColumnCount)
+                    }
+                    .overlayPreferenceValue(StudyCardAnchorKey.self) { anchors in
+                        studyEvidenceOverlay(anchors)
                     }
                     .scaleEffect(
                         reduceMotion ? 1 : canvasGesturePresentation.boundaryScale,
@@ -450,13 +457,13 @@ struct MacLibraryView: View {
                     )
                 }
                 .padding(.horizontal, canvasHorizontalPadding)
-                // Preserve an initial panoramic field so the built-in
-                // landscape reads as scenery, even on a full board.
-                // It scrolls away naturally once the user starts
-                // working through the collection.
-                .padding(.top, landscapeRevealHeight(for: geometry.size.height))
+                // Room for the canvas chrome above the page's header.
+                .padding(.top, pageTopInset)
                 .padding(.bottom, 28)
             }
+            // Cards soften as they pass under the canvas chrome rather than
+            // being cut by the window's edge.
+            .modifier(SoftTopScrollEdge())
             .contentShape(Rectangle())
             .simultaneousGesture(canvasMagnificationGesture)
             .accessibilityAction(named: "Zoom In") {
@@ -507,7 +514,7 @@ struct MacLibraryView: View {
         let isLooking = studyRunner.isRunning(project.id)
         let isSearchingText = !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
-        return zoomableCanvas {
+        return zoomableCanvas(spacing: studyBoardSpacing) {
             VStack(alignment: .leading, spacing: canvasSpacing) {
                 StudyBoardHeader(
                     study: study,
@@ -523,11 +530,9 @@ struct MacLibraryView: View {
                         boardIsEmpty: board.isEmpty,
                         isSearchingText: isSearchingText && !board.isEmpty
                     )
-                    .padding(.horizontal, 18)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
             }
-            .padding(.bottom, canvasSpacing)
+            .padding(.bottom, pageHeaderGap)
         } cards: { activeColumnCount in
             ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                 studyBoardCard(entry, project: project, columnCount: activeColumnCount)
@@ -582,26 +587,57 @@ struct MacLibraryView: View {
     private func studyBoardCard(_ entry: StudyBoardEntry, project: Project, columnCount: Int) -> some View {
         let isSelected = selectedStudyEntryID == entry.id
         switch entry {
+        case .finding(let suggestion) where suggestion.isMove:
+            VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                Button {
+                    guard canvasInteractionPhase == .idle else { return }
+                    selectStudyEntry(entry.id)
+                } label: {
+                    StudyMoveCard(
+                        suggestion: suggestion,
+                        localImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                        columns: columnCount,
+                        isSelected: isSelected
+                    )
+                }
+                .buttonStyle(.plain)
+                .studyBoardVerdict(entry.verdict, seed: entry.id)
+                .modifier(
+                    MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
+                        decide(suggestion, verdict: verdict, reason: nil, advancing: false)
+                    }
+                )
+                .studyCardAnchor(entry.id)
+
+                StudyMarginNote(suggestion: suggestion, columns: columnCount)
+            }
+            .contextMenu { studyFindingMenu(suggestion) }
+            .accessibilityHint("Opens the move up close")
         case .finding(let suggestion):
             let item = savedInspiration(for: suggestion)
                 ?? suggestion.previewInspiration(projectID: project.id)
-            InspirationCard(
-                inspiration: item,
-                localImageURL: store.localImageURL(for: item),
-                canvasColumnCount: columnCount,
-                isSelected: isSelected,
-                onSelect: {
-                    guard canvasInteractionPhase == .idle else { return }
-                    selectStudyEntry(entry.id)
-                }
-            )
-            .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
-            .studyBoardVerdict(entry.verdict)
-            .modifier(
-                MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
-                    decide(suggestion, verdict: verdict, reason: nil, advancing: false)
-                }
-            )
+            VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                InspirationCard(
+                    inspiration: item,
+                    localImageURL: store.localImageURL(for: item),
+                    canvasColumnCount: columnCount,
+                    isSelected: isSelected,
+                    onSelect: {
+                        guard canvasInteractionPhase == .idle else { return }
+                        selectStudyEntry(entry.id)
+                    }
+                )
+                .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
+                .studyBoardVerdict(entry.verdict, seed: entry.id)
+                .modifier(
+                    MacStudyQuickVerdict(isAvailable: suggestion.status == .pending) { verdict in
+                        decide(suggestion, verdict: verdict, reason: nil, advancing: false)
+                    }
+                )
+                .studyCardAnchor(entry.id)
+
+                StudyMarginNote(suggestion: suggestion, columns: columnCount)
+            }
             .contextMenu { studyFindingMenu(suggestion) }
         case .pattern(let reflection):
             Button {
@@ -616,9 +652,39 @@ struct MacLibraryView: View {
                 )
             }
             .buttonStyle(.plain)
-            .studyBoardVerdict(entry.verdict)
+            .studyBoardVerdict(entry.verdict, seed: entry.id, circlesKept: false)
+            .studyCardAnchor(entry.id)
+            .onHover { isHovering in
+                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) {
+                    if isHovering {
+                        hoveredStudyPatternID = reflection.id
+                    } else if hoveredStudyPatternID == reflection.id {
+                        hoveredStudyPatternID = nil
+                    }
+                }
+            }
             .contextMenu { studyPatternMenu(reflection) }
             .accessibilityHint("Opens the pattern up close")
+        }
+    }
+
+    /// While the pointer rests on a pattern, pencil lines run to the kept
+    /// finds it was drawn from, and dashed ones to the rejects it stands
+    /// against.
+    @ViewBuilder
+    private func studyEvidenceOverlay(_ anchors: [UUID: Anchor<CGRect>]) -> some View {
+        if showsStudyBoard,
+           selectedStudyEntryID == nil,
+           let patternID = hoveredStudyPatternID,
+           let study = currentStudyProject?.study,
+           let reflection = study.reflections.first(where: { $0.id == patternID }) {
+            StudyEvidenceLines(
+                pattern: patternID,
+                evidence: reflection.evidence(in: study),
+                contrasts: reflection.rejectedSuggestionIDs,
+                anchors: anchors
+            )
+            .transition(.opacity)
         }
     }
 
@@ -678,6 +744,7 @@ struct MacLibraryView: View {
                             suggestion: suggestion,
                             savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
                             relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                            targetItems: studyCloseLookItems(suggestion.forInspirationID.map { [$0] } ?? []),
                             onDecide: { verdict, reason in
                                 decide(suggestion, verdict: verdict, reason: reason, advancing: true)
                             }
@@ -860,56 +927,67 @@ struct MacLibraryView: View {
         }
     }
 
-    private var emptyState: some View {
-        ContentUnavailableView {
-            Label(
-                store.searchText.isEmpty ? "Start your moodboard" : "No visuals found",
-                systemImage: store.searchText.isEmpty ? "sparkles.rectangle.stack" : "magnifyingglass"
+    /// The page's name, written like the study board's subject, so the two
+    /// boards of a study share one header line.
+    private var moodboardHeader: some View {
+        let project = currentProjectID.flatMap(project(with:))
+        let edit = project.map { project in
+            BoardPageEdit(
+                title: project.isStudy ? "Edit Study…" : "Edit Project…",
+                help: project.isStudy ? "Edit the subject and brief" : "Rename the project",
+                hint: project.isStudy ? "Edits the subject and brief" : "Renames the project",
+                action: { sheet = project.isStudy ? .startStudy(project) : .editProject(project) }
             )
-        } description: {
-            Text(emptyDescription)
-        } actions: {
-            if store.searchText.isEmpty {
-                HStack {
-                    Button("Save a link") { sheet = .capture }
-                        .buttonStyle(.borderedProminent)
-                    Button("Set up browser") { sheet = .browserSetup }
+        }
+        return BoardPageHeader(
+            title: project?.name ?? (store.scope == .general ? "General" : "All inspiration"),
+            detail: project?.study?.brief ?? "",
+            onEdit: edit
+        )
+    }
+
+    /// Written on the page where the cards would be.
+    @ViewBuilder
+    private var moodboardEmptyNote: some View {
+        if !store.searchText.isEmpty {
+            BoardPageNote(
+                title: "No matches",
+                message: "Try a different title, author, note, or link."
+            ) {
+                Button("Clear Search") { store.searchText = "" }
+            }
+        } else if store.inspirations.isEmpty {
+            BoardPageNote(
+                title: "Start your moodboard",
+                message: "Save what catches your eye from X or any page: interfaces and type, interiors, objects, and art."
+            ) {
+                HStack(spacing: 8) {
+                    Button("Save a Link") { sheet = .capture }
+                        .inkProminentButtonStyle()
+                    Button("Set Up Browser") { sheet = .browserSetup }
                 }
-            } else {
-                Button("Clear search") { store.searchText = "" }
+            }
+        } else {
+            BoardPageNote(
+                title: "Nothing here yet",
+                message: store.scope == .general
+                    ? "What you save without a project lands here."
+                    : "Move things here from the moodboard, or save a link straight into this project."
+            ) {
+                Button("Save a Link") { sheet = .capture }
             }
         }
-        .padding(28)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.primary.opacity(0.08), lineWidth: 0.5)
-        }
-        .frame(maxWidth: 520)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .dropDestination(for: URL.self) { urls, _ in
-            let webURLs = urls.filter(isWebURL)
-            guard !webURLs.isEmpty else { return false }
-            captureDropped(webURLs)
-            return true
-        }
     }
 
-    private func landscapeRevealHeight(for availableHeight: CGFloat) -> CGFloat {
-        min(132, max(72, availableHeight * 0.17))
-    }
+    /// Clears the canvas chrome above a page's header.
+    private let pageTopInset: CGFloat = 64
 
-    private var emptyDescription: String {
-        if !store.searchText.isEmpty { return "Try a different title, author, note, or URL." }
-        switch store.scope {
-        case .all:
-            return "Collect visual ideas from X or any webpage, then shape them into projects."
-        case .general:
-            return "Unsorted visuals land here by default."
-        case .project:
-            return "Move visuals here, or save a new link directly into this project."
-        }
-    }
+    /// Between a page's header and its first cards, the same on both
+    /// boards, so switching between them leaves the cards' tops in place.
+    private let pageHeaderGap: CGFloat = 24
+
+    /// Room between study cards for the ink loops around kept ones.
+    private let studyBoardSpacing: CGFloat = 24
 
     @ViewBuilder
     private func cardContextMenu(for inspiration: Inspiration) -> some View {
@@ -927,8 +1005,63 @@ struct MacLibraryView: View {
             }
         }
         Button("Edit…") { sheet = .editInspiration(inspiration) }
+        if let study = inspiration.projectID.flatMap(project(with:))?.study {
+            Divider()
+            Button("Find Ways to Make This Better") { startImproving(inspiration, lenses: .rams) }
+            Button("Check Against Your Direction") { startImproving(inspiration, lenses: .direction) }
+                .disabled(!study.reflections.contains { $0.status == .confirmed || $0.status == .corrected })
+        }
         Divider()
         Button("Delete", role: .destructive) { pendingInspirationDeletion = inspiration }
+    }
+
+    /// Starts the study's agent on ways to make one of the person's own items
+    /// better, then shows the board where the moves arrive.
+    private func startImproving(_ inspiration: Inspiration, lenses: StudyAgentTarget.Lenses) {
+        guard let projectID = inspiration.projectID,
+              let project = project(with: projectID),
+              project.isStudy else { return }
+        guard !studyRunner.isBusy(projectID) else {
+            showToast("The study's agent is already working", symbol: "hourglass")
+            return
+        }
+        let target = StudyAgentTarget(
+            inspirationID: inspiration.id,
+            title: inspiration.meaningfulTitle ?? inspiration.title,
+            lenses: lenses
+        )
+        Task {
+            let configuration = StudyAgentSettings.load()
+            let agent = await Task.detached { ResolvedStudyAgent.resolve(configuration) }.value
+            guard let agent else {
+                showToast("Set up a study agent first", symbol: "exclamationmark.triangle")
+                return
+            }
+            do {
+                try await studyRunner.start(
+                    task: .improve,
+                    project: project,
+                    agent: agent,
+                    configuration: configuration,
+                    repository: store.repository,
+                    target: target,
+                    onProgress: { [store] in
+                        await store.reload()
+                    },
+                    onChange: { [store, syncCoordinator] in
+                        await store.reload()
+                        guard let syncCoordinator else { return }
+                        _ = await syncCoordinator.sync()
+                        await store.reload()
+                    }
+                )
+                closeDetailInspector()
+                openStudyBoard(projectID)
+                studyFilter = .toJudge
+            } catch {
+                showToast(error.localizedDescription, symbol: "exclamationmark.triangle")
+            }
+        }
     }
 
     @ViewBuilder
@@ -988,12 +1121,15 @@ struct MacLibraryView: View {
     @ViewBuilder
     private var toastOverlay: some View {
         if let toast {
+            // A capsule on one line, keeping its rounded ends when a longer
+            // message, like a sync error, wraps.
+            let shape = RoundedRectangle(cornerRadius: 19, style: .continuous)
             Label(toast.message, systemImage: toast.symbol)
                 .font(.callout.weight(.medium))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(.ultraThickMaterial, in: Capsule())
-                .overlay { Capsule().strokeBorder(.primary.opacity(0.1), lineWidth: 0.5) }
+                .background(.ultraThickMaterial, in: shape)
+                .overlay { shape.strokeBorder(.primary.opacity(0.1), lineWidth: 0.5) }
                 .shadow(color: .black.opacity(0.15), radius: 12, y: 5)
                 .padding(.bottom, 18)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -1002,10 +1138,6 @@ struct MacLibraryView: View {
 
     private var projects: [Project] {
         store.projects.sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
-    }
-
-    private var activeLandscape: MoodboardLandscape {
-        MoodboardLandscapeSelection.landscape(for: store.scope)
     }
 
     private var sidebarItems: [MacProjectSidebarItem] {
@@ -1084,10 +1216,6 @@ struct MacLibraryView: View {
                 selectedInspirationID = id
             }
         }
-    }
-
-    private var currentProjectColorHex: String? {
-        currentProjectID.flatMap { project(with: $0)?.colorHex }
     }
 
     private var currentStudyProjectID: Project.ID? {
@@ -1224,7 +1352,9 @@ struct MacLibraryView: View {
             selectStudyEntry(nil)
             studyFilter = .all
         }
-        store.scope = scope
+        withAnimation(reduceMotion ? nil : MacChromeMotion.fade) {
+            store.scope = scope
+        }
         if let selectedInspiration, !scope.contains(selectedInspiration) {
             setSelectedInspiration(nil)
         }
@@ -1497,6 +1627,18 @@ struct MacLibraryView: View {
     }
 }
 
+/// The soft scroll edge under the floating canvas chrome, where the system
+/// has one.
+private struct SoftTopScrollEdge: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            content
+        }
+    }
+}
+
 private struct MacCanvasGesturePresentation: Equatable {
     static let inactive = MacCanvasGesturePresentation(
         baseColumnCount: 1,
@@ -1656,7 +1798,9 @@ private struct InterleavedCanvasLayout: Layout {
 
         let totalSpacing = horizontalSpacing * CGFloat(count - 1)
         let columnWidth = max(1, (width - totalSpacing) / CGFloat(count))
-        var columnHeights = (0..<count).map(initialOffset(for:))
+        // Every column starts on the same line; the cards' own heights make
+        // the rhythm.
+        var columnHeights = Array(repeating: CGFloat.zero, count: count)
         var frames: [CGRect] = []
         frames.reserveCapacity(subviews.count)
 
@@ -1690,15 +1834,6 @@ private struct InterleavedCanvasLayout: Layout {
         )
         cache.measurements[key] = measurements
         return measurements
-    }
-
-    private func initialOffset(for column: Int) -> CGFloat {
-        switch column % 4 {
-        case 1: 10
-        case 2: 4
-        case 3: 14
-        default: 0
-        }
     }
 
     private func interpolate(

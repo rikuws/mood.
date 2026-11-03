@@ -10,6 +10,7 @@
 		069C4ED0FFCCF971D33D057E /* BrowserSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD1A233A4C76A62328E1AE4C /* BrowserSetupView.swift */; };
 		0D4950F956A73C44DAA951D6 /* BrowserIntegrationInstaller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28439851C5DD34712CF32AEB /* BrowserIntegrationInstaller.swift */; };
 		0E29AAD2B2549CDE2488181F /* ShareComposerModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CC6C4F62FA33D5585ED8B96 /* ShareComposerModel.swift */; };
+		10E8E07F3ADF2EF4667782D2 /* GeistSerif-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = DFE25E877C104CF7CC67AF86 /* GeistSerif-Regular.woff2 */; };
 		14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */; };
 		179BD1592565EC4828C0533D /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B5ACF2847F8BBF82E223584 /* main.swift */; };
 		1AA51E4EE73D8B4DFBAB5BB1 /* StudyAgentRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BB3923EE9E2D228E9053826 /* StudyAgentRunner.swift */; };
@@ -20,8 +21,10 @@
 		30E61DE9454D8A71CCCE21AB /* ShareComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A76EBC41EDA62971A91B555B /* ShareComposerView.swift */; };
 		312DA1B67C7F6D8A15267A53 /* CaptureDeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */; };
 		3362098A689B1307870FBB19 /* InspirationEditorSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = C421984B2C307DCC855CABA7 /* InspirationEditorSheet.swift */; };
+		38E9769429542561F13A3A23 /* GeistSerif-Regular.woff2 in Resources */ = {isa = PBXBuildFile; fileRef = DFE25E877C104CF7CC67AF86 /* GeistSerif-Regular.woff2 */; };
 		393E55787DA30D26AF2AEE64 /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = A9338FB84BBC74C31E563ADE /* PinaxCore */; };
 		4184544F645A5DE57F92F9E9 /* PinaxColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AEEDA3EB99E6CC5AD40A1785 /* PinaxColor.swift */; };
+		428E8632B35AC1A446C12FD1 /* Sketchbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66AA3CE7A5B9458408CCB8F5 /* Sketchbook.swift */; };
 		43BAC225C5AD4F0A61AF4DDC /* PinaxAgent in Resources */ = {isa = PBXBuildFile; fileRef = C09FDC155FD3B7B1808DFF55 /* PinaxAgent */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4805E95689ECFF598A66E337 /* PinaxCore in Frameworks */ = {isa = PBXBuildFile; productRef = 5DF4CA7FF85985D3BA61E797 /* PinaxCore */; };
 		4AB66A454FE40AF632B1F850 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7913E82468644892D4F1181A /* Assets.xcassets */; };
@@ -50,12 +53,17 @@
 		9B948BD82847B05F3C73177E /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = C8C875C281DD95BFDE4C4BC6 /* InfoPlist.strings */; };
 		9C30AAC70E2EC527A4BFEF16 /* IOSLibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */; };
 		9F808341195D5464403ECE33 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 2DE16D20D12390630B19973E /* InfoPlist.strings */; };
+		A23D3349749A56A3BF8F91D6 /* GeistSerif-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 329E07962B1B0C4B695B01DF /* GeistSerif-OFL.txt */; };
 		A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D31782EDBB792389D4E078 /* InspirationDetailView.swift */; };
 		AA3AA7434D18E11432B6F55B /* NativeMessagingHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */; };
+		B08C2F1EED270E4230930DCB /* CardCaption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4212B7FE072C200517C05 /* CardCaption.swift */; };
+		B10B15EC3068B1297DEF5EF4 /* Sketchbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66AA3CE7A5B9458408CCB8F5 /* Sketchbook.swift */; };
+		B817B9119EAF37F5BAB8AD94 /* CardCaption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4212B7FE072C200517C05 /* CardCaption.swift */; };
 		BFC374D985C049BE31C1C01A /* StudyAgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80042702775E6D0552C597 /* StudyAgentSettingsView.swift */; };
 		BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */; };
 		C2101F612D9D9B0B3E47B2B1 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
 		C3218466F0C3E53D077F8381 /* NativeMessageFramer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */; };
+		C44EF394621FEABDAA5337D8 /* GeistSerif-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 329E07962B1B0C4B695B01DF /* GeistSerif-OFL.txt */; };
 		D326BFE9105DAC73BFA33491 /* PinaxiOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */; };
 		DC5D54DBC1FBA2EAE71EF8F9 /* InspirationImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42094DB6B27C4C1FF5F6C30C /* InspirationImageView.swift */; };
 		E02428394842D8B9C55A9248 /* InspirationEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8DDFF167230CD3E1900605 /* InspirationEditorView.swift */; };
@@ -120,6 +128,7 @@
 		09087426BEBF1093F410D192 /* CaptureProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureProtocol.swift; sourceTree = "<group>"; };
 		099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
 		0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessageFramer.swift; sourceTree = "<group>"; };
+		13D4212B7FE072C200517C05 /* CardCaption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCaption.swift; sourceTree = "<group>"; };
 		170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLibraryView.swift; sourceTree = "<group>"; };
 		17C1D1168232960E08F0EF78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxMacApp.swift; sourceTree = "<group>"; };
@@ -134,6 +143,7 @@
 		2BE334042550ABD6F1DCA236 /* CaptureAcknowledgement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureAcknowledgement.swift; sourceTree = "<group>"; };
 		2FD3AA784BBC5A44956B6525 /* StudyViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StudyViews.swift; sourceTree = "<group>"; };
 		2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessagingHost.swift; sourceTree = "<group>"; };
+		329E07962B1B0C4B695B01DF /* GeistSerif-OFL.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "GeistSerif-OFL.txt"; sourceTree = "<group>"; };
 		42094DB6B27C4C1FF5F6C30C /* InspirationImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationImageView.swift; sourceTree = "<group>"; };
 		43D84134E057F3E7EEE0E2F5 /* IOSLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSLibraryView.swift; sourceTree = "<group>"; };
 		494362440C606F731D799661 /* ShareItemExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareItemExtractor.swift; sourceTree = "<group>"; };
@@ -143,6 +153,7 @@
 		5DF1139AD333D8B51AD6C37F /* PinaxiOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = PinaxiOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		651E885FB9FC9A49206B2883 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
 		6648723837BCA939AED69373 /* CaptureSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureSheet.swift; sourceTree = "<group>"; };
+		66AA3CE7A5B9458408CCB8F5 /* Sketchbook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sketchbook.swift; sourceTree = "<group>"; };
 		66D31782EDBB792389D4E078 /* InspirationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationDetailView.swift; sourceTree = "<group>"; };
 		6766387870BD9CE4938D29C5 /* PinaxShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = PinaxShare.entitlements; sourceTree = "<group>"; };
 		67710632DF6A1D8F1DD1D13C /* IOSInspirationDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IOSInspirationDetailView.swift; sourceTree = "<group>"; };
@@ -165,6 +176,7 @@
 		CC8DDFF167230CD3E1900605 /* InspirationEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InspirationEditorView.swift; sourceTree = "<group>"; };
 		D1F2755380398FEEBEFB5A60 /* MacSpaceChrome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacSpaceChrome.swift; sourceTree = "<group>"; };
 		DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownsampledPreviewImage.swift; sourceTree = "<group>"; };
+		DFE25E877C104CF7CC67AF86 /* GeistSerif-Regular.woff2 */ = {isa = PBXFileReference; path = "GeistSerif-Regular.woff2"; sourceTree = "<group>"; };
 		E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libPinaxNativeMessaging.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		ED56C13D8C7096916E2EAD29 /* PinaxiOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxiOSApp.swift; sourceTree = "<group>"; };
 		F24D43E728BC7634B5C7B482 /* ProjectViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViews.swift; sourceTree = "<group>"; };
@@ -422,8 +434,11 @@
 		DE4BD7EEE066FC39C5EB832F /* AppUI */ = {
 			isa = PBXGroup;
 			children = (
+				13D4212B7FE072C200517C05 /* CardCaption.swift */,
 				DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */,
+				66AA3CE7A5B9458408CCB8F5 /* Sketchbook.swift */,
 				2FD3AA784BBC5A44956B6525 /* StudyViews.swift */,
+				E317106CBA3A52E0BD6B6CAA /* Fonts */,
 			);
 			path = AppUI;
 			sourceTree = "<group>";
@@ -440,6 +455,15 @@
 				F24D43E728BC7634B5C7B482 /* ProjectViews.swift */,
 			);
 			path = Views;
+			sourceTree = "<group>";
+		};
+		E317106CBA3A52E0BD6B6CAA /* Fonts */ = {
+			isa = PBXGroup;
+			children = (
+				329E07962B1B0C4B695B01DF /* GeistSerif-OFL.txt */,
+				DFE25E877C104CF7CC67AF86 /* GeistSerif-Regular.woff2 */,
+			);
+			path = Fonts;
 			sourceTree = "<group>";
 		};
 		ED0DEDF86DAEAF0101C23547 /* Support */ = {
@@ -648,10 +672,10 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */,
-				4886257118D25DED667B7ABD /* PinaxNativeHost */,
 				79B8175317766BE52357EBC0 /* PinaxAgent */,
 				B71ADB24B6050892C06047BA /* PinaxMac */,
+				4886257118D25DED667B7ABD /* PinaxNativeHost */,
+				5167F70E2143383A597E8BB9 /* PinaxNativeMessaging */,
 				C964D12D73179AD5AA2FEA32 /* PinaxShareExtension */,
 				5F8C5ADE6300043D98005E05 /* PinaxiOS */,
 			);
@@ -664,6 +688,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				4AB66A454FE40AF632B1F850 /* Assets.xcassets in Resources */,
+				C44EF394621FEABDAA5337D8 /* GeistSerif-OFL.txt in Resources */,
+				38E9769429542561F13A3A23 /* GeistSerif-Regular.woff2 in Resources */,
 				9F808341195D5464403ECE33 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -673,6 +699,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				54E3D7C8346BD2E7C0BB984C /* Assets.xcassets in Resources */,
+				A23D3349749A56A3BF8F91D6 /* GeistSerif-OFL.txt in Resources */,
+				10E8E07F3ADF2EF4667782D2 /* GeistSerif-Regular.woff2 in Resources */,
 				9B948BD82847B05F3C73177E /* InfoPlist.strings in Resources */,
 				6A0880524547DBAF265F67D3 /* PinaxNativeHost in Resources */,
 				43BAC225C5AD4F0A61AF4DDC /* PinaxAgent in Resources */,
@@ -740,6 +768,7 @@
 				069C4ED0FFCCF971D33D057E /* BrowserSetupView.swift in Sources */,
 				312DA1B67C7F6D8A15267A53 /* CaptureDeepLink.swift in Sources */,
 				88A55C06F3EF3C046245C248 /* CaptureSheet.swift in Sources */,
+				B08C2F1EED270E4230930DCB /* CardCaption.swift in Sources */,
 				714C8665CF2D2DA117CE4953 /* ChromiumBrowser.swift in Sources */,
 				BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */,
 				F032156F85D35F16E09BC0DE /* InspirationCard.swift in Sources */,
@@ -749,6 +778,7 @@
 				2ED9C8D4CAF2AA22B4C96B1C /* MacSpaceChrome.swift in Sources */,
 				14292879A31AE5C6189EA6B2 /* PinaxMacApp.swift in Sources */,
 				4E68DD164B4C0D335A1611B7 /* ProjectEditorSheet.swift in Sources */,
+				B10B15EC3068B1297DEF5EF4 /* Sketchbook.swift in Sources */,
 				1AA51E4EE73D8B4DFBAB5BB1 /* StudyAgentRunner.swift in Sources */,
 				BFC374D985C049BE31C1C01A /* StudyAgentSettingsView.swift in Sources */,
 				63D387E033C4FCF9B56F4B03 /* StudyViews.swift in Sources */,
@@ -787,6 +817,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				51F572CFE0AC517C495F09CB /* CaptureDeepLink.swift in Sources */,
+				B817B9119EAF37F5BAB8AD94 /* CardCaption.swift in Sources */,
 				85E3C2D9A842D78A9E702611 /* DownsampledPreviewImage.swift in Sources */,
 				7C08894180141C033FB39F8F /* IOSInspirationCard.swift in Sources */,
 				766943FF83FB37B560E51A5D /* IOSInspirationDetailView.swift in Sources */,
@@ -797,6 +828,7 @@
 				4184544F645A5DE57F92F9E9 /* PinaxColor.swift in Sources */,
 				D326BFE9105DAC73BFA33491 /* PinaxiOSApp.swift in Sources */,
 				F7BFDE853DF354E1F5EADB30 /* ProjectViews.swift in Sources */,
+				428E8632B35AC1A446C12FD1 /* Sketchbook.swift in Sources */,
 				575F6A47E613A9C1C9112F07 /* StudyViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

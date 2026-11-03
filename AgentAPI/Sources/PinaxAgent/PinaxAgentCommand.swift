@@ -64,6 +64,8 @@ private struct PinaxAgentExecutable {
                     await api.reflect(project: project, filePath: file),
                     prettyPrinted: command.prettyPrinted
                 )
+            case .mcp:
+                try await PinaxAgentMCPServer(api: api).run()
             case .validateEssence:
                 return
             }

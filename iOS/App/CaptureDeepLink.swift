@@ -51,6 +51,7 @@ enum IOSCaptureDeepLink {
             authorName: cleanOptional(values["authorName"], maximumLength: 200),
             authorHandle: cleanOptional(values["authorHandle"], maximumLength: 100),
             imageURL: values["imageURL"].flatMap(CaptureURL.validatedWebURL),
+            motion: InspirationMotion(storedValue: values["motion"]),
             projectID: values["projectID"].flatMap(UUID.init(uuidString:))
         )
     }

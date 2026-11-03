@@ -1,15 +1,15 @@
 # mood.
 
-mood. is a local-first visual moodboard for collecting anything that catches your eye on X and the web—from interfaces and typography to interiors, fashion, objects, places, and art. The native macOS and iOS apps share one library model with General and Projects, search, editing, drag-and-drop or manual link capture, and private CloudKit sync.
+mood. helps you find your design direction and hand it to your coding agent. Save what catches your eye on X and the web—interfaces and type, but also interiors, fashion, objects, places, and art—including the bookmarks you already have. Work out what your taste is on a study board where an agent proposes real, credited work and you keep or reject it with a reason. Then hand it over as direction in which every rule traces back to what you saved and why. The native macOS and iOS apps share one local-first library with General and Projects, search, editing, drag-and-drop or manual link capture, and private CloudKit sync; there is no mood. account, API key, or model inside the app.
 
 Capture surfaces are included for:
 
 - a Chromium toolbar action for the current page;
 - a mood. action beside posts on X;
-- X's own Bookmark action (Remove bookmark is ignored);
+- an import of the bookmarks you already have on X, from X's Bookmarks page (X's own Bookmark button doesn't save to mood.);
 - the iOS system Share sheet, including X's **Share via…** flow.
 
-See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. [Guided visual studies](Documentation/STUDIES.md) let you seed a subject with work you love, judge the real sources an agent finds with the [`mood-study`](skills/mood-study) skill on a study board that fills in as it finds them, and confirm the patterns it reflects back. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
+See [Documentation/ARCHITECTURE.md](Documentation/ARCHITECTURE.md) for storage, native messaging, and sync details. The macOS app also bundles a local [agent API](Documentation/AGENT_API.md) for fetching projects and their saved items as versioned JSON, and for saving a project's distilled essence when the user asks. `mood-agent mcp` serves the same thing to Claude Code, Codex, Cursor or any other MCP client, so the agent building your app can read your direction directly. [Guided visual studies](Documentation/STUDIES.md) let you seed a subject with work you love, judge the real sources an agent finds with the [`mood-study`](skills/mood-study) skill on a study board that fills in as it finds them, and confirm the patterns it reflects back. The [`mood-distill`](skills/mood-distill) skill turns those visuals—or one arbitrary image—into an evidence-grounded, portable [design essence](Documentation/DESIGN_ESSENCE.md).
 
 ## Requirements
 
@@ -51,7 +51,7 @@ xcodebuild \
   build
 ```
 
-Those `CODE_SIGNING_ALLOWED=NO` commands verify compilation only. The unsigned Mac app deliberately stores its development library under Application Support and does not initialize CloudKit, because it has no effective App Group or iCloud entitlement. Use a properly signed build to verify shared-container and cross-device behavior.
+Those `CODE_SIGNING_ALLOWED=NO` commands verify compilation only. The unsigned Mac app deliberately stores its development library under Application Support and does not initialize CloudKit, because it has no effective App Group or iCloud entitlement. Use a properly signed build to verify shared-container and cross-device behavior. To look at the iOS app on a sample library, build for the simulator with `CODE_SIGN_IDENTITY=-` (an unsigned build stops at CloudKit setup) and launch it with `SIMCTL_CHILD_PINAX_STORAGE_DIRECTORY=<folder> xcrun simctl launch booted com.rikuwikman.Pinax`; Debug simulator builds read that override, device builds never do.
 
 For normal development, open `Pinax.xcodeproj`, select a team for **PinaxMac**, **PinaxiOS**, and **PinaxShareExtension**, then run the corresponding shared scheme. `project.yml` is the project source of truth; regenerate after changing it instead of hand-editing the generated project.
 
@@ -83,7 +83,7 @@ mood. supports Google Chrome, Chromium, Brave, Microsoft Edge, Arc, and Vivaldi.
 1. Build and launch the signed/direct Mac app. The app bundle contains both `Contents/Helpers/PinaxNativeHost` and `Contents/Resources/BrowserExtension`.
 2. In mood., open **Browser Setup** and choose **Install for all browsers** (or install one browser). This writes only the app's user-level `com.pinax.native_host.json` manifest, pointing to the helper inside the current app bundle.
 3. In the browser, open `chrome://extensions` (or `edge://extensions`), enable Developer mode, choose **Load unpacked**, and select the BrowserExtension folder shown by mood. During repository development, `BrowserExtension/dist` is the equivalent folder.
-4. Pin the extension if desired. Its toolbar button saves the active HTTP(S) page. On X, use the injected mood. action or add the post to X Bookmarks.
+4. Pin the extension if desired. Its toolbar button saves the active HTTP(S) page. On X, use the injected mood. action. To bring in bookmarks you already have, open X's Bookmarks page, choose **Start importing** in the mood. panel, and scroll; each post is saved to General as it appears.
 
 The unpacked extension has the fixed ID `ohhhjpbfjecipcnkahlhaggckmdjfndg`; the installed native-host manifest authorizes that exact origin. Rerun Browser Setup after moving the app, because Chromium manifests contain an absolute helper path.
 

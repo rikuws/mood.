@@ -159,10 +159,13 @@ struct InspirationDetailView: View {
     private func details(bodyLineLimit: Int?) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             VStack(alignment: .leading, spacing: 8) {
+                // The same display serif as a study find's close look, so
+                // every close look reads as one sheet of the sketchbook.
                 Text(displayTitle)
-                    .font(.system(size: 26, weight: .semibold, design: .serif))
-                    .tracking(-0.3)
+                    .font(StudyBoardType.closeLookTitle)
+                    .tracking(-0.2)
                     .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
                     .accessibilityAddTraits(.isHeader)
 
@@ -229,13 +232,16 @@ struct InspirationDetailView: View {
             Button {
                 openURL(inspiration.url)
             } label: {
-                Label("Open", systemImage: "arrow.up.right.square")
-                    .padding(.horizontal, 6)
+                Label(
+                    inspiration.motion == nil ? "Open" : "Play at Source",
+                    systemImage: inspiration.motion == nil ? "arrow.up.right.square" : "play.circle"
+                )
+                .padding(.horizontal, 6)
             }
-            .buttonStyle(.borderedProminent)
+            .inkProminentButtonStyle()
             .controlSize(.large)
             .keyboardShortcut(.return, modifiers: [.command])
-            .help("Open original")
+            .help(inspiration.motion == nil ? "Open original" : "It moves: play it where it was posted")
 
             Spacer(minLength: 8)
 

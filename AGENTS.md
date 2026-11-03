@@ -1,6 +1,6 @@
 # mood.
 
-mood. is a local-first native macOS and iOS visual moodboard for collecting imagery, text, authorship, and source context into General and Projects. Mac and iOS share one coordinated App Group library (`library.json` plus `Media/`) with an optional private CloudKit replica. Capture surfaces are a Chromium toolbar action, an injected mood. control on X, and the iOS Share sheet (including X **Share via…**). Design is restrained and native: collected content carries personality; Apple navigation, sheets, menus, and gestures stay standard.
+mood. is a local-first native macOS and iOS app that helps people find their design direction and hand it to their coding agent: it collects imagery, text, authorship, and source context into General and Projects, studies a direction with an agent on a study board, and distills it into agent-readable direction traced to the saved references (see `PRODUCT.md`). Mac and iOS share one coordinated App Group library (`library.json` plus `Media/`) with an optional private CloudKit replica. Capture surfaces are a Chromium toolbar action, an injected mood. control on X, an import of existing bookmarks from X's Bookmarks page, and the iOS Share sheet (including X **Share via…**). Design is restrained and native: collected content carries personality; Apple navigation, sheets, menus, and gestures stay standard.
 
 ## Architecture
 
@@ -41,7 +41,7 @@ xcodebuild -project Pinax.xcodeproj -scheme PinaxiOS \
   CODE_SIGNING_ALLOWED=NO build
 ```
 
-Unsigned builds prove compilation only. The unsigned Mac app uses Application Support and skips CloudKit. They do not validate App Group storage, browser installation, signing, or live CloudKit.
+Unsigned builds prove compilation only. The unsigned Mac app uses Application Support and skips CloudKit. They do not validate App Group storage, browser installation, signing, or live CloudKit. To look at the iOS app on a sample library, build for the simulator with `CODE_SIGN_IDENTITY=-` (an unsigned build stops at CloudKit setup) and launch it with `SIMCTL_CHILD_PINAX_STORAGE_DIRECTORY=<folder> xcrun simctl launch booted com.rikuwikman.Pinax`; Debug simulator builds read that override, device builds never do.
 
 ## Test
 

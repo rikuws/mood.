@@ -30,7 +30,6 @@ struct IOSLibraryView: View {
     @AppStorage("iosStudyShowsBoard") private var prefersStudyBoard = true
     @State private var studyFilter = StudyBoardFilter.all
     @State private var studyArrivals = StudyBoardArrivals()
-    @State private var studyCloseLookEntryID: StudyBoardEntry.ID?
     @State private var studyNudge = ""
     @State private var showsStudyAgent = false
 
@@ -40,7 +39,7 @@ struct IOSLibraryView: View {
                 libraryContent
 
                 if let message {
-                    ToastView(message: message.text)
+                    ToastView(message: message.text, symbol: message.symbol)
                         .padding(.horizontal)
                         .padding(.bottom, 10)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -107,8 +106,8 @@ struct IOSLibraryView: View {
                     requestSync()
                 }
                 .presentationDetents([.medium, .large])
-            case .studyCloseLook(let projectID):
-                studyCloseLookSheet(projectID: projectID)
+            case .studyCloseLook(let projectID, let entryID):
+                studyCloseLookSheet(projectID: projectID, entryID: entryID)
             }
         }
         .confirmationDialog(
@@ -131,9 +130,7 @@ struct IOSLibraryView: View {
             "mood. couldn't complete that",
             isPresented: Binding(
                 get: {
-                    operationError != nil
-                        || store.lastError != nil
-                        || syncCoordinator.lastError != nil
+                    operationError != nil || store.lastError != nil
                 },
                 set: { isPresented in
                     if !isPresented {
@@ -153,7 +150,6 @@ struct IOSLibraryView: View {
             Text(
                 operationError
                     ?? store.lastError
-                    ?? syncCoordinator.lastError
                     ?? "An unknown error occurred."
             )
         }
@@ -202,39 +198,45 @@ struct IOSLibraryView: View {
                 Spacer()
                 ProgressView("Opening library…")
                 Spacer()
-            } else if store.visibleInspirations.isEmpty {
-                emptyState
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollView {
-                    InterleavedCardLayout(
-                        columnPosition: reduceMotion
-                            ? CGFloat(activeCanvasColumnCount)
-                            : canvasLayoutColumnPosition,
-                        minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
-                        maximumColumnCount: maximumCanvasColumnCount
-                    ) {
-                        ForEach(store.visibleInspirations) { inspiration in
-                            card(
-                                for: inspiration,
-                                columnCount: activeCanvasColumnCount
+                    VStack(alignment: .leading, spacing: 18) {
+                        moodboardHeader
+
+                        if store.visibleInspirations.isEmpty {
+                            emptyState
+                        } else {
+                            InterleavedCardLayout(
+                                columnPosition: reduceMotion
+                                    ? CGFloat(activeCanvasColumnCount)
+                                    : canvasLayoutColumnPosition,
+                                minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
+                                maximumColumnCount: maximumCanvasColumnCount
+                            ) {
+                                ForEach(store.visibleInspirations) { inspiration in
+                                    card(
+                                        for: inspiration,
+                                        columnCount: activeCanvasColumnCount
+                                    )
+                                }
+                            }
+                            .transaction { transaction in
+                                guard reduceMotion else { return }
+                                transaction.animation = nil
+                                transaction.disablesAnimations = true
+                            }
+                            .scaleEffect(
+                                reduceMotion ? 1 : canvasBoundaryScale,
+                                anchor: canvasPinch.anchor
                             )
                         }
                     }
                     .padding(.horizontal, 16)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 16)
                     .padding(.bottom, 34)
-                    .transaction { transaction in
-                        guard reduceMotion else { return }
-                        transaction.animation = nil
-                        transaction.disablesAnimations = true
-                    }
-                    .scaleEffect(
-                        reduceMotion ? 1 : canvasBoundaryScale,
-                        anchor: canvasPinch.anchor
-                    )
                 }
+                .paperTopEdge()
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("inspirationCanvas")
@@ -245,46 +247,72 @@ struct IOSLibraryView: View {
                 }
             }
         }
-        .background(Color.pinaxCanvas)
+        // Every board is a page of the sketchbook.
+        .background {
+            SketchPaper()
+                .ignoresSafeArea()
+        }
     }
 
+    /// The page's name, written like the study board's subject, so the two
+    /// boards of a study share one header line.
+    private var moodboardHeader: some View {
+        let project = selectedProject
+        let edit = project.map { project in
+            BoardPageEdit(
+                title: project.isStudy ? "Edit Study…" : "Manage Projects…",
+                help: "",
+                hint: project.isStudy ? "Edits the subject and brief" : "Opens your projects",
+                action: { sheet = project.isStudy ? .startStudy(project) : .projects }
+            )
+        }
+        return BoardPageHeader(
+            title: project?.name ?? (store.scope == .general ? "General" : "All inspiration"),
+            detail: project?.study?.brief ?? "",
+            onEdit: edit
+        )
+    }
+
+    /// Written on the page, under its header, where the cards would be.
     @ViewBuilder
     private var emptyState: some View {
-        if store.snapshot.inspirations.isEmpty {
-            ContentUnavailableView {
-                Label("Start your moodboard", systemImage: "sparkles.rectangle.stack")
-            } description: {
-                VStack(spacing: 8) {
-                    Text("Collect visual ideas from X and the web — from interfaces and type to interiors, fashion, objects, and art.")
-                    Text("In the X app, tap Share on a post, choose Share via…, then choose Save to mood. If it isn't visible, tap More to enable it.")
-                }
-            } actions: {
-                Button {
-                    sheet = .manualCapture
-                } label: {
-                    Label("Save a link", systemImage: "plus")
-                }
-                .buttonStyle(.borderedProminent)
+        if !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            BoardPageNote(
+                title: "No matches",
+                message: "Try a different title, author, note, or link."
+            )
+        } else if store.snapshot.inspirations.isEmpty {
+            BoardPageNote(
+                title: "Start your moodboard",
+                message: "Save what catches your eye from X and the web: interfaces and type, interiors, fashion, objects, and art. In the X app, tap Share on a post, choose Share via…, then Save to mood. If it isn't there, tap More to turn it on."
+            ) {
+                HStack(spacing: 10) {
+                    Button {
+                        sheet = .manualCapture
+                    } label: {
+                        Label("Save a Link", systemImage: "plus")
+                    }
+                    .inkProminentButtonStyle()
 
-                Button("Manage projects") {
-                    sheet = .projects
+                    Button("Manage Projects") {
+                        sheet = .projects
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
-            .padding(24)
-        } else if !store.searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            ContentUnavailableView.search(text: store.searchText)
         } else {
-            ContentUnavailableView {
-                Label("Nothing here yet", systemImage: "rectangle.stack")
-            } description: {
-                Text("Move saved visuals here or add a new link to this project.")
-            } actions: {
+            BoardPageNote(
+                title: "Nothing here yet",
+                message: store.scope == .general
+                    ? "What you save without a project lands here."
+                    : "Move things here from the moodboard, or save a link straight into this project."
+            ) {
                 Button {
                     sheet = .manualCapture
                 } label: {
-                    Label("Save a link", systemImage: "plus")
+                    Label("Save a Link", systemImage: "plus")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
             }
         }
     }
@@ -381,7 +409,8 @@ struct IOSLibraryView: View {
                             ? CGFloat(activeCanvasColumnCount)
                             : canvasLayoutColumnPosition,
                         minimumColumnCount: canvasZoomBehavior.minimumColumnCount,
-                        maximumColumnCount: maximumCanvasColumnCount
+                        maximumColumnCount: maximumCanvasColumnCount,
+                        minimumSpacing: 22
                     ) {
                         ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
                             studyCard(entry, project: project, columnCount: activeCanvasColumnCount)
@@ -406,6 +435,7 @@ struct IOSLibraryView: View {
             .padding(.bottom, 34)
             .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: entries.map(\.id))
         }
+        .paperTopEdge()
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("studyBoard")
@@ -446,6 +476,26 @@ struct IOSLibraryView: View {
     @ViewBuilder
     private func studyCard(_ entry: StudyBoardEntry, project: Project, columnCount: Int) -> some View {
         switch entry {
+        case .finding(let suggestion) where suggestion.isMove:
+            Button {
+                guard allowsCardInteraction else { return }
+                openStudyCloseLook(entry.id, projectID: project.id)
+            } label: {
+                VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                    StudyMoveCard(
+                        suggestion: suggestion,
+                        localImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
+                        columns: columnCount
+                    )
+                    .studyBoardVerdict(entry.verdict, seed: entry.id)
+
+                    StudyMarginNote(suggestion: suggestion, columns: columnCount)
+                }
+            }
+            .buttonStyle(CollectedCardButtonStyle())
+            .contextMenu { studyFindingMenu(suggestion, projectID: project.id) }
+            .disabled(!allowsCardInteraction)
+            .allowsHitTesting(allowsCardInteraction)
         case .finding(let suggestion):
             let item = savedInspiration(for: suggestion)
                 ?? suggestion.previewInspiration(projectID: project.id)
@@ -453,13 +503,17 @@ struct IOSLibraryView: View {
                 guard allowsCardInteraction else { return }
                 openStudyCloseLook(entry.id, projectID: project.id)
             } label: {
-                IOSInspirationCard(
-                    inspiration: item,
-                    localImageURL: store.localImageURL(for: item),
-                    canvasColumnCount: columnCount
-                )
-                .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
-                .studyBoardVerdict(entry.verdict)
+                VStack(alignment: .leading, spacing: StudyMarginNote.spacing) {
+                    IOSInspirationCard(
+                        inspiration: item,
+                        localImageURL: store.localImageURL(for: item),
+                        canvasColumnCount: columnCount
+                    )
+                    .environment(\.previewImageReveal, studyArrivals.reveal(for: entry.id))
+                    .studyBoardVerdict(entry.verdict, seed: entry.id)
+
+                    StudyMarginNote(suggestion: suggestion, columns: columnCount)
+                }
             }
             .buttonStyle(CollectedCardButtonStyle())
             .contextMenu { studyFindingMenu(suggestion, projectID: project.id) }
@@ -475,7 +529,7 @@ struct IOSLibraryView: View {
                     columns: columnCount,
                     developsOnArrival: studyArrivals.fresh.contains(entry.id)
                 )
-                .studyBoardVerdict(entry.verdict)
+                .studyBoardVerdict(entry.verdict, seed: entry.id, circlesKept: false)
             }
             .buttonStyle(CollectedCardButtonStyle())
             .contextMenu { studyPatternMenu(reflection, projectID: project.id) }
@@ -542,9 +596,8 @@ struct IOSLibraryView: View {
     }
 
     @ViewBuilder
-    private func studyCloseLookSheet(projectID: Project.ID) -> some View {
+    private func studyCloseLookSheet(projectID: Project.ID, entryID: StudyBoardEntry.ID) -> some View {
         if let study = store.snapshot.project(id: projectID)?.study,
-           let entryID = studyCloseLookEntryID,
            let entry = StudyBoard(study: study).entry(id: entryID) {
             let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
             let index = entries.firstIndex(where: { $0.id == entry.id })
@@ -552,8 +605,8 @@ struct IOSLibraryView: View {
             CloseLookFrame(
                 position: index.map { $0 + 1 },
                 count: entries.count,
-                onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries),
-                onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries),
+                onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries, projectID: projectID),
+                onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries, projectID: projectID),
                 onClose: { sheet = nil }
             ) {
                 // Stacked, so stepping crossfades one entry into the next
@@ -566,6 +619,7 @@ struct IOSLibraryView: View {
                                 suggestion: suggestion,
                                 savedImageURL: savedInspiration(for: suggestion).flatMap { store.localImageURL(for: $0) },
                                 relatedItems: studyCloseLookItems(suggestion.basedOnInspirationIDs),
+                                targetItems: studyCloseLookItems(suggestion.forInspirationID.map { [$0] } ?? []),
                                 onDecide: { verdict, reason in
                                     decide(suggestion, projectID: projectID, verdict: verdict, reason: reason, advancing: true)
                                 }
@@ -588,6 +642,9 @@ struct IOSLibraryView: View {
                 }
             }
             .presentationDragIndicator(.visible)
+            // A sheet of the sketchbook, in its ink rather than system blue.
+            .presentationBackground(Sketchbook.sheet)
+            .tint(.pinaxPlum)
             .modifier(PageSizedSheet())
         } else {
             ContentUnavailableView(
@@ -598,21 +655,33 @@ struct IOSLibraryView: View {
         }
     }
 
+    /// The entry travels in the sheet itself, so the sheet can never be
+    /// built before the entry it shows is known.
     private func openStudyCloseLook(_ id: StudyBoardEntry.ID, projectID: Project.ID) {
-        studyCloseLookEntryID = id
-        sheet = .studyCloseLook(projectID)
+        sheet = .studyCloseLook(projectID, id)
     }
 
-    private func studyEntrySelector(at index: Int?, in entries: [StudyBoardEntry]) -> (() -> Void)? {
+    private func studyEntrySelector(
+        at index: Int?,
+        in entries: [StudyBoardEntry],
+        projectID: Project.ID
+    ) -> (() -> Void)? {
         guard let index, entries.indices.contains(index) else { return nil }
         let id = entries[index].id
-        return { showStudyCloseLookEntry(id) }
+        return { showStudyCloseLookEntry(id, projectID: projectID) }
     }
 
-    private func showStudyCloseLookEntry(_ id: StudyBoardEntry.ID) {
+    /// Steps the open close look to another entry; the sheet stays put
+    /// because its identity is the project, not the entry.
+    private func showStudyCloseLookEntry(_ id: StudyBoardEntry.ID, projectID: Project.ID) {
         withAnimation(reduceMotion ? nil : StudyBoardMotion.step) {
-            studyCloseLookEntryID = id
+            sheet = .studyCloseLook(projectID, id)
         }
+    }
+
+    private var studyCloseLookEntryID: StudyBoardEntry.ID? {
+        if case .studyCloseLook(_, let entryID) = sheet { return entryID }
+        return nil
     }
 
     /// Finds that arrive while the board is open develop into place; what was
@@ -669,7 +738,7 @@ struct IOSLibraryView: View {
                     reason: reason
                 )
                 if let upcoming, studyCloseLookEntryID == suggestion.id {
-                    showStudyCloseLookEntry(upcoming)
+                    showStudyCloseLookEntry(upcoming, projectID: projectID)
                 }
                 requestSync()
             } catch {
@@ -695,7 +764,7 @@ struct IOSLibraryView: View {
                     response: response
                 )
                 if let upcoming, studyCloseLookEntryID == reflection.id {
-                    showStudyCloseLookEntry(upcoming)
+                    showStudyCloseLookEntry(upcoming, projectID: projectID)
                 }
                 requestSync()
             } catch {
@@ -896,6 +965,22 @@ struct IOSLibraryView: View {
             Label("Move to", systemImage: "folder")
         }
 
+        // iOS doesn't start agents itself, so this hands over a prompt.
+        if let project = inspiration.projectID.flatMap({ store.snapshot.project(id: $0) }), project.isStudy {
+            Button {
+                StudyAgentPromptText.copy(
+                    for: project,
+                    target: StudyAgentTarget(
+                        inspirationID: inspiration.id,
+                        title: inspiration.meaningfulTitle ?? inspiration.title
+                    )
+                )
+                showMessage("Copied. Paste it into an agent with mood-study")
+            } label: {
+                Label("Copy prompt: make this better", systemImage: "wand.and.stars")
+            }
+        }
+
         Button(role: .destructive) {
             inspirationToDelete = inspiration
         } label: {
@@ -952,21 +1037,32 @@ struct IOSLibraryView: View {
     }
 
     @MainActor
-    private func showMessage(_ text: String) {
-        let message = LibraryMessage(text: text)
-        withAnimation(.snappy) { self.message = message }
+    private func showMessage(_ text: String, symbol: String = "checkmark.circle.fill") {
+        let message = LibraryMessage(text: text, symbol: symbol)
+        withAnimation(reduceMotion ? nil : .snappy) { self.message = message }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(2.2))
             guard self.message?.id == message.id else { return }
-            withAnimation(.easeOut(duration: 0.18)) { self.message = nil }
+            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { self.message = nil }
         }
     }
 
     @MainActor
     private func syncAndReload() async {
         await store.reload()
-        _ = await syncCoordinator.sync()
+        let result = await syncCoordinator.sync()
         await store.reload()
+
+        // Sync is optional and the library is saved here either way, so a
+        // failure is said in passing, as on the Mac, rather than in an alert
+        // that blocks the board, for example when iCloud is signed out.
+        if result == nil, syncCoordinator.lastError != nil {
+            syncCoordinator.clearError()
+            showMessage(
+                "Sync unavailable. Your changes are saved on this \(UIDevice.current.localizedModel).",
+                symbol: "icloud.slash"
+            )
+        }
     }
 
     private func requestSync() {
@@ -980,6 +1076,9 @@ private struct InterleavedCardLayout: Layout {
     var columnPosition: CGFloat
     let minimumColumnCount: Int
     let maximumColumnCount: Int
+    /// The least room between cards: the study board's is wider, so the ink
+    /// loops around kept cards don't run into each other.
+    var minimumSpacing: CGFloat = 0
 
     var animatableData: CGFloat {
         get { columnPosition }
@@ -1090,15 +1189,16 @@ private struct InterleavedCardLayout: Layout {
     }
 
     private func horizontalSpacing(for columnCount: Int) -> CGFloat {
-        columnCount >= 4 ? 8 : 12
+        max(minimumSpacing, columnCount >= 4 ? 8 : 12)
     }
 
     private func verticalSpacing(for columnCount: Int) -> CGFloat {
-        switch columnCount {
+        let spacing: CGFloat = switch columnCount {
         case 1...2: 18
         case 3: 14
         default: 10
         }
+        return max(minimumSpacing, spacing)
     }
 
     private func measurements(
@@ -1203,7 +1303,11 @@ private struct ScopeBar: View {
     @Bindable var store: LibraryStore
     let onManageProjects: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var underline
+
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
                 scopeButton("All", count: store.counts.total, scope: .all)
@@ -1229,7 +1333,17 @@ private struct ScopeBar: View {
             }
             .padding(.horizontal, 16)
         }
-        .background(.bar)
+        // Written on the page like the study board's filters, not on a
+        // bar of its own.
+        .trailingOverflowFade()
+        // The page you're on is always in view, even when large text
+        // pushes it past the edge.
+        .onChange(of: store.scope, initial: true) { _, scope in
+            withAnimation(reduceMotion ? nil : GlassSegmentMetrics.selection) {
+                proxy.scrollTo(scope, anchor: .center)
+            }
+        }
+        }
     }
 
     private func scopeButton(
@@ -1238,34 +1352,43 @@ private struct ScopeBar: View {
         scope: LibraryScope,
         color: Color? = nil
     ) -> some View {
-        Button {
-            withAnimation(.snappy) { store.scope = scope }
+        let isSelected = store.scope == scope
+        return Button {
+            withAnimation(reduceMotion ? nil : GlassSegmentMetrics.selection) { store.scope = scope }
         } label: {
-            VStack(spacing: 5) {
-                HStack(spacing: 6) {
-                    if let color {
-                        Circle()
-                            .fill(color)
-                            .frame(width: 7, height: 7)
-                    }
-                    Text(title)
-                    Text("\(count)")
-                        .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                if let color {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 7, height: 7)
                 }
-
-                Capsule()
-                    .fill(store.scope == scope ? Color.pinaxPlum : .clear)
-                    .frame(height: 2)
+                Text(title)
+                Text("\(count)")
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(Sketchbook.graphite)
             }
-            .font(.subheadline.weight(store.scope == scope ? .semibold : .regular))
+            .font(.subheadline.weight(isSelected ? .semibold : .regular))
             .foregroundStyle(.primary)
             .frame(minHeight: 44)
+            // The page you're on is your choice, so it's underlined in ink,
+            // like the study board's current filter.
+            .overlay(alignment: .bottom) {
+                if isSelected {
+                    InkUnderline()
+                        .stroke(Sketchbook.ink, style: Sketchbook.inkStroke(2))
+                        .frame(height: 6)
+                        .padding(.horizontal, -3)
+                        .offset(y: -6)
+                        .matchedGeometryEffect(id: "underline", in: underline)
+                        .accessibilityHidden(true)
+                }
+            }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(title), \(count) visual\(count == 1 ? "" : "s")")
         .accessibilityAddTraits(store.scope == scope ? .isSelected : [])
+        .id(scope)
     }
 }
 
@@ -1310,7 +1433,7 @@ private enum LibrarySheet: Identifiable {
     case editInspiration(Inspiration)
     case newStudy
     case startStudy(Project)
-    case studyCloseLook(Project.ID)
+    case studyCloseLook(Project.ID, StudyBoardEntry.ID)
 
     var id: String {
         switch self {
@@ -1324,7 +1447,7 @@ private enum LibrarySheet: Identifiable {
             "new-study"
         case .startStudy(let project):
             "start-study-\(project.id.uuidString)"
-        case .studyCloseLook(let projectID):
+        case .studyCloseLook(let projectID, _):
             "study-close-look-\(projectID.uuidString)"
         }
     }
@@ -1339,18 +1462,23 @@ private enum CanvasInteractionPhase: Equatable {
 private struct LibraryMessage: Identifiable {
     let id = UUID()
     let text: String
+    var symbol = "checkmark.circle.fill"
 }
 
 private struct ToastView: View {
     let message: String
+    var symbol = "checkmark.circle.fill"
 
     var body: some View {
-        Label(message, systemImage: "checkmark.circle.fill")
+        // A capsule on one line, and the same rounded ends when a longer
+        // message wraps to two.
+        Label(message, systemImage: symbol)
             .font(.subheadline.weight(.medium))
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
+            .padding(.vertical, 10)
             .frame(minHeight: 44)
-            .background(.black.opacity(0.82), in: Capsule())
+            .background(Sketchbook.cover.opacity(0.88), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
             .shadow(color: .black.opacity(0.16), radius: 12, y: 5)
             .accessibilityAddTraits(.isStaticText)
     }

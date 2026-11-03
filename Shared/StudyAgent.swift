@@ -1,19 +1,63 @@
 import Foundation
 
-/// What the user asks a connected coding agent to do for a study. Both tasks
-/// only add pending proposals through `mood-agent`; the user decides in mood.
+/// What the user asks a connected coding agent to do for a study. Every task
+/// only adds pending proposals through `mood-agent`; the user decides in mood.
 public enum StudyAgentTask: String, Codable, CaseIterable, Hashable, Sendable {
     /// Find real, credited sources and add them with `mood-agent suggest`.
     case findSources
     /// Reflect patterns in keeps and rejects with `mood-agent reflect`.
     case reflect
+    /// Propose ways to make one of the user's own items better, each through
+    /// a lens and shown by a real, credited source, as moves added with
+    /// `mood-agent suggest`. Needs a `StudyAgentTarget`.
+    case improve
 
     public var displayName: String {
         switch self {
         case .findSources: "Find sources"
         case .reflect: "Reflect patterns"
+        case .improve: "Ways to make it better"
         }
     }
+}
+
+/// The user's own work a "make it better" run proposes moves for, and what
+/// it looks through.
+public struct StudyAgentTarget: Equatable, Hashable, Sendable {
+    public enum Lenses: String, Codable, CaseIterable, Hashable, Sendable {
+        /// Dieter Rams' ten principles of good design.
+        case rams
+        /// The study's confirmed and corrected patterns, so the moves say
+        /// where the work strays from the direction: checking what was built.
+        case direction
+    }
+
+    public var inspirationID: Inspiration.ID
+    public var title: String
+    public var lenses: Lenses
+
+    public init(inspirationID: Inspiration.ID, title: String, lenses: Lenses = .rams) {
+        self.inspirationID = inspirationID
+        self.title = StudyAgentNudge.cleaned(title) ?? "Untitled"
+        self.lenses = lenses
+    }
+}
+
+/// Dieter Rams' ten principles of good design, worded as lenses. The
+/// environmental one is read as being light on resources, for software.
+public enum StudyLens {
+    public static let rams = [
+        "Innovative",
+        "Useful",
+        "Aesthetic",
+        "Understandable",
+        "Unobtrusive",
+        "Honest",
+        "Long-lasting",
+        "Thorough to the detail",
+        "Light on resources",
+        "As little design as possible",
+    ]
 }
 
 /// The coding agent mood. starts for a study. By default mood. picks the
@@ -100,6 +144,8 @@ public struct StudyAgentContext: Equatable, Sendable {
     /// A direction the user gave this run, such as "more interiors, less
     /// type". Cleaned with `StudyAgentNudge.cleaned`.
     public var nudge: String?
+    /// For `improve`: the user's own item to make better.
+    public var target: StudyAgentTarget?
 
     public init(
         projectID: Project.ID,
@@ -109,7 +155,8 @@ public struct StudyAgentContext: Equatable, Sendable {
         skillDirectory: String,
         workingDirectory: String,
         storageDirectory: String,
-        nudge: String? = nil
+        nudge: String? = nil,
+        target: StudyAgentTarget? = nil
     ) {
         self.projectID = projectID
         self.projectName = projectName
@@ -119,6 +166,7 @@ public struct StudyAgentContext: Equatable, Sendable {
         self.workingDirectory = workingDirectory
         self.storageDirectory = storageDirectory
         self.nudge = StudyAgentNudge.cleaned(nudge)
+        self.target = target
     }
 }
 
@@ -184,6 +232,10 @@ public extension StudyAgentConfiguration {
         ]
         if let nudge = context.nudge {
             environment["MOOD_STUDY_NUDGE"] = nudge
+        }
+        if let target = context.target {
+            environment["MOOD_STUDY_TARGET"] = target.inspirationID.uuidString
+            environment["MOOD_STUDY_LENSES"] = target.lenses.rawValue
         }
 
         func launch(_ arguments: [String], stdin: String? = nil) -> StudyAgentInvocation {
@@ -322,6 +374,8 @@ public enum StudyAgentPrompt {
             one object with the fields of a `reflect --file` entry. mood. adds each file as it \
             appears. Never rewrite a file you've saved. Don't suggest new sources in this run.
             """
+        case .improve:
+            improveJob(target: context.target, images: images, folder: folder)
         }
 
         let direction = context.nudge.map { nudge in
@@ -349,6 +403,37 @@ public enum StudyAgentPrompt {
         propose: the user keeps, rejects, confirms or corrects everything in mood. Nobody can answer \
         questions during this run: if the study isn't ready, say why and stop without writing any file. \
         Finish with a short plain summary of what you proposed.
+        """
+    }
+
+    private static func improveJob(target: StudyAgentTarget?, images: String, folder: String) -> String {
+        guard let target else {
+            return "Your task was to propose ways to make one of the user's items better, but mood. didn't say which. "
+                + "Say so and stop without writing any file."
+        }
+        let id = target.inspirationID.uuidString.lowercased()
+        let lenses: String = switch target.lenses {
+        case .rams:
+            "Look through Dieter Rams' ten principles of good design: "
+                + StudyLens.rams.map { "\"\($0)\"" }.joined(separator: ", ")
+                + ". Use only the ones that genuinely apply to this item, and put the principle's name in `lens`."
+        case .direction:
+            "Look through the user's own direction: the study's patterns in ./study.json whose status is "
+                + "`confirmed` or `corrected` (for a corrected one, use its `correction`). Each move says where the "
+                + "item strays from one of them; put that pattern, shortened to a few words, in `lens`. If there are "
+                + "no confirmed or corrected patterns, say so and stop without writing any file."
+        }
+        return """
+        Your task: propose 10 to 15 ways to make the user's own work better, following the skill's \
+        "Make it better" section. The work is the study item \(id) ("\(target.title)"), image at \
+        ./\(images)/\(id).<ext>. Look at it closely first. \(lenses) Each move is one concrete change to \
+        this item, in one sentence, and is shown done well by a real, credited source you found and \
+        confirmed: set `move`, `lens` and `forInspirationID` ("\(id)") along with the source's `url`, \
+        `title`, `creator`, `imageURL` and a `rationale` saying what in the source shows the move and why it \
+        fits this item. Never draw, render or mock up a variant of the user's work. Save each move the \
+        moment its source checks out, as its own file: ./\(folder)/01.json, ./\(folder)/02.json, and so on, \
+        each holding one object with the fields of a `suggest --file` entry. Never rewrite a file you've \
+        saved. Don't propose plain sources or patterns in this run.
         """
     }
 }

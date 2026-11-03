@@ -192,6 +192,9 @@ struct StudyAgentControl: View {
                 return count == 0 ? "\(run.agentName) is looking" : "\(run.agentName) · \(count) found"
             case .reflect:
                 return "\(run.agentName) is reflecting"
+            case .improve:
+                let count = run.result.addedSuggestions
+                return count == 0 ? "\(run.agentName) is sketching moves" : "\(run.agentName) · \(count) moves"
             }
         }
         if let run = finishedRun {
@@ -287,7 +290,7 @@ struct StudyAgentControl: View {
     @ViewBuilder
     private func runningCard(_ run: StudyAgentRunner.Run) -> some View {
         StudyAgentCardHeading(
-            title: run.task == .findSources ? "\(run.agentName) is looking" : "\(run.agentName) is reflecting",
+            title: runningTitle(run),
             message: runningMessage(run)
         )
         .contentTransition(.numericText())
@@ -299,7 +302,7 @@ struct StudyAgentControl: View {
             } accessory: {
                 if StudyAgentNudge.cleaned(nudge) != nil {
                     Button("Steer") { steer(agent: agent) }
-                        .buttonStyle(.borderedProminent)
+                        .inkProminentButtonStyle()
                         .controlSize(.small)
                         .help("Start the search again in this direction, keeping what it found")
                         .transition(.opacity)
@@ -330,7 +333,7 @@ struct StudyAgentControl: View {
                 Text("Get Claude Code")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .inkProminentButtonStyle()
             .controlSize(.large)
         } else {
             StudyAgentPrimaryButton("Use Automatic") { choose(.automatic) }
@@ -447,6 +450,14 @@ struct StudyAgentControl: View {
         return pending == 0 ? steer : "\(pending) still to judge. \(steer)"
     }
 
+    private func runningTitle(_ run: StudyAgentRunner.Run) -> String {
+        switch run.task {
+        case .findSources: "\(run.agentName) is looking"
+        case .reflect: "\(run.agentName) is reflecting"
+        case .improve: "\(run.agentName) is sketching moves"
+        }
+    }
+
     private func runningMessage(_ run: StudyAgentRunner.Run) -> String {
         var message: String
         switch run.task {
@@ -458,6 +469,12 @@ struct StudyAgentControl: View {
             message = count == 0
                 ? "Looking for patterns in what you kept and rejected."
                 : "\(count) pattern\(count == 1 ? "" : "s") so far."
+        case .improve:
+            let count = run.result.addedSuggestions
+            let item = run.target.map { "\u{201C}\($0.title)\u{201D}" } ?? "your item"
+            message = count == 0
+                ? "Looking for ways to make \(item) better. Moves appear on the board as they land."
+                : "\(count) move\(count == 1 ? "" : "s") for \(item) so far."
         }
         if let nudge = run.nudge {
             message += " Leaning \u{201C}\(nudge)\u{201D}."

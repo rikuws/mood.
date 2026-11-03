@@ -17,6 +17,8 @@ public struct CapturePayload: Codable, Equatable, Sendable {
     public var authorName: String?
     public var authorHandle: String?
     public var imageURL: URL?
+    /// Set when the captured post is a video or GIF.
+    public var motion: InspirationMotion?
     public var projectID: Project.ID?
     /// When true, a duplicate capture explicitly assigns `projectID`,
     /// including `nil` for General. Automatic browser captures leave this
@@ -35,6 +37,7 @@ public struct CapturePayload: Codable, Equatable, Sendable {
         authorName: String? = nil,
         authorHandle: String? = nil,
         imageURL: URL? = nil,
+        motion: InspirationMotion? = nil,
         projectID: Project.ID? = nil,
         assignProjectOnDuplicate: Bool = false,
         overwriteMetadataOnDuplicate: Bool = false
@@ -46,6 +49,7 @@ public struct CapturePayload: Codable, Equatable, Sendable {
         self.authorName = authorName
         self.authorHandle = authorHandle
         self.imageURL = imageURL
+        self.motion = motion
         self.projectID = projectID
         self.assignProjectOnDuplicate = assignProjectOnDuplicate
         self.overwriteMetadataOnDuplicate = overwriteMetadataOnDuplicate
@@ -59,6 +63,7 @@ public struct CapturePayload: Codable, Equatable, Sendable {
         case authorName
         case authorHandle
         case imageURL
+        case motion
         case projectID
         case assignProjectOnDuplicate
         case overwriteMetadataOnDuplicate
@@ -73,6 +78,7 @@ public struct CapturePayload: Codable, Equatable, Sendable {
         authorName = try container.decodeIfPresent(String.self, forKey: .authorName)
         authorHandle = try container.decodeIfPresent(String.self, forKey: .authorHandle)
         imageURL = try container.decodeIfPresent(URL.self, forKey: .imageURL)
+        motion = InspirationMotion(storedValue: try container.decodeIfPresent(String.self, forKey: .motion))
         projectID = try container.decodeIfPresent(Project.ID.self, forKey: .projectID)
         assignProjectOnDuplicate = try container.decodeIfPresent(
             Bool.self,

@@ -264,6 +264,7 @@ public enum PinaxSyncMerger {
         if winner.authorName == nil { winner.authorName = other.authorName }
         if winner.authorHandle == nil { winner.authorHandle = other.authorHandle }
         if winner.imageURL == nil { winner.imageURL = other.imageURL }
+        if winner.motion == nil { winner.motion = other.motion }
         if winner.localImageFilename == nil {
             winner.localImageFilename = other.localImageFilename
         }

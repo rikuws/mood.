@@ -203,16 +203,10 @@ struct InspirationImageView: View {
     }
 
     private var quoteBackground: Color {
-        let palette: [Color] = [
-            .black,
-            Color(white: 0.067),
-            Color(white: 0.122),
-            Color(white: 0.173),
-        ]
         let index = inspiration.id.uuidString.unicodeScalars.reduce(0) {
             $0 + Int($1.value)
-        } % palette.count
-        return palette[index]
+        } % Sketchbook.quoteGrounds.count
+        return Sketchbook.quoteGrounds[index]
     }
 
     private var previewAccessibilityLabel: String {

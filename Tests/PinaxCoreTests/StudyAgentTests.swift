@@ -155,6 +155,33 @@ final class StudyAgentTests: XCTestCase, @unchecked Sendable {
         XCTAssertFalse(reflect.contains("./suggestions/"))
     }
 
+    func testImproveRunAsksForMovesOnTheTargetThroughItsLenses() throws {
+        let screen = UUID(uuidString: "0A1B2C3D-4E5F-6071-8293-A4B5C6D7E8F9")!
+        var improving = context
+        improving.target = StudyAgentTarget(inspirationID: screen, title: "Ledger \"settings\"\nscreen")
+
+        let rams = StudyAgentPrompt.make(task: .improve, context: improving)
+        XCTAssertTrue(rams.contains("\"Make it better\" section"))
+        XCTAssertTrue(rams.contains("./images/0a1b2c3d-4e5f-6071-8293-a4b5c6d7e8f9.<ext>"))
+        XCTAssertTrue(rams.contains("(\"Ledger 'settings' screen\")"))
+        XCTAssertTrue(rams.contains("\"As little design as possible\""))
+        XCTAssertTrue(rams.contains("./suggestions/01.json"))
+        XCTAssertTrue(rams.contains("Never draw, render or mock up a variant"))
+
+        improving.target?.lenses = .direction
+        let direction = StudyAgentPrompt.make(task: .improve, context: improving)
+        XCTAssertTrue(direction.contains("`confirmed` or `corrected`"))
+        XCTAssertFalse(direction.contains("Dieter Rams"))
+
+        let invocation = try StudyAgentConfiguration(preset: .claudeCode)
+            .invocation(task: .improve, context: improving, agent: .claudeCode, executable: "/usr/local/bin/claude")
+        XCTAssertEqual(invocation.environment["MOOD_STUDY_TARGET"], screen.uuidString)
+        XCTAssertEqual(invocation.environment["MOOD_STUDY_LENSES"], "direction")
+
+        XCTAssertTrue(StudyAgentPrompt.make(task: .improve, context: context).contains("didn't say which"))
+        XCTAssertEqual(StudyAgentHandoff.proposalsDirectoryName(for: .improve), "suggestions")
+    }
+
     func testNudgeSteersTheRunAsOneCleanLine() throws {
         XCTAssertNil(StudyAgentNudge.cleaned("  \n "))
         XCTAssertNil(StudyAgentNudge.cleaned(nil))
