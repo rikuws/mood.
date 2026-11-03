@@ -65,7 +65,7 @@ struct StudyStartForm: View {
                 Button(isSaving ? "Saving…" : actionTitle) {
                     Task { await save() }
                 }
-                .buttonStyle(.borderedProminent)
+                .inkProminentButtonStyle()
                 .keyboardShortcut(.defaultAction)
                 .disabled(trimmedSubject.isEmpty || isSaving)
             }
@@ -301,6 +301,7 @@ struct StudyBoardFilterBar: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 control
             }
+            .trailingOverflowFade()
         }
         #else
         control
@@ -557,7 +558,7 @@ struct StudyAgentPrimaryButton: View {
             Text(title)
                 .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .inkProminentButtonStyle()
         .controlSize(.large)
     }
 }
@@ -722,7 +723,17 @@ enum StudyCardMetrics {
         }
     }
 
+    /// A pattern's statement, before Dynamic Type. A phone's two columns
+    /// are a third as wide as the Mac's, so its sizes step down sooner.
     static func statementSize(_ columns: Int) -> CGFloat {
+        #if os(iOS)
+        switch columns {
+        case ...1: 22
+        case 2: 15.5
+        case 3: 13
+        default: 11.5
+        }
+        #else
         switch columns {
         case ...1: 24
         case 2: 19
@@ -732,6 +743,17 @@ enum StudyCardMetrics {
         case 6: 10.5
         default: 9.5
         }
+        #endif
+    }
+
+    /// The smallest a card's own text gets, such as a lens or how much a
+    /// pattern rests on.
+    static var minimumTextSize: CGFloat {
+        #if os(iOS)
+        return 11
+        #else
+        return 10
+        #endif
     }
 
     static func lineLimit(_ columns: Int) -> Int {
@@ -802,6 +824,8 @@ struct StudyPatternCard: View {
     var isSelected = false
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Follows the person's text size on iOS.
+    @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
     /// How much of the frame is drawn: all of it, unless it's just arrived.
     @State private var drawn: CGFloat
 
@@ -816,7 +840,7 @@ struct StudyPatternCard: View {
         let padding = StudyCardMetrics.padding(columns)
         VStack(alignment: .leading, spacing: max(5, padding * 0.45)) {
             Text(statement)
-                .font(.system(size: StudyCardMetrics.statementSize(columns), design: .serif))
+                .font(.system(size: StudyCardMetrics.statementSize(columns) * textScale, design: .serif))
                 .foregroundStyle(.primary)
                 .lineLimit(StudyCardMetrics.lineLimit(columns))
                 .multilineTextAlignment(.leading)
@@ -826,9 +850,10 @@ struct StudyPatternCard: View {
             // draws the lines to those saves.
             if let evidence {
                 Text(evidence)
-                    .font(.system(size: max(10, StudyCardMetrics.statementSize(columns) * 0.62)))
+                    .font(.system(size: max(StudyCardMetrics.minimumTextSize, StudyCardMetrics.statementSize(columns) * 0.62) * textScale))
                     .foregroundStyle(Sketchbook.graphite)
-                    .lineLimit(1)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .opacity(Double(drawn))
@@ -916,19 +941,22 @@ struct StudyMoveCard: View {
     let columns: Int
     var isSelected = false
 
+    /// Follows the person's text size on iOS.
+    @ScaledMetric(relativeTo: .body) private var textScale: CGFloat = 1
+
     var body: some View {
         let padding = max(8, StudyCardMetrics.padding(columns) * 0.75)
         let shape = RoundedRectangle(cornerRadius: StudyCardMetrics.cornerRadius(columns) + 2, style: .continuous)
         VStack(alignment: .leading, spacing: max(6, padding * 0.5)) {
             Text(suggestion.move ?? suggestion.title)
-                .font(.system(size: StudyCardMetrics.statementSize(columns) * 0.85, design: .serif))
+                .font(.system(size: StudyCardMetrics.statementSize(columns) * 0.85 * textScale, design: .serif))
                 .foregroundStyle(.primary)
                 .lineLimit(StudyCardMetrics.lineLimit(columns))
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if let lens = suggestion.lens {
                 StudyLensLabel(lens: lens)
-                    .font(.system(size: max(10, StudyCardMetrics.statementSize(columns) * 0.6)))
+                    .font(.system(size: max(StudyCardMetrics.minimumTextSize, StudyCardMetrics.statementSize(columns) * 0.6) * textScale))
             }
             if columns <= 5 {
                 source
@@ -957,15 +985,19 @@ struct StudyMoveCard: View {
             }
             .frame(width: side, height: side)
             .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+            // The title may take two lines, so a large text size still
+            // says what the source is.
             VStack(alignment: .leading, spacing: 1) {
                 Text(suggestion.title)
                     .font(.caption)
                     .foregroundStyle(.primary)
+                    .lineLimit(2)
                 Text("by \(suggestion.creator)")
                     .font(.caption2)
                     .foregroundStyle(Sketchbook.graphite)
+                    .lineLimit(1)
             }
-            .lineLimit(1)
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -1633,7 +1665,7 @@ struct StudyFindingCloseLook: View {
                     } label: {
                         Label("Keep", systemImage: "checkmark")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .inkProminentButtonStyle()
                     .keyboardShortcut(.return, modifiers: .command)
                     .help("Keep, and save it to the moodboard (⌘↩)")
 
@@ -1772,14 +1804,14 @@ struct StudyPatternCloseLook: View {
                         onRespond(.correct(correction))
                         isCorrecting = false
                     }
-                    .buttonStyle(.borderedProminent)
+                    .inkProminentButtonStyle()
                     .disabled(correction.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     Button("Cancel") { isCorrecting = false }
                 }
             } else {
                 HStack(spacing: 8) {
                     Button("That's right") { onRespond(.confirm) }
-                        .buttonStyle(.borderedProminent)
+                        .inkProminentButtonStyle()
                         .disabled(reflection.status == .confirmed)
                     Button("Correct it") {
                         correction = reflection.acceptedStatement ?? reflection.statement
@@ -1912,6 +1944,7 @@ struct StudyLensPicker: View {
                     .padding(.vertical, 6)
                     .padding(.horizontal, 7)
             }
+            .trailingOverflowFade()
             .padding(.horizontal, -7)
             #else
             SketchFlowLayout(spacing: 8, lineSpacing: 8) { chips }

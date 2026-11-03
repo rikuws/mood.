@@ -238,7 +238,7 @@ struct InspirationDetailView: View {
                 )
                 .padding(.horizontal, 6)
             }
-            .buttonStyle(.borderedProminent)
+            .inkProminentButtonStyle()
             .controlSize(.large)
             .keyboardShortcut(.return, modifiers: [.command])
             .help(inspiration.motion == nil ? "Open original" : "It moves: play it where it was posted")

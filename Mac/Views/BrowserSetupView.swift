@@ -52,7 +52,7 @@ struct BrowserSetupView: View {
                                 Label("Install for all browsers", systemImage: "puzzlepiece.extension")
                             }
                         }
-                        .buttonStyle(.borderedProminent)
+                        .inkProminentButtonStyle()
                         .disabled(isInstallingAll || statuses.isEmpty)
                     }
 

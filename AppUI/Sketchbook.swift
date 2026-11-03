@@ -24,6 +24,9 @@ enum Sketchbook {
     static let cover = Color(light: 0x13120F, dark: 0x13120F)
     /// Behind an image while it loads, and under a page saved without one.
     static let wash = Color(light: 0xEAE5DA, dark: 0x2A2824)
+    /// A label on the interface's ink (the tint): white on black in Light
+    /// Mode, black on white in Dark Mode.
+    static let onTint = Color(light: 0xFFFFFF, dark: 0x000000)
     /// Grounds for a post saved without a picture, chosen by its ID: warm
     /// blacks, the same temperature as the page.
     static let quoteGrounds = [
@@ -131,6 +134,82 @@ struct SketchPaper: View {
             }
             .allowsHitTesting(false)
             .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// Content softens into the paper as it scrolls up to whatever sits
+    /// above the page, instead of being sliced at a hard line. It's a mask,
+    /// so the paper's own grain shows through rather than a flat band, the
+    /// fade is eased so it has no visible horizon, and it covers only the
+    /// page's top margin, so nothing at rest is touched.
+    func paperTopEdge(height: CGFloat = 16) -> some View {
+        mask {
+            VStack(spacing: 0) {
+                LinearGradient(stops: Self.paperEdgeStops, startPoint: .top, endPoint: .bottom)
+                    .frame(height: height)
+                Rectangle()
+            }
+            // Down past the home indicator too, where the page keeps
+            // scrolling.
+            .ignoresSafeArea(edges: .bottom)
+        }
+    }
+
+    private static var paperEdgeStops: [Gradient.Stop] {
+        (0...8).map { step in
+            let t = CGFloat(step) / 8
+            let eased = t * t * (3 - 2 * t)
+            return Gradient.Stop(color: .black.opacity(eased), location: t)
+        }
+    }
+}
+
+extension View {
+    /// The one prominent action of a view, filled with the interface's ink:
+    /// black with a white label in Light Mode, white with a black label in
+    /// Dark Mode. The system style alone keeps its label white on any tint,
+    /// which disappeared on Dark Mode's white.
+    func inkProminentButtonStyle() -> some View {
+        buttonStyle(.borderedProminent)
+            .foregroundStyle(Sketchbook.onTint)
+    }
+
+    /// For a horizontal scroller: fades its trailing edge while there's
+    /// more to scroll to, so a tab cut off at the edge reads as "more this
+    /// way" rather than as clipping. Before iOS 18 and macOS 15 the edge
+    /// stays as it is.
+    func trailingOverflowFade() -> some View {
+        modifier(TrailingOverflowFade())
+    }
+}
+
+private struct TrailingOverflowFade: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hasMore = false
+
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, macOS 15.0, *) {
+            content
+                .onScrollGeometryChange(for: Bool.self) { geometry in
+                    geometry.contentSize.width - geometry.contentOffset.x - geometry.containerSize.width > 1
+                } action: { _, more in
+                    withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { hasMore = more }
+                }
+                .mask {
+                    HStack(spacing: 0) {
+                        Rectangle()
+                        LinearGradient(
+                            colors: [.black, .black.opacity(hasMore ? 0 : 1)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                        .frame(width: 32)
+                    }
+                }
+        } else {
+            content
+        }
     }
 }
 

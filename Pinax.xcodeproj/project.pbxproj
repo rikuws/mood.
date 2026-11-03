@@ -56,7 +56,9 @@
 		A23D3349749A56A3BF8F91D6 /* GeistSerif-OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = 329E07962B1B0C4B695B01DF /* GeistSerif-OFL.txt */; };
 		A96987A2FC425F94233AA30D /* InspirationDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66D31782EDBB792389D4E078 /* InspirationDetailView.swift */; };
 		AA3AA7434D18E11432B6F55B /* NativeMessagingHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FFC5EF45BCABA8026FED0AF /* NativeMessagingHost.swift */; };
+		B08C2F1EED270E4230930DCB /* CardCaption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4212B7FE072C200517C05 /* CardCaption.swift */; };
 		B10B15EC3068B1297DEF5EF4 /* Sketchbook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66AA3CE7A5B9458408CCB8F5 /* Sketchbook.swift */; };
+		B817B9119EAF37F5BAB8AD94 /* CardCaption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D4212B7FE072C200517C05 /* CardCaption.swift */; };
 		BFC374D985C049BE31C1C01A /* StudyAgentSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F80042702775E6D0552C597 /* StudyAgentSettingsView.swift */; };
 		BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */; };
 		C2101F612D9D9B0B3E47B2B1 /* libPinaxNativeMessaging.a in Frameworks */ = {isa = PBXBuildFile; fileRef = E096359DE167EC20C1FED6DF /* libPinaxNativeMessaging.a */; };
@@ -126,6 +128,7 @@
 		09087426BEBF1093F410D192 /* CaptureProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureProtocol.swift; sourceTree = "<group>"; };
 		099AD9B809A634A0A16A2C31 /* CaptureDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureDeepLink.swift; sourceTree = "<group>"; };
 		0DAB61AF97F166061C70A545 /* NativeMessageFramer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeMessageFramer.swift; sourceTree = "<group>"; };
+		13D4212B7FE072C200517C05 /* CardCaption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardCaption.swift; sourceTree = "<group>"; };
 		170DA01B61975CBF58B7CDDC /* MacLibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacLibraryView.swift; sourceTree = "<group>"; };
 		17C1D1168232960E08F0EF78 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		18B007A849AB1D795EDC9932 /* PinaxMacApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinaxMacApp.swift; sourceTree = "<group>"; };
@@ -431,6 +434,7 @@
 		DE4BD7EEE066FC39C5EB832F /* AppUI */ = {
 			isa = PBXGroup;
 			children = (
+				13D4212B7FE072C200517C05 /* CardCaption.swift */,
 				DE3F1B5472C6E6970E15D34B /* DownsampledPreviewImage.swift */,
 				66AA3CE7A5B9458408CCB8F5 /* Sketchbook.swift */,
 				2FD3AA784BBC5A44956B6525 /* StudyViews.swift */,
@@ -764,6 +768,7 @@
 				069C4ED0FFCCF971D33D057E /* BrowserSetupView.swift in Sources */,
 				312DA1B67C7F6D8A15267A53 /* CaptureDeepLink.swift in Sources */,
 				88A55C06F3EF3C046245C248 /* CaptureSheet.swift in Sources */,
+				B08C2F1EED270E4230930DCB /* CardCaption.swift in Sources */,
 				714C8665CF2D2DA117CE4953 /* ChromiumBrowser.swift in Sources */,
 				BFE546D3DBD3E7A3FA6E16CF /* DownsampledPreviewImage.swift in Sources */,
 				F032156F85D35F16E09BC0DE /* InspirationCard.swift in Sources */,
@@ -812,6 +817,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				51F572CFE0AC517C495F09CB /* CaptureDeepLink.swift in Sources */,
+				B817B9119EAF37F5BAB8AD94 /* CardCaption.swift in Sources */,
 				85E3C2D9A842D78A9E702611 /* DownsampledPreviewImage.swift in Sources */,
 				7C08894180141C033FB39F8F /* IOSInspirationCard.swift in Sources */,
 				766943FF83FB37B560E51A5D /* IOSInspirationDetailView.swift in Sources */,

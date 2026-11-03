@@ -96,7 +96,7 @@ struct CaptureSheet: View {
                     }
                 }
                 .keyboardShortcut(.return, modifiers: [.command])
-                .buttonStyle(.borderedProminent)
+                .inkProminentButtonStyle()
                 .disabled(isSaving || validatedURL == nil)
             }
             .padding(16)

@@ -141,7 +141,7 @@ struct IOSInspirationDetailView: View {
                     )
                     .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.borderedProminent)
+                .inkProminentButtonStyle()
                 .controlSize(.large)
                 .accessibilityHint("Opens \(inspiration.url.host() ?? "the original website")")
             }

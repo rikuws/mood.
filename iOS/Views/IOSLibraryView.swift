@@ -30,7 +30,6 @@ struct IOSLibraryView: View {
     @AppStorage("iosStudyShowsBoard") private var prefersStudyBoard = true
     @State private var studyFilter = StudyBoardFilter.all
     @State private var studyArrivals = StudyBoardArrivals()
-    @State private var studyCloseLookEntryID: StudyBoardEntry.ID?
     @State private var studyNudge = ""
     @State private var showsStudyAgent = false
 
@@ -107,8 +106,8 @@ struct IOSLibraryView: View {
                     requestSync()
                 }
                 .presentationDetents([.medium, .large])
-            case .studyCloseLook(let projectID):
-                studyCloseLookSheet(projectID: projectID)
+            case .studyCloseLook(let projectID, let entryID):
+                studyCloseLookSheet(projectID: projectID, entryID: entryID)
             }
         }
         .confirmationDialog(
@@ -237,6 +236,7 @@ struct IOSLibraryView: View {
                     .padding(.top, 16)
                     .padding(.bottom, 34)
                 }
+                .paperTopEdge()
                 .contentShape(Rectangle())
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("inspirationCanvas")
@@ -292,7 +292,7 @@ struct IOSLibraryView: View {
                     } label: {
                         Label("Save a Link", systemImage: "plus")
                     }
-                    .buttonStyle(.borderedProminent)
+                    .inkProminentButtonStyle()
 
                     Button("Manage Projects") {
                         sheet = .projects
@@ -435,6 +435,7 @@ struct IOSLibraryView: View {
             .padding(.bottom, 34)
             .animation(reduceMotion ? nil : StudyBoardMotion.settle, value: entries.map(\.id))
         }
+        .paperTopEdge()
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("studyBoard")
@@ -595,9 +596,8 @@ struct IOSLibraryView: View {
     }
 
     @ViewBuilder
-    private func studyCloseLookSheet(projectID: Project.ID) -> some View {
+    private func studyCloseLookSheet(projectID: Project.ID, entryID: StudyBoardEntry.ID) -> some View {
         if let study = store.snapshot.project(id: projectID)?.study,
-           let entryID = studyCloseLookEntryID,
            let entry = StudyBoard(study: study).entry(id: entryID) {
             let entries = StudyBoard(study: study).entries(for: studyFilter, matching: store.searchText)
             let index = entries.firstIndex(where: { $0.id == entry.id })
@@ -605,8 +605,8 @@ struct IOSLibraryView: View {
             CloseLookFrame(
                 position: index.map { $0 + 1 },
                 count: entries.count,
-                onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries),
-                onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries),
+                onPrevious: studyEntrySelector(at: index.map { $0 - 1 }, in: entries, projectID: projectID),
+                onNext: studyEntrySelector(at: index.map { $0 + 1 }, in: entries, projectID: projectID),
                 onClose: { sheet = nil }
             ) {
                 // Stacked, so stepping crossfades one entry into the next
@@ -642,6 +642,9 @@ struct IOSLibraryView: View {
                 }
             }
             .presentationDragIndicator(.visible)
+            // A sheet of the sketchbook, in its ink rather than system blue.
+            .presentationBackground(Sketchbook.sheet)
+            .tint(.pinaxPlum)
             .modifier(PageSizedSheet())
         } else {
             ContentUnavailableView(
@@ -652,21 +655,33 @@ struct IOSLibraryView: View {
         }
     }
 
+    /// The entry travels in the sheet itself, so the sheet can never be
+    /// built before the entry it shows is known.
     private func openStudyCloseLook(_ id: StudyBoardEntry.ID, projectID: Project.ID) {
-        studyCloseLookEntryID = id
-        sheet = .studyCloseLook(projectID)
+        sheet = .studyCloseLook(projectID, id)
     }
 
-    private func studyEntrySelector(at index: Int?, in entries: [StudyBoardEntry]) -> (() -> Void)? {
+    private func studyEntrySelector(
+        at index: Int?,
+        in entries: [StudyBoardEntry],
+        projectID: Project.ID
+    ) -> (() -> Void)? {
         guard let index, entries.indices.contains(index) else { return nil }
         let id = entries[index].id
-        return { showStudyCloseLookEntry(id) }
+        return { showStudyCloseLookEntry(id, projectID: projectID) }
     }
 
-    private func showStudyCloseLookEntry(_ id: StudyBoardEntry.ID) {
+    /// Steps the open close look to another entry; the sheet stays put
+    /// because its identity is the project, not the entry.
+    private func showStudyCloseLookEntry(_ id: StudyBoardEntry.ID, projectID: Project.ID) {
         withAnimation(reduceMotion ? nil : StudyBoardMotion.step) {
-            studyCloseLookEntryID = id
+            sheet = .studyCloseLook(projectID, id)
         }
+    }
+
+    private var studyCloseLookEntryID: StudyBoardEntry.ID? {
+        if case .studyCloseLook(_, let entryID) = sheet { return entryID }
+        return nil
     }
 
     /// Finds that arrive while the board is open develop into place; what was
@@ -723,7 +738,7 @@ struct IOSLibraryView: View {
                     reason: reason
                 )
                 if let upcoming, studyCloseLookEntryID == suggestion.id {
-                    showStudyCloseLookEntry(upcoming)
+                    showStudyCloseLookEntry(upcoming, projectID: projectID)
                 }
                 requestSync()
             } catch {
@@ -749,7 +764,7 @@ struct IOSLibraryView: View {
                     response: response
                 )
                 if let upcoming, studyCloseLookEntryID == reflection.id {
-                    showStudyCloseLookEntry(upcoming)
+                    showStudyCloseLookEntry(upcoming, projectID: projectID)
                 }
                 requestSync()
             } catch {
@@ -1292,6 +1307,7 @@ private struct ScopeBar: View {
     @Namespace private var underline
 
     var body: some View {
+        ScrollViewReader { proxy in
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 18) {
                 scopeButton("All", count: store.counts.total, scope: .all)
@@ -1319,6 +1335,15 @@ private struct ScopeBar: View {
         }
         // Written on the page like the study board's filters, not on a
         // bar of its own.
+        .trailingOverflowFade()
+        // The page you're on is always in view, even when large text
+        // pushes it past the edge.
+        .onChange(of: store.scope, initial: true) { _, scope in
+            withAnimation(reduceMotion ? nil : GlassSegmentMetrics.selection) {
+                proxy.scrollTo(scope, anchor: .center)
+            }
+        }
+        }
     }
 
     private func scopeButton(
@@ -1363,6 +1388,7 @@ private struct ScopeBar: View {
         .buttonStyle(.plain)
         .accessibilityLabel("\(title), \(count) visual\(count == 1 ? "" : "s")")
         .accessibilityAddTraits(store.scope == scope ? .isSelected : [])
+        .id(scope)
     }
 }
 
@@ -1407,7 +1433,7 @@ private enum LibrarySheet: Identifiable {
     case editInspiration(Inspiration)
     case newStudy
     case startStudy(Project)
-    case studyCloseLook(Project.ID)
+    case studyCloseLook(Project.ID, StudyBoardEntry.ID)
 
     var id: String {
         switch self {
@@ -1421,7 +1447,7 @@ private enum LibrarySheet: Identifiable {
             "new-study"
         case .startStudy(let project):
             "start-study-\(project.id.uuidString)"
-        case .studyCloseLook(let projectID):
+        case .studyCloseLook(let projectID, _):
             "study-close-look-\(projectID.uuidString)"
         }
     }

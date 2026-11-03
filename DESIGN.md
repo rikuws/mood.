@@ -231,7 +231,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 ### Buttons
 
 - **Shape:** use native SwiftUI button shapes and control sizes. Touch targets are at least 44×44pt on iOS; macOS controls preserve system sizing and keyboard focus.
-- **Primary:** `.borderedProminent` with inverted ink (black on light, white on dark), used for the single clear action in empty states and save flows.
+- **Primary:** `.borderedProminent` with inverted ink (black on light, white on dark) and a label in the opposite ink (`inkProminentButtonStyle()`), used for the single clear action in empty states, save flows, and a close look's verdict. The system style alone keeps its label white, which vanishes on Dark Mode's white.
 - **Hover / Focus:** allow platform-native hover, focus ring, pressed, disabled, loading, destructive, and keyboard states. Never approximate them with custom web-style chrome.
 - **Secondary / Ghost:** plain, borderless, menu, toolbar, and standard bordered styles remain native. Destructive actions use the semantic destructive role.
 
@@ -266,7 +266,7 @@ mood. uses a hybrid of tonal layering and shallow ambient shadow. The gallery ca
 
 ### Stepped Caption Cutout
 
-The signature collected-card caption grows from the preview's lower-left corner as white paper. At low density on macOS the source sits on a rounded shelf above the title, each as wide as its own text, so the step follows the words and never cuts across a line; on iOS it uses two rounded shelves before the final edge. At high density it collapses to one compact rounded edge. A title that is only the image's file name ("IMG_2041.jpeg", a browser's "name (1200×800)") is left off, so an image-only save carries just its source. The cutout must fully mask the image beneath it, including the lower-left inner corner, and its right edge must always retain visible breathing room after the last glyph.
+The signature collected-card caption grows from the preview's lower-left corner as white paper. At low density the source sits on a rounded shelf above the title, each as wide as its own text, so the step follows the words and never cuts across a line or lets a glyph run onto the image; Mac and iOS share the one caption. At high density it collapses to one compact rounded edge. A title that is only the image's file name ("IMG_2041.jpeg", a browser's "name (1200×800)") is left off, so an image-only save carries just its source. The cutout must fully mask the image beneath it, including the lower-left inner corner, and its right edge must always retain visible breathing room after the last glyph.
 
 ### Image-less Reference Preview
 

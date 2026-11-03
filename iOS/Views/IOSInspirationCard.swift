@@ -67,39 +67,16 @@ struct IOSInspirationCard: View {
     }
 
     private var imageInsetCaption: some View {
-        VStack(alignment: .leading, spacing: captionSpacing) {
-            if showsSourceLabel {
-                Text(previewSourceLabel)
-                    .font(
-                        .system(
-                            size: effectiveInsetLabelFontSize,
-                            weight: .semibold
-                        )
-                    )
-                    .foregroundStyle(.black.opacity(0.82))
-                    .lineLimit(1)
-            }
-
-            if let captionTitle {
-                Text(captionTitle)
-                    .font(
-                        .system(
-                            size: effectiveTitleFontSize,
-                            weight: .semibold,
-                            design: .serif
-                        )
-                    )
-                    .foregroundStyle(.black.opacity(0.9))
-                    .lineLimit(titleLineLimit)
-                    .multilineTextAlignment(.leading)
-            }
-        }
-        .padding(captionInsets)
-        .fixedSize(horizontal: false, vertical: true)
-        .background {
-            SteppedCaptionInsetShape(compact: !showsSourceLabel || captionTitle == nil)
-                .fill(Color.white)
-        }
+        InspirationCardCaption(
+            label: showsSourceLabel ? previewSourceLabel : nil,
+            title: captionTitle,
+            labelFontSize: effectiveInsetLabelFontSize,
+            titleFontSize: effectiveTitleFontSize,
+            titleLineLimit: titleLineLimit,
+            spacing: captionSpacing,
+            insets: captionInsets,
+            cornerRadius: showsSourceLabel && captionTitle != nil ? 10 : 4
+        )
     }
 
     @ViewBuilder
@@ -259,109 +236,5 @@ struct IOSInspirationCard: View {
             return "@\(handle.trimmingCharacters(in: CharacterSet(charactersIn: "@")))"
         }
         return inspiration.url.host() ?? "Saved reference"
-    }
-}
-
-private struct SteppedCaptionInsetShape: Shape {
-    let compact: Bool
-
-    private let preferredCornerRadius: CGFloat = 10
-
-    func path(in rect: CGRect) -> Path {
-        if compact {
-            let finalEdge = rect.maxX
-            let radius = min(preferredCornerRadius, rect.height / 2)
-
-            var path = Path()
-            path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-            addOuterCorner(
-                to: &path,
-                edgeX: finalEdge,
-                fromY: rect.minY,
-                radius: radius
-            )
-            path.addLine(to: CGPoint(x: finalEdge, y: rect.maxY))
-            path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-            path.closeSubpath()
-            return path
-        }
-
-        let firstStepX = rect.minX + (rect.width * 0.56)
-        let secondStepX = rect.minX + (rect.width * 0.8)
-        let finalEdge = rect.maxX
-        let firstShelfY = rect.minY + (rect.height * 0.32)
-        let secondShelfY = rect.minY + (rect.height * 0.64)
-        let radius = min(
-            preferredCornerRadius,
-            (firstShelfY - rect.minY) / 2,
-            (secondShelfY - firstShelfY) / 2,
-            (finalEdge - secondStepX) / 2
-        )
-
-        var path = Path()
-        path.move(to: CGPoint(x: rect.minX, y: rect.minY))
-        addRoundedStep(
-            to: &path,
-            stepX: firstStepX,
-            fromY: rect.minY,
-            toY: firstShelfY,
-            radius: radius
-        )
-        addRoundedStep(
-            to: &path,
-            stepX: secondStepX,
-            fromY: firstShelfY,
-            toY: secondShelfY,
-            radius: radius
-        )
-        addOuterCorner(
-            to: &path,
-            edgeX: finalEdge,
-            fromY: secondShelfY,
-            radius: radius
-        )
-        path.addLine(to: CGPoint(x: finalEdge, y: rect.maxY))
-        path.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
-        path.closeSubpath()
-        return path
-    }
-
-    private func addRoundedStep(
-        to path: inout Path,
-        stepX: CGFloat,
-        fromY: CGFloat,
-        toY: CGFloat,
-        radius: CGFloat
-    ) {
-        let curve = radius * 0.552_284_75
-
-        path.addLine(to: CGPoint(x: stepX - radius, y: fromY))
-        path.addCurve(
-            to: CGPoint(x: stepX, y: fromY + radius),
-            control1: CGPoint(x: stepX - radius + curve, y: fromY),
-            control2: CGPoint(x: stepX, y: fromY + radius - curve)
-        )
-        path.addLine(to: CGPoint(x: stepX, y: toY - radius))
-        path.addCurve(
-            to: CGPoint(x: stepX + radius, y: toY),
-            control1: CGPoint(x: stepX, y: toY - radius + curve),
-            control2: CGPoint(x: stepX + radius - curve, y: toY)
-        )
-    }
-
-    private func addOuterCorner(
-        to path: inout Path,
-        edgeX: CGFloat,
-        fromY: CGFloat,
-        radius: CGFloat
-    ) {
-        let curve = radius * 0.552_284_75
-
-        path.addLine(to: CGPoint(x: edgeX - radius, y: fromY))
-        path.addCurve(
-            to: CGPoint(x: edgeX, y: fromY + radius),
-            control1: CGPoint(x: edgeX - radius + curve, y: fromY),
-            control2: CGPoint(x: edgeX, y: fromY + radius - curve)
-        )
     }
 }

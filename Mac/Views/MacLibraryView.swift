@@ -963,7 +963,7 @@ struct MacLibraryView: View {
             ) {
                 HStack(spacing: 8) {
                     Button("Save a Link") { sheet = .capture }
-                        .buttonStyle(.borderedProminent)
+                        .inkProminentButtonStyle()
                     Button("Set Up Browser") { sheet = .browserSetup }
                 }
             }

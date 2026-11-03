@@ -302,7 +302,7 @@ struct StudyAgentControl: View {
             } accessory: {
                 if StudyAgentNudge.cleaned(nudge) != nil {
                     Button("Steer") { steer(agent: agent) }
-                        .buttonStyle(.borderedProminent)
+                        .inkProminentButtonStyle()
                         .controlSize(.small)
                         .help("Start the search again in this direction, keeping what it found")
                         .transition(.opacity)
@@ -333,7 +333,7 @@ struct StudyAgentControl: View {
                 Text("Get Claude Code")
                     .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
+            .inkProminentButtonStyle()
             .controlSize(.large)
         } else {
             StudyAgentPrimaryButton("Use Automatic") { choose(.automatic) }

@@ -76,7 +76,7 @@ struct InspirationEditorSheet: View {
                 Button(isSaving ? "Saving…" : "Save") {
                     Task { await save() }
                 }
-                .buttonStyle(.borderedProminent)
+                .inkProminentButtonStyle()
                 .keyboardShortcut(.defaultAction)
                 .disabled(isSaving)
             }
